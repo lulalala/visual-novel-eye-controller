@@ -37,7 +37,7 @@ Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` 
 
 ### Rules the design depends on
 
-1. **Triggers emit fixed event names. They never choose the output.** The only place events are mapped to outputs is `output.actions` (`OutputConfig.actions` in code, `[output.actions]` in TOML). Current event names: `long_blink`, `head_shake`, `head_nod_up`, `head_nod_down`, `nod_up`, `nod_down`.
+1. **Triggers emit fixed event names. They never choose the output.** The only place events are mapped to outputs is `output.actions` (`OutputConfig.actions` in code, `[output.actions]` in TOML). Current event names: `blink`, `head_shake`, `head_nod_up`, `head_nod_down`, `nod_up`, `nod_down`.
 2. Outputs come in two kinds. Keystroke/mouse outputs are listed in `OUTPUT_NAMES` in `outputs.py` (`enter`, `space`, `left_click`, `wheel_down`, `up`, `down`). App-level outputs start with `app:` (currently only `app:toggle_pause`). The event loop in `app.py` handles `app:` outputs before `ActionDispatcher` sees them.
 3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, MediaPipe, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
 4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.
@@ -58,12 +58,12 @@ Camera frames are processed in memory and are **never written to disk or sent an
 - Interfaces are `typing.Protocol` (`Trigger`, `Output`). Concrete classes don't inherit from them.
 - Units go in names: `_s` for seconds, `_deg` for degrees (`min_duration_s`, `amplitude_deg`).
 - Private state uses a leading underscore. Comments explain *why* or describe the gesture, not what the line does. Match the existing comment density, which is sparse.
-- Validate config values that the type can't enforce in the constructor, and raise `ValueError` with a message that names the key and the allowed values. Example: `long_blink.fire_on must be 'reopen' or 'hold', not 'x'`.
+- Validate config values that the type can't enforce in the constructor, and raise `ValueError` with a message that names the key and the allowed values. Example: `blink.fire_on must be 'reopen' or 'hold', not 'x'`.
 - No new runtime dependencies without asking. Platform-specific code is imported lazily inside the class or function that needs it (see `Win32Output`, `PynputOutput`).
 
 ### User feedback and logging
 
-- When a gesture is detected but doesn't fire, the user should be told why. Pass the optional `log` callback into the trigger and call it with a message shaped like `"{name}: <what happened> (<reason>, <limit>)"`. Example: `long_blink: blink 0.12s (too short, min 0.15s)`. Format durations as `.2f` seconds and angles as whole degrees with `°`.
+- When a gesture is detected but doesn't fire, the user should be told why. Pass the optional `log` callback into the trigger and call it with a message shaped like `"{name}: <what happened> (<reason>, <limit>)"`. Example: `blink: blink 0.12s (too short, min 0.15s)`. Format durations as `.2f` seconds and angles as whole degrees with `°`.
 - Use `print` through the `log` callback. Don't add the `logging` module.
 
 ### Adding a new trigger (checklist)
@@ -86,7 +86,15 @@ Adding a new output name: add it to `OUTPUT_NAMES` and implement it in **both** 
 
 ### Docs
 
-- Write in standard American English (behavior, center, license, color) everywhere: code, comments, docs and commit messages.
+Follow the [developer documentation writing standard](https://github.com/NateBJones-Projects/developer-documentation-skill/blob/main/references/writing-standard.md). Key rules:
+
+- Address the reader as `you`. Use active voice, present tense, and imperative verbs for instructions.
+- Use `must` for a requirement, `can` for an available action, and `might` for an uncertain outcome. Use `should` only for a clear recommendation.
+- Do not use `please` in instructions. Remove filler and promotional claims.
+- Use one term consistently for the same thing.
+- Headings: sentence case, no skipped levels. Task sections start with a base-form verb ("Install the package"). Concept sections use a noun phrase ("Configuration fields").
+- Use code font in prose for filenames, paths, commands, flags, code elements, and text the reader must enter. Use fenced code blocks for longer examples; add a language identifier and introduce the block with a sentence.
+- Write in standard American English (behavior, center, license, color) everywhere: code, comments, docs, and commit messages.
 - `README.md` is user-facing: plain sentences, second person, concrete numbers ("turn past ~15° to one side"). Keep the **Layout** section and the flag examples in step with the code.
 - Research and findings go in `docs/research.md`, not the README.
 
