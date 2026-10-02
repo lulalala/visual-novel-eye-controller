@@ -11,7 +11,12 @@ def config_from(*argv):
 def test_defaults():
     config = config_from()
     assert config.long_blink.min_duration_s == LongBlinkConfig().min_duration_s
-    assert config.output.actions == {"next": "enter", "head_up": "up", "head_down": "down"}
+    assert config.output.actions == {
+        "long_blink": "enter",
+        "head_shake": "app:toggle_pause",
+        "head_nod_up": "up",
+        "head_nod_down": "down",
+    }
     assert config.feedback.log_blinks
 
 
@@ -22,7 +27,7 @@ def test_shortcut_flags():
     )
     assert config.long_blink.min_duration_s == 0.6
     assert config.long_blink.fire_on == "hold"
-    assert config.output.actions["next"] == "space"
+    assert config.output.actions["long_blink"] == "space"
     assert config.output.dry_run
     assert not config.feedback.sound
     assert not config.feedback.log_blinks

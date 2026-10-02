@@ -31,7 +31,7 @@ def test_long_blink_fires_on_reopen():
     trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45))
     events = run(trigger, [(1.0, False), (0.6, True), (0.5, False)])
     assert len(events) == 1
-    assert events[0].action == "next"
+    assert events[0].action == "long_blink"
     assert 1.6 <= events[0].timestamp < 1.7
 
 
@@ -72,10 +72,10 @@ class RecordingOutput:
 
 def test_dispatcher_maps_actions_and_applies_cooldown():
     out = RecordingOutput()
-    dispatcher = ActionDispatcher(out, {"next": "enter"}, cooldown_s=1.0)
-    assert dispatcher.dispatch(TriggerEvent("long_blink", "next", 0.0))
-    assert not dispatcher.dispatch(TriggerEvent("long_blink", "next", 0.5))
-    assert dispatcher.dispatch(TriggerEvent("long_blink", "next", 1.2))
+    dispatcher = ActionDispatcher(out, {"long_blink": "enter"}, cooldown_s=1.0)
+    assert dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.0))
+    assert not dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.5))
+    assert dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 1.2))
     assert out.sent == ["enter", "enter"]
 
 
@@ -97,9 +97,9 @@ def test_successful_long_blink_is_not_logged_by_trigger():
 
 def test_dispatcher_logs_cooldown_skips():
     messages = []
-    dispatcher = ActionDispatcher(RecordingOutput(), {"next": "enter"}, 1.0, log=messages.append)
-    dispatcher.dispatch(TriggerEvent("long_blink", "next", 0.0))
-    dispatcher.dispatch(TriggerEvent("long_blink", "next", 0.5))
+    dispatcher = ActionDispatcher(RecordingOutput(), {"long_blink": "enter"}, 1.0, log=messages.append)
+    dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.0))
+    dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.5))
     assert len(messages) == 1 and "cooldown" in messages[0]
 
 
@@ -129,7 +129,7 @@ def test_head_shake_left_right_fires():
     trigger = HeadShakeTrigger(HeadShakeConfig())
     yaws = [0.0] * 10 + sweep(0, -25, 6) + sweep(-25, 25, 10) + sweep(25, 0, 6) + [0.0] * 10
     events = shake(trigger, yaws)
-    assert len(events) == 1 and events[0].action == "toggle_pause"
+    assert len(events) == 1 and events[0].action == "head_shake"
 
 
 def test_head_shake_right_left_fires_too():

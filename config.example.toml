@@ -33,7 +33,6 @@ max_duration_s = 2.0
 fire_on = "reopen"
 # Ignore blinks while the head is turned further than this
 max_head_yaw_deg = 12.0
-action = "next"
 
 [head]
 # Head turns are measured relative to a rolling median of your usual pose
@@ -45,25 +44,24 @@ enabled = true
 amplitude_deg = 15.0
 max_duration_s = 1.0
 cooldown_s = 1.5
-action = "toggle_pause"
 
 [head_nod]
 # Tilt head up or down past amplitude_deg to send the mapped key
 enabled = true
 amplitude_deg = 15.0
 cooldown_s = 1.0
-action_up = "head_up"
-action_down = "head_down"
 
 [output]
 cooldown_s = 1.0
 dry_run = false
 
 [output.actions]
-# enter | space | left_click | wheel_down | up | down
-next = "enter"
-head_up = "up"
-head_down = "down"
+# Keystroke/mouse outputs: enter | space | left_click | wheel_down | up | down
+# App-level outputs: app:toggle_pause
+long_blink = "enter"
+head_shake = "app:toggle_pause"
+head_nod_up = "up"
+head_nod_down = "down"
 
 [feedback]
 sound = true

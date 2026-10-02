@@ -35,8 +35,8 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
      "help": "longer closures are cancelled, in seconds"}),
     ("--fire-on", "long_blink.fire_on", {"choices": ["reopen", "hold"],
      "help": "fire when the eyes reopen, or as soon as --min-duration is reached"}),
-    ("--output", "output.actions.next", {"choices": OUTPUT_NAMES,
-     "help": "what to send to the game"}),
+    ("--output", "output.actions.long_blink", {"choices": OUTPUT_NAMES,
+     "help": "what key to send for a long blink"}),
     ("--cooldown", "output.cooldown_s", {"type": float, "metavar": "S",
      "help": "minimum time between triggers, in seconds"}),
     ("--close-ratio", "eyes.close_ratio", {"type": float, "metavar": "R",
@@ -116,9 +116,13 @@ def run(config: Config, args: argparse.Namespace) -> int:
         if config.feedback.sound:
             play_sound("trigger")
 
+    # App-level outputs (app:*) are handled in the event loop; only keystroke
+    # and mouse outputs go to ActionDispatcher.
+    key_actions = {k: v for k, v in config.output.actions.items()
+                   if not v.startswith("app:")}
     dispatcher = ActionDispatcher(
         create_output(config.output.dry_run),
-        config.output.actions,
+        key_actions,
         config.output.cooldown_s,
         on_fire,
         log_blink,
@@ -159,9 +163,11 @@ def run(config: Config, args: argparse.Namespace) -> int:
                 event = trigger.update(obs)
                 if event is None:
                     continue
-                if event.action == "toggle_pause":  # works while paused, unlike outputs
+                mapped = config.output.actions.get(event.action)
+                if mapped is not None and mapped.startswith("app:"):
                     print(f"{event.trigger}: {event.detail}", flush=True)
-                    pause.toggle()
+                    if mapped == "app:toggle_pause":
+                        pause.toggle()
                     continue
                 if pause.paused:
                     if log_blink:

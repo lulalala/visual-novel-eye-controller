@@ -59,7 +59,6 @@ class LongBlinkConfig:
     # Ignore closures while the head is turned further than this (you are
     # looking away, or shaking your head, which often comes with a blink).
     max_head_yaw_deg: float = 12.0
-    action: str = "next"
 
 
 @dataclass(frozen=True)
@@ -70,8 +69,6 @@ class HeadShakeConfig:
     amplitude_deg: float = 15.0
     max_duration_s: float = 1.0
     cooldown_s: float = 1.5
-    # "toggle_pause" is handled internally; other actions go to [output.actions].
-    action: str = "toggle_pause"
 
 
 @dataclass(frozen=True)
@@ -80,15 +77,20 @@ class HeadNodConfig:
     # Tilt past amplitude_deg up or down to trigger.
     amplitude_deg: float = 15.0
     cooldown_s: float = 1.0
-    action_up: str = "head_up"
-    action_down: str = "head_down"
 
 
 @dataclass(frozen=True)
 class OutputConfig:
-    # Maps trigger actions to an output: enter, space, left_click, wheel_down, up, down.
+    # Maps trigger event names to outputs.
+    # Keystroke outputs: enter, space, left_click, wheel_down, up, down.
+    # App-level outputs: app:toggle_pause.
     actions: dict[str, str] = field(
-        default_factory=lambda: {"next": "enter", "head_up": "up", "head_down": "down"}
+        default_factory=lambda: {
+            "long_blink": "enter",
+            "head_shake": "app:toggle_pause",
+            "head_nod_up": "up",
+            "head_nod_down": "down",
+        }
     )
     cooldown_s: float = 1.0
     dry_run: bool = False

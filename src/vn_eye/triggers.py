@@ -115,7 +115,7 @@ class LongBlinkTrigger:
         return f"open (last closure {self._last_duration:.2f}s)"
 
     def _event(self, t: float, duration: float) -> TriggerEvent:
-        return TriggerEvent(self.name, self.config.action, t, f"closed {duration:.2f}s")
+        return TriggerEvent(self.name, self.name, t, f"closed {duration:.2f}s")
 
 
 class HeadShakeTrigger:
@@ -159,7 +159,7 @@ class HeadShakeTrigger:
         ):
             self._pending = None
             self._last_fire = t
-            return TriggerEvent(self.name, self.config.action, t, f"shake in {t - pending[1]:.2f}s")
+            return TriggerEvent(self.name, self.name, t, f"shake in {t - pending[1]:.2f}s")
         self._pending = (side, t)
         return None
 
@@ -220,10 +220,10 @@ class HeadNodTrigger:
         if self._last_fire is not None and t - self._last_fire < self.config.cooldown_s:
             self._log(f"{self.name}: pitch {obs.head_pitch:+.0f}° ignored (cooldown)")
             return None
-        action = self.config.action_up if side == 1 else self.config.action_down
+        event_name = "head_nod_up" if side == 1 else "head_nod_down"
         self._last_fire = t
         self._peak = 0.0
-        return TriggerEvent(self.name, action, t, f"pitch {obs.head_pitch:+.0f}°")
+        return TriggerEvent(self.name, event_name, t, f"pitch {obs.head_pitch:+.0f}°")
 
     def status(self) -> str:
         return "no head pose" if self._pitch is None else f"pitch {self._pitch:+.0f}°"
