@@ -46,7 +46,7 @@ class HeadConfig:
 
 
 @dataclass(frozen=True)
-class LongBlinkConfig:
+class BlinkConfig:
     enabled: bool = True
     # Shortest closure that triggers. 0.15 s lets most natural blinks advance
     # the text; raise it (e.g. 0.35-0.45) to require a deliberate closure.
@@ -95,7 +95,7 @@ class OutputConfig:
     # App-level outputs: app:toggle_pause.
     actions: dict[str, str] = field(
         default_factory=lambda: {
-            "long_blink": "enter",
+            "blink": "enter",
             "head_shake": "app:toggle_pause",
             "head_nod_up": "up",
             "head_nod_down": "down",
@@ -126,7 +126,7 @@ class Config:
     backend: BackendConfig = field(default_factory=BackendConfig)
     eyes: EyeConfig = field(default_factory=EyeConfig)
     head: HeadConfig = field(default_factory=HeadConfig)
-    long_blink: LongBlinkConfig = field(default_factory=LongBlinkConfig)
+    blink: BlinkConfig = field(default_factory=BlinkConfig)
     head_shake: HeadShakeConfig = field(default_factory=HeadShakeConfig)
     head_nod: HeadNodConfig = field(default_factory=HeadNodConfig)
     nod: NodConfig = field(default_factory=NodConfig)
@@ -169,7 +169,7 @@ def load_config(path: Path | None) -> Config:
 
 
 def apply_overrides(config: Config, overrides: dict[str, Any]) -> Config:
-    """Apply nested overrides, e.g. {"long_blink": {"min_duration_s": 0.5}}."""
+    """Apply nested overrides, e.g. {"blink": {"min_duration_s": 0.5}}."""
     return _merge(config, overrides, "")
 
 

@@ -55,7 +55,7 @@ Platform notes:
 src/vn_eye/
   landmarks.py  camera frame -> FaceFrame (MediaPipe backend; other backends plug in here)
   eyes.py       FaceFrame -> EyeObservation (eye openness, adaptive open/closed state)
-  triggers.py   EyeObservation -> TriggerEvent (LongBlinkTrigger; add gaze triggers here)
+  triggers.py   EyeObservation -> TriggerEvent (BlinkTrigger; add gaze triggers here)
   outputs.py    TriggerEvent -> key/mouse input, with cooldown
   app.py        main loop and CLI
 ```

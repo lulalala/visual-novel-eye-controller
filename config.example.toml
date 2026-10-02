@@ -23,7 +23,7 @@ close_ratio = 0.55
 open_ratio = 0.75
 require_both_eyes = true
 
-[long_blink]
+[blink]
 enabled = true
 # 0.15 lets natural blinks advance; 0.35-0.45 requires a deliberate closure
 min_duration_s = 0.15
@@ -65,7 +65,7 @@ dry_run = false
 [output.actions]
 # Keystroke/mouse outputs: enter | space | left_click | wheel_down | up | down
 # App-level outputs: app:toggle_pause
-long_blink = "enter"
+blink = "enter"
 head_shake = "app:toggle_pause"
 head_nod_up = "up"
 head_nod_down = "down"

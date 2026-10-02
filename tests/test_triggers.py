@@ -1,9 +1,9 @@
-from vn_eye.config import HeadConfig, HeadShakeConfig, LongBlinkConfig, NodConfig
+from vn_eye.config import BlinkConfig, HeadConfig, HeadShakeConfig, NodConfig
 from vn_eye.eyes import Observation
 from vn_eye.head import HeadTracker
 from vn_eye.landmarks import FaceFrame
 from vn_eye.outputs import ActionDispatcher
-from vn_eye.triggers import HeadShakeTrigger, LongBlinkTrigger, NodTrigger, TriggerEvent
+from vn_eye.triggers import BlinkTrigger, HeadShakeTrigger, NodTrigger, TriggerEvent
 
 FPS = 30
 
@@ -23,33 +23,33 @@ def run(trigger, segments, start=0.0):
 
 
 def test_normal_blink_does_not_fire():
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45))
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45))
     assert run(trigger, [(1.0, False), (0.2, True), (1.0, False)]) == []
 
 
-def test_long_blink_fires_on_reopen():
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45))
+def test_blink_fires_on_reopen():
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45))
     events = run(trigger, [(1.0, False), (0.6, True), (0.5, False)])
     assert len(events) == 1
-    assert events[0].action == "long_blink"
+    assert events[0].action == "blink"
     assert 1.6 <= events[0].timestamp < 1.7
 
 
 def test_too_long_closure_is_canceled():
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45, max_duration_s=2.0))
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45, max_duration_s=2.0))
     assert run(trigger, [(1.0, False), (3.0, True), (1.0, False)]) == []
 
 
 def test_hold_mode_fires_once_while_closed():
-    config = LongBlinkConfig(min_duration_s=0.45, fire_on="hold")
-    trigger = LongBlinkTrigger(config)
+    config = BlinkConfig(min_duration_s=0.45, fire_on="hold")
+    trigger = BlinkTrigger(config)
     events = run(trigger, [(1.0, False), (3.0, True), (1.0, False)])
     assert len(events) == 1
     assert 1.0 + config.min_duration_s <= events[0].timestamp < 1.0 + config.min_duration_s + 1 / FPS
 
 
 def test_losing_face_cancels_closure():
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45))
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45))
     run(trigger, [(1.0, False), (0.3, True)])
     trigger.update(Observation(1.31, face_present=False))
     events = run(trigger, [(0.3, True), (0.5, False)], start=1.35)
@@ -57,7 +57,7 @@ def test_losing_face_cancels_closure():
 
 
 def test_not_ready_ignores_closure():
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45))
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45))
     for i in range(30):
         assert trigger.update(Observation(i / FPS, face_present=True, ready=False, closed=True)) is None
 
@@ -72,40 +72,40 @@ class RecordingOutput:
 
 def test_dispatcher_maps_actions_and_applies_cooldown():
     out = RecordingOutput()
-    dispatcher = ActionDispatcher(out, {"long_blink": "enter"}, cooldown_s=1.0)
-    assert dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.0))
-    assert not dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.5))
-    assert dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 1.2))
+    dispatcher = ActionDispatcher(out, {"blink": "enter"}, cooldown_s=1.0)
+    assert dispatcher.dispatch(TriggerEvent("blink", "blink", 0.0))
+    assert not dispatcher.dispatch(TriggerEvent("blink", "blink", 0.5))
+    assert dispatcher.dispatch(TriggerEvent("blink", "blink", 1.2))
     assert out.sent == ["enter", "enter"]
 
 
 def test_short_and_too_long_closures_are_logged():
     messages = []
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45), log=messages.append)
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45), log=messages.append)
     run(trigger, [(1.0, False), (0.2, True), (0.5, False), (3.0, True), (0.5, False)])
     assert len(messages) == 2
     assert "too short" in messages[0]
     assert "too long" in messages[1]
 
 
-def test_successful_long_blink_is_not_logged_by_trigger():
+def test_successful_blink_is_not_logged_by_trigger():
     messages = []
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45), log=messages.append)
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45), log=messages.append)
     assert len(run(trigger, [(1.0, False), (0.6, True), (0.5, False)])) == 1
     assert messages == []
 
 
 def test_dispatcher_logs_cooldown_skips():
     messages = []
-    dispatcher = ActionDispatcher(RecordingOutput(), {"long_blink": "enter"}, 1.0, log=messages.append)
-    dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.0))
-    dispatcher.dispatch(TriggerEvent("long_blink", "long_blink", 0.5))
+    dispatcher = ActionDispatcher(RecordingOutput(), {"blink": "enter"}, 1.0, log=messages.append)
+    dispatcher.dispatch(TriggerEvent("blink", "blink", 0.0))
+    dispatcher.dispatch(TriggerEvent("blink", "blink", 0.5))
     assert len(messages) == 1 and "cooldown" in messages[0]
 
 
 def test_blink_with_head_turned_is_ignored():
     messages = []
-    trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.15), log=messages.append)
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15), log=messages.append)
     obs = [Observation(i / FPS, face_present=True, ready=True, closed=8 <= i < 16, head_yaw=20.0 if i == 10 else 2.0)
            for i in range(30)]
     assert [e for o in obs if (e := trigger.update(o))] == []

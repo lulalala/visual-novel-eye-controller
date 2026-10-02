@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Protocol
 
-from vn_eye.config import Config, HeadNodConfig, HeadShakeConfig, LongBlinkConfig, NodConfig
+from vn_eye.config import BlinkConfig, Config, HeadNodConfig, HeadShakeConfig, NodConfig
 from vn_eye.eyes import Observation
 
 
@@ -33,14 +33,14 @@ class Trigger(Protocol):
         ...
 
 
-class LongBlinkTrigger:
+class BlinkTrigger:
     """Fires when both eyes stay closed for a deliberate length of time."""
 
-    name = "long_blink"
+    name = "blink"
 
-    def __init__(self, config: LongBlinkConfig, log: Callable[[str], None] | None = None) -> None:
+    def __init__(self, config: BlinkConfig, log: Callable[[str], None] | None = None) -> None:
         if config.fire_on not in ("reopen", "hold"):
-            raise ValueError(f"long_blink.fire_on must be 'reopen' or 'hold', not {config.fire_on!r}")
+            raise ValueError(f"blink.fire_on must be 'reopen' or 'hold', not {config.fire_on!r}")
         self.config = config
         self._log = log or (lambda _msg: None)
         self._closed_since: float | None = None
@@ -290,8 +290,8 @@ class NodTrigger:
 
 def create_triggers(config: Config, log: Callable[[str], None] | None = None) -> list[Trigger]:
     triggers: list[Trigger] = []
-    if config.long_blink.enabled:
-        triggers.append(LongBlinkTrigger(config.long_blink, log))
+    if config.blink.enabled:
+        triggers.append(BlinkTrigger(config.blink, log))
     if config.head_shake.enabled:
         triggers.append(HeadShakeTrigger(config.head_shake))
     if config.head_nod.enabled:
