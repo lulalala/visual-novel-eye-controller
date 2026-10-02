@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vn-eye"
+version = "0.1.0"
+description = "Advance visual novels with eye gestures (webcam prototype)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mediapipe>=0.10.14",
+    "opencv-python>=4.8",
+    "numpy>=1.26",
+    # Used on macOS/Linux for key output and on every OS for the pause hotkey.
+    # Windows key output uses SendInput directly via ctypes.
+    "pynput>=1.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+vn-eye = "vn_eye.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,48 @@
+# Copy to config.toml and pass with `vn-eye --config config.toml`.
+# Every key is optional; the values below are the defaults.
+
+[camera]
+index = 0
+width = 640
+height = 480
+fps = 30
+
+[backend]
+name = "mediapipe"
+# "auto" (GPU on macOS, CPU elsewhere), "cpu" or "gpu"
+delegate = "auto"
+
+[eyes]
+# "ear" (eye aspect ratio from landmarks) or "blendshape" (MediaPipe eyeBlink scores)
+metric = "ear"
+# Openness is compared with a rolling median of your open-eye value.
+baseline_window_s = 10.0
+warmup_s = 2.0
+# Closed below baseline * close_ratio, open again above baseline * open_ratio.
+close_ratio = 0.55
+open_ratio = 0.75
+require_both_eyes = true
+
+[long_blink]
+enabled = true
+min_duration_s = 0.45
+max_duration_s = 2.0
+# "reopen": fire when you open your eyes (hold past max_duration_s to cancel)
+# "hold":   fire as soon as min_duration_s is reached
+fire_on = "reopen"
+action = "next"
+
+[output]
+cooldown_s = 1.0
+dry_run = false
+
+[output.actions]
+# enter | space | left_click | wheel_down
+next = "enter"
+
+[feedback]
+sound = true
+
+[hotkeys]
+# pynput syntax, e.g. "<ctrl>+<alt>+p", "<f8>". Empty string disables it.
+pause = "<ctrl>+<alt>+p"
