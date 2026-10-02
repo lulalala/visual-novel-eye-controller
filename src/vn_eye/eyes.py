@@ -48,7 +48,7 @@ def eye_openness(face: FaceFrame, metric: str) -> tuple[float, float] | None:
 
 
 @dataclass(frozen=True)
-class EyeObservation:
+class Observation:
     """What triggers see each frame. Gaze position will be added here later."""
 
     timestamp: float
@@ -60,6 +60,8 @@ class EyeObservation:
     ready: bool = False
     """True once enough "open" samples exist to judge closure."""
     closed: bool = False
+    head_yaw: float | None = None
+    """Head turn in degrees relative to the user's usual pose (sign: left/right)."""
 
 
 class EyeStateTracker:
@@ -74,12 +76,12 @@ class EyeStateTracker:
         self._history.clear()
         self._closed = False
 
-    def update(self, face: FaceFrame) -> EyeObservation:
+    def update(self, face: FaceFrame) -> Observation:
         values = eye_openness(face, self.config.metric)
         t = face.timestamp
         if values is None:
             self._closed = False
-            return EyeObservation(t, face_present=False)
+            return Observation(t, face_present=False)
 
         left, right = values
         # With both eyes required, the more open eye decides, so one closed
@@ -100,7 +102,7 @@ class EyeStateTracker:
         if not self._closed:
             self._history.append((t, combined))
 
-        return EyeObservation(
+        return Observation(
             timestamp=t,
             face_present=True,
             left=left,

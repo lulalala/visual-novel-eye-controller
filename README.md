@@ -12,7 +12,7 @@ Initial findings are collected in [docs/research.md](docs/research.md).
 
 # Stage 2 - Prototype: long blink → Enter
 
-`vn-eye` watches your webcam and sends `Enter` (or space, left click, or scroll-down) to the foreground window when you close both eyes deliberately. By default that means 0.35–2 s, while normal blinks are usually shorter (0.17–0.34 s in our first test). It needs only a webcam. Frames are processed locally and never stored.
+`vn-eye` watches your webcam and sends `Enter` (or space, left click, or scroll-down) to the foreground window when you blink. By default any closure of both eyes lasting 0.15–2 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes deliberately to advance, raise `--min-duration` to about 0.35–0.45 s (ordinary blinks were 0.17–0.34 s in our first test). Shake your head to pause and resume. It needs only a webcam. Frames are processed locally and never stored.
 
 ## Setup
 
@@ -39,8 +39,9 @@ vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
 `vn-eye --help` lists all flags. Command-line settings override the config file.
 
 - Keep your eyes open normally for ~2 s at start so it can learn your "eyes open" level. It keeps adapting as your posture changes.
-- Close both eyes for about 0.35 s or longer, then open them: you'll hear a beep and `Enter` is sent. Closing them for more than 2 s cancels.
-- `Ctrl+Alt+P` pauses and resumes (also `p` in the preview window). `q`/`Esc` closes the preview; `Ctrl+C` stops it from the terminal.
+- Blink (both eyes, at least 0.15 s): you'll hear a beep and `Enter` is sent. Closing them for more than 2 s cancels. Blinks while your head is turned more than 12° are ignored.
+- **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. Use `--shake-degrees` to adjust, or `--no-head-shake` to turn it off.
+- `Ctrl+Alt+P` also pauses and resumes (also `p` in the preview window). `q`/`Esc` closes the preview; `Ctrl+C` stops it from the terminal.
 - Every closure that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. `--no-blink-log` turns this off.
 - `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
 

@@ -40,16 +40,38 @@ class EyeConfig:
 
 
 @dataclass(frozen=True)
+class HeadConfig:
+    # Head yaw is measured relative to a rolling median of your usual pose.
+    baseline_window_s: float = 10.0
+
+
+@dataclass(frozen=True)
 class LongBlinkConfig:
     enabled: bool = True
-    # Normal blinks last ~100-400 ms; a deliberate closure is longer.
-    min_duration_s: float = 0.35
+    # Shortest closure that triggers. 0.15 s lets most natural blinks advance
+    # the text; raise it (e.g. 0.35-0.45) to require a deliberate closure.
+    min_duration_s: float = 0.15
     # Closures longer than this are ignored (resting your eyes, looking away).
     max_duration_s: float = 2.0
     # "reopen": fire when the eyes reopen (allows cancelling by holding past max).
     # "hold": fire as soon as min_duration_s is reached (lower latency).
     fire_on: str = "reopen"
+    # Ignore closures while the head is turned further than this (you are
+    # looking away, or shaking your head, which often comes with a blink).
+    max_head_yaw_deg: float = 12.0
     action: str = "next"
+
+
+@dataclass(frozen=True)
+class HeadShakeConfig:
+    enabled: bool = True
+    # Turn past amplitude_deg to one side, then past it to the other side,
+    # within max_duration_s.
+    amplitude_deg: float = 15.0
+    max_duration_s: float = 1.0
+    cooldown_s: float = 1.5
+    # "toggle_pause" is handled internally; other actions go to [output.actions].
+    action: str = "toggle_pause"
 
 
 @dataclass(frozen=True)
@@ -78,7 +100,9 @@ class Config:
     camera: CameraConfig = field(default_factory=CameraConfig)
     backend: BackendConfig = field(default_factory=BackendConfig)
     eyes: EyeConfig = field(default_factory=EyeConfig)
+    head: HeadConfig = field(default_factory=HeadConfig)
     long_blink: LongBlinkConfig = field(default_factory=LongBlinkConfig)
+    head_shake: HeadShakeConfig = field(default_factory=HeadShakeConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
     hotkeys: HotkeyConfig = field(default_factory=HotkeyConfig)

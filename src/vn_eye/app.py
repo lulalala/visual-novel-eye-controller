@@ -6,6 +6,7 @@ import argparse
 import csv
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,8 @@ import cv2
 from vn_eye import preview
 from vn_eye.config import Config, apply_overrides, load_config, nested, parse_override
 from vn_eye.eyes import EyeStateTracker
-from vn_eye.feedback import play_trigger_sound
+from vn_eye.feedback import play_sound
+from vn_eye.head import HeadTracker
 from vn_eye.hotkeys import PauseSwitch
 from vn_eye.landmarks import create_backend
 from vn_eye.outputs import OUTPUT_NAMES, ActionDispatcher, create_output
@@ -40,6 +42,10 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
     ("--close-ratio", "eyes.close_ratio", {"type": float, "metavar": "R",
      "help": "closed below baseline * R (lower = needs a firmer closure)"}),
     ("--metric", "eyes.metric", {"choices": ["ear", "blendshape"], "help": "eye openness measure"}),
+    ("--shake-degrees", "head_shake.amplitude_deg", {"type": float, "metavar": "DEG",
+     "help": "how far to turn the head each way for the pause/resume shake"}),
+    ("--no-head-shake", "head_shake.enabled", {"action": "store_const", "const": False,
+     "help": "disable the head-shake pause/resume gesture"}),
     ("--dry-run", "output.dry_run", {"action": "store_const", "const": True,
      "help": "print actions instead of sending input"}),
     ("--no-sound", "feedback.sound", {"action": "store_const", "const": False,
@@ -98,6 +104,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
     cap = open_camera(config)
     backend = create_backend(config.backend.name, config.backend.delegate)
     tracker = EyeStateTracker(config.eyes)
+    head = HeadTracker(config.head)
     log_blink = print if config.feedback.log_blinks else None
     triggers = create_triggers(config, log_blink)
     last_fire_at = -1e9
@@ -107,7 +114,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
         last_fire_at = time.monotonic()
         print(f"{event.trigger}: {event.detail} -> {output_name}", flush=True)
         if config.feedback.sound:
-            play_trigger_sound()
+            play_sound("trigger")
 
     dispatcher = ActionDispatcher(
         create_output(config.output.dry_run),
@@ -116,13 +123,17 @@ def run(config: Config, args: argparse.Namespace) -> int:
         on_fire,
         log_blink,
     )
-    pause = PauseSwitch()
+    def on_pause_change(paused: bool) -> None:
+        if config.feedback.sound:
+            play_sound("pause" if paused else "resume")
+
+    pause = PauseSwitch(on_pause_change)
     pause.start_global_hotkey(config.hotkeys.pause)
 
     log_file = args.log.open("w", newline="") if args.log else None
     log = csv.writer(log_file) if log_file else None
     if log:
-        log.writerow(["t", "face", "left", "right", "combined", "baseline", "ready", "closed", "fired"])
+        log.writerow(["t", "face", "left", "right", "combined", "baseline", "ready", "closed", "head_yaw", "fired"])
 
     print("Running. Keep your eyes open normally for a couple of seconds to calibrate.", flush=True)
     start = time.monotonic()
@@ -140,12 +151,16 @@ def run(config: Config, args: argparse.Namespace) -> int:
             prev = now
 
             face = backend.process(frame, now)
-            obs = tracker.update(face)
+            obs = replace(tracker.update(face), head_yaw=head.update(face))
 
             fired = False
             for trigger in triggers:
                 event = trigger.update(obs)
                 if event is None:
+                    continue
+                if event.action == "toggle_pause":  # works while paused, unlike outputs
+                    print(f"{event.trigger}: {event.detail}", flush=True)
+                    pause.toggle()
                     continue
                 if pause.paused:
                     if log_blink:
@@ -158,7 +173,8 @@ def run(config: Config, args: argparse.Namespace) -> int:
                     f"{now - start:.3f}", int(obs.face_present),
                     *(f"{v:.4f}" if v is not None else "" for v in
                       (obs.left, obs.right, obs.combined, obs.baseline)),
-                    int(obs.ready), int(obs.closed), int(fired),
+                    int(obs.ready), int(obs.closed),
+                    f"{obs.head_yaw:.1f}" if obs.head_yaw is not None else "", int(fired),
                 ])
 
             if args.preview:

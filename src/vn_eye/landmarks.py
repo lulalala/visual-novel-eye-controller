@@ -7,6 +7,7 @@ GazeFollower, a Tobii tracker) can be added without touching the triggers.
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 import urllib.request
@@ -31,6 +32,8 @@ class FaceFrame:
     """(N, 3) landmarks in pixel coordinates (z is relative depth), or None if no face."""
     blendshapes: dict[str, float] | None = None
     """Optional named expression scores in [0, 1], e.g. ``eyeBlinkLeft``."""
+    head_yaw_deg: float | None = None
+    """Absolute head turn left/right in degrees, if the backend estimates head pose."""
 
 
 class LandmarkBackend(Protocol):
@@ -85,6 +88,7 @@ class MediaPipeBackend:
             running_mode=vision.RunningMode.VIDEO,
             num_faces=1,
             output_face_blendshapes=True,
+            output_facial_transformation_matrixes=True,
         )
         self._landmarker = vision.FaceLandmarker.create_from_options(options)
         self._last_ts_ms = -1
@@ -111,7 +115,11 @@ class MediaPipeBackend:
         blendshapes = None
         if result.face_blendshapes:
             blendshapes = {c.category_name: c.score for c in result.face_blendshapes[0]}
-        return FaceFrame(timestamp, points, blendshapes)
+        yaw = None
+        if result.facial_transformation_matrixes:
+            r = np.asarray(result.facial_transformation_matrixes[0])[:3, :3]
+            yaw = math.degrees(math.atan2(r[0, 2], r[2, 2]))
+        return FaceFrame(timestamp, points, blendshapes, yaw)
 
     def close(self) -> None:
         self._landmarker.close()

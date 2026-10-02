@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 from vn_eye.config import EyeConfig
-from vn_eye.eyes import LEFT_EYE, RIGHT_EYE, EyeObservation
+from vn_eye.eyes import LEFT_EYE, RIGHT_EYE, Observation
 from vn_eye.landmarks import FaceFrame
 
 WINDOW = "vn-eye preview"
@@ -23,7 +23,7 @@ def _text(img: np.ndarray, text: str, y: int, color=_WHITE) -> None:
     cv2.putText(img, text, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 1, cv2.LINE_AA)
 
 
-def _openness_bar(img: np.ndarray, obs: EyeObservation, cfg: EyeConfig) -> None:
+def _openness_bar(img: np.ndarray, obs: Observation, cfg: EyeConfig) -> None:
     if obs.combined is None or obs.baseline is None:
         return
     h, w = img.shape[:2]
@@ -46,7 +46,7 @@ def _openness_bar(img: np.ndarray, obs: EyeObservation, cfg: EyeConfig) -> None:
 def show(
     frame_bgr: np.ndarray,
     face: FaceFrame,
-    obs: EyeObservation,
+    obs: Observation,
     eye_cfg: EyeConfig,
     trigger_status: list[str],
     paused: bool,
