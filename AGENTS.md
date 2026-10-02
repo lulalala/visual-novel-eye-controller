@@ -82,7 +82,7 @@ Adding a new output name: add it to `OUTPUT_NAMES` and implement it in **both** 
 ### Tests
 
 - Tests never use a real camera, MediaPipe model, OS input or sound. Build `Observation`/`FaceFrame` objects by hand.
-- Use the plain `def test_*` function style with bare `assert`, and name tests after behavior (`test_too_long_closure_is_cancelled`). No test classes and no mocking framework.
+- Use the plain `def test_*` function style with bare `assert`, and name tests after behavior (`test_too_long_closure_is_canceled`). No test classes and no mocking framework.
 
 ### Docs
 

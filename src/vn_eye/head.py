@@ -11,7 +11,7 @@ from vn_eye.landmarks import FaceFrame
 
 class HeadTracker:
     """Reports head yaw and pitch relative to a rolling median, so an
-    off-centre webcam or a habitual slight tilt reads as 0."""
+    off-center webcam or a habitual slight tilt reads as 0."""
 
     def __init__(self, config: HeadConfig) -> None:
         self.config = config

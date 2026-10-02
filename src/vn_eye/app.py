@@ -32,7 +32,7 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
     ("--min-duration", "long_blink.min_duration_s", {"type": float, "metavar": "S",
      "help": "shortest closure that triggers, in seconds"}),
     ("--max-duration", "long_blink.max_duration_s", {"type": float, "metavar": "S",
-     "help": "longer closures are cancelled, in seconds"}),
+     "help": "longer closures are canceled, in seconds"}),
     ("--fire-on", "long_blink.fire_on", {"choices": ["reopen", "hold"],
      "help": "fire when the eyes reopen, or as soon as --min-duration is reached"}),
     ("--output", "output.actions.long_blink", {"choices": OUTPUT_NAMES,

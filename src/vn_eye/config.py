@@ -53,7 +53,7 @@ class LongBlinkConfig:
     min_duration_s: float = 0.15
     # Closures longer than this are ignored (resting your eyes, looking away).
     max_duration_s: float = 2.0
-    # "reopen": fire when the eyes reopen (allows cancelling by holding past max).
+    # "reopen": fire when the eyes reopen (allows canceling by holding past max).
     # "hold": fire as soon as min_duration_s is reached (lower latency).
     fire_on: str = "reopen"
     # Ignore closures while the head is turned further than this (you are

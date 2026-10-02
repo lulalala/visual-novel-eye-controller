@@ -26,7 +26,7 @@ Conclusion: the idea is novel as a product, but every building block exists.
 
 | Option | Accuracy | Head movement | Cost | Notes |
 | --- | --- | --- | --- | --- |
-| Consumer IR tracker (Tobii Eye Tracker 5) | ~0.5–1° | Tolerates normal head motion (also tracks head) | ~US$250 | 133 Hz. SDK is Stream Engine (C/C#); Python bindings exist only as community projects. Licence forbids storing/analysing gaze data without an analytical licence – real-time interaction use is the intended case. |
+| Consumer IR tracker (Tobii Eye Tracker 5) | ~0.5–1° | Tolerates normal head motion (also tracks head) | ~US$250 | 133 Hz. SDK is Stream Engine (C/C#); Python bindings exist only as community projects. License forbids storing/analyzing gaze data without an analytical license – real-time interaction use is the intended case. |
 | Research IR tracker (Tobii Pro, Pupil Labs Core) | ~0.5° | Good | High | Overkill; Pupil Core is open source but head-mounted. |
 | Plain webcam + ML gaze model | ~1–4° (WebGazer ≈ 3–4°, newer DL models such as GazeFollower ≈ 1 cm after calibration) | Must be handled in software; accuracy degrades with motion and lighting | Free | Most accessible. Good enough for coarse regions (e.g. "text box" vs. "bottom-right corner"), not for word-level tracking. |
 
@@ -57,7 +57,7 @@ depth needed.
 
 Setup matters more than the camera:
 - Light the face from the front (lamp or monitor). A window behind the user hurts.
-- Mount the camera on top of the monitor, centred. If it is off to the side, the head looks turned: blinks are ignored beyond 12° of turn, and head-shake detection gets less reliable.
+- Mount the camera on top of the monitor, centered. If it is off to the side, the head looks turned: blinks are ignored beyond 12° of turn, and head-shake detection gets less reliable.
 - Glare on glasses can hide the eyelids. Tilt the camera or lamp a little.
 - Turn off driver "low-light compensation" or auto-exposure modes that lower fps.
 
@@ -105,7 +105,7 @@ cooldown to avoid double-advances.
 
 ## 5. Requirements / difficulty
 
-- **Head movement**: must tolerate small movements. Landmark-based approaches normalise by face/eye geometry; IR trackers handle it in hardware. Larger movements need re-calibration or head-pose compensation.
+- **Head movement**: must tolerate small movements. Landmark-based approaches normalize by face/eye geometry; IR trackers handle it in hardware. Larger movements need re-calibration or head-pose compensation.
 - **Lighting & glasses**: webcam accuracy drops in dim light and with reflective glasses – common when reading in the evening. Should be tested early.
 - **Latency**: budget ~100–200 ms from gesture to key press; webcam at 30 fps is enough for blinks and dwell.
 - **False positives vs. negatives**: an accidental skip is worse than a missed trigger (you lose a line; VNs usually have backlog, but it's annoying). Prefer conservative thresholds plus a per-user calibration step.
@@ -117,12 +117,12 @@ Difficulty estimate:
 - Dwell-zone with webcam gaze: **moderate** (calibration, smoothing, drift).
 - Reliable implicit end-of-reading detection: **hard** (research-level; realistic with an IR tracker).
 
-## 6. Licences of candidate libraries
+## 6. Licenses of candidate libraries
 
 Checked October 2026 (PyPI metadata, project LICENSE files, vendor terms).
-Verify again before release, as licences can change between versions.
+Verify again before release, as licenses can change between versions.
 
-| Library | Purpose | Licence | OK to use in an open-source project? |
+| Library | Purpose | License | OK to use in an open-source project? |
 | --- | --- | --- | --- |
 | MediaPipe (incl. Face Landmarker model) | Face/iris landmarks, blinks | Apache-2.0 | Yes – permissive |
 | OpenCV (`opencv-python`) | Camera capture, image processing | Apache-2.0 | Yes |
@@ -131,19 +131,19 @@ Verify again before release, as licences can change between versions.
 | EyeTrax | Webcam gaze + calibration | MIT | Yes |
 | GazeTracking (antoinelame) | Pupil position / blink | MIT | Yes |
 | Project Gameface (google) | Reference code for gesture → input | Apache-2.0 (repo archived Sep 2025) | Yes, but unmaintained |
-| **GazeFollower** | Deep-learning webcam gaze | **CC BY-NC-SA 4.0** | Only non-commercially, and derivatives must keep the same licence; it can't be bundled into an MIT/Apache project without imposing these terms |
+| **GazeFollower** | Deep-learning webcam gaze | **CC BY-NC-SA 4.0** | Only non-commercially, and derivatives must keep the same license; it can't be bundled into an MIT/Apache project without imposing these terms |
 | **WebGazer.js** | Browser webcam gaze | **GPL-3.0** (LGPL-3.0 option for small companies) | Copyleft – using it makes the combined work GPL |
 | pyautogui | Send key/mouse input | BSD-3-Clause | Yes |
 | keyboard (boppreh) | Send key input | MIT | Yes |
 | pynput | Send key/mouse input | LGPL-3.0 | Yes as an unmodified dependency; modifications to pynput itself must be shared |
 | Textractor / LunaTranslator | Hook current VN line text | GPL-3.0 | Use as a separate program (e.g. read its output) rather than linking/bundling, unless we go GPL |
-| **Tobii Stream Engine** (Eye Tracker 5) | IR tracker access | **Proprietary** (Tobii SDK licence) | Usable for "Interactive Use" only: gaze as live input is allowed, but storing/analysing gaze data or exposing it via an API is not. Cannot be redistributed in our repo; users install Tobii's runtime themselves |
+| **Tobii Stream Engine** (Eye Tracker 5) | IR tracker access | **Proprietary** (Tobii SDK license) | Usable for "Interactive Use" only: gaze as live input is allowed, but storing/analyzing gaze data or exposing it via an API is not. Cannot be redistributed in our repo; users install Tobii's runtime themselves |
 | tobii-research (Tobii Pro SDK) | Pro tracker access | Proprietary | Pro hardware only |
-| python-tobii-stream-engine, PyEyetracker | Community Python wrappers | No clear licence found | Treat as "all rights reserved" until a licence is confirmed; writing our own small ctypes wrapper is the safer path |
+| python-tobii-stream-engine, PyEyetracker | Community Python wrappers | No clear license found | Treat as "all rights reserved" until a license is confirmed; writing our own small ctypes wrapper is the safer path |
 
 Takeaways:
 - A permissive stack is available: **MediaPipe + OpenCV + EyeTrax/own code + pyautogui or keyboard** are all Apache/MIT/BSD.
-- Avoid GazeFollower if we want commercial freedom or a permissive licence; it's fine for experiments.
+- Avoid GazeFollower if we want commercial freedom or a permissive license; it's fine for experiments.
 - Tobii support must stay an optional backend that loads the user's installed runtime and never logs gaze data.
 - This repo has no LICENSE file yet. With the stack above, MIT or Apache-2.0 would be compatible.
 
@@ -158,7 +158,7 @@ Caveats:
 - The **public GazeFollower model was trained on 7M images**. The 32M-image "base model" (presumably the one benchmarked) and the fine-tuning code are available only by email, for academic use, on condition they are *not shared*. We could not ship that model to users at all.
 - Accuracy matters only for some gestures. Long blink needs no gaze. A dwell zone a few cm wide tolerates 3–4° (1° ≈ 1 cm at 60 cm viewing distance). Only implicit end-of-reading needs ~1°, roughly one VN text line. A good IR tracker is still the realistic option there.
 
-Decision: keep the core under a permissive licence, and make the gaze source a **pluggable backend**. A GazeFollower backend can be an optional add-on that users install themselves (`pip install gazefollower`). Its NC/SA terms then apply to that add-on, not to the core. CC licences aren't designed for software, so how share-alike applies across a plugin boundary is legally unclear; get advice before any commercial distribution. If benchmarks later show GazeFollower is decisively better, we can also ask the authors for a different licence.
+Decision: keep the core under a permissive license, and make the gaze source a **pluggable backend**. A GazeFollower backend can be an optional add-on that users install themselves (`pip install gazefollower`). Its NC/SA terms then apply to that add-on, not to the core. CC licenses aren't designed for software, so how share-alike applies across a plugin boundary is legally unclear; get advice before any commercial distribution. If benchmarks later show GazeFollower is decisively better, we can also ask the authors for a different license.
 
 ## 7. Suggested next steps (Stage 2 prototype)
 
@@ -186,14 +186,14 @@ Decision: keep the core under a permissive licence, and make the gaze source a *
 - Windows Eye Control: https://support.microsoft.com/en-us/windows/get-started-with-eye-control-in-windows-1a170a20-1083-2452-8f42-17a7d4fe89a9
 - Python Tobii Stream Engine bindings: https://github.com/betaboon/python-tobii-stream-engine
 - Return sweeps in reading: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6863793/
-- GazeFollower licence (CC BY-NC-SA 4.0) and model availability: https://pypi.org/project/gazefollower/
+- GazeFollower license (CC BY-NC-SA 4.0) and model availability: https://pypi.org/project/gazefollower/
 - GazeFollower paper (ACM PACMCGIT 2025): https://doi.org/10.1145/3729410 , https://www.researchgate.net/publication/391149662_GazeFollower_An_open-source_system_for_deep_learning-based_gaze_tracking_with_web_cameras
 - EyeTrax: https://pypi.org/project/eyetrax/
-- GazeTracking licence: https://github.com/antoinelame/GazeTracking/blob/master/LICENSE
-- WebGazer licence: https://github.com/brownhci/WebGazer/blob/master/LICENSE.md
-- Project Gameface licence: https://github.com/google/project-gameface/blob/main/LICENSE
+- GazeTracking license: https://github.com/antoinelame/GazeTracking/blob/master/LICENSE
+- WebGazer license: https://github.com/brownhci/WebGazer/blob/master/LICENSE.md
+- Project Gameface license: https://github.com/google/project-gameface/blob/main/LICENSE
 - MediaPipe Face Mesh V2 model card: https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Face%20Mesh%20V2.pdf
-- Tobii SDK licence agreement: https://www.tobii.com/products/integration/tobii-sdk-license
-- Tobii Core/Gaming SDK licence (Interactive vs Analytical use): https://developer.tobii.com/license-agreement/
+- Tobii SDK license agreement: https://www.tobii.com/products/integration/tobii-sdk-license
+- Tobii Core/Gaming SDK license (Interactive vs Analytical use): https://developer.tobii.com/license-agreement/
 - Textractor: https://github.com/Artikash/Textractor
 - PyPI metadata for mediapipe, opencv-python, eyetrax, pynput, pyautogui, keyboard, dlib, numpy, tobii-research: https://pypi.org/

@@ -15,7 +15,7 @@ _GREEN = (80, 200, 80)
 _RED = (60, 60, 230)
 _YELLOW = (40, 200, 230)
 _WHITE = (240, 240, 240)
-_GREY = (140, 140, 140)
+_GRAY = (140, 140, 140)
 
 
 def _text(img: np.ndarray, text: str, y: int, color=_WHITE) -> None:
@@ -33,7 +33,7 @@ def _openness_bar(img: np.ndarray, obs: Observation, cfg: EyeConfig) -> None:
     def x(v: float) -> int:
         return int(x0 + min(v * scale, x1 - x0))
 
-    cv2.rectangle(img, (x0, y0), (x1, y1), _GREY, 1)
+    cv2.rectangle(img, (x0, y0), (x1, y1), _GRAY, 1)
     cv2.rectangle(img, (x0, y0), (x(obs.combined), y1), _RED if obs.closed else _GREEN, -1)
     for v, color in (
         (obs.baseline * cfg.close_ratio, _RED),
@@ -77,7 +77,7 @@ def show(
     for line in trigger_status:
         y += 22
         _text(img, line, y)
-    _text(img, "p: pause   q/Esc: quit", img.shape[0] - 40, _GREY)
+    _text(img, "p: pause   q/Esc: quit", img.shape[0] - 40, _GRAY)
     _openness_bar(img, obs, eye_cfg)
 
     cv2.imshow(WINDOW, img)

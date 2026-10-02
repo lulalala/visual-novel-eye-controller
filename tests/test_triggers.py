@@ -35,7 +35,7 @@ def test_long_blink_fires_on_reopen():
     assert 1.6 <= events[0].timestamp < 1.7
 
 
-def test_too_long_closure_is_cancelled():
+def test_too_long_closure_is_canceled():
     trigger = LongBlinkTrigger(LongBlinkConfig(min_duration_s=0.45, max_duration_s=2.0))
     assert run(trigger, [(1.0, False), (3.0, True), (1.0, False)]) == []
 

@@ -57,7 +57,7 @@ class LongBlinkTrigger:
         if not obs.face_present or not obs.ready:
             # Losing the face mid-closure (turning away, leaning out) cancels it.
             if self._closed_since is not None and not self._fired:
-                self._log(f"{self.name}: closure cancelled (face lost)")
+                self._log(f"{self.name}: closure canceled (face lost)")
             self.reset()
             return None
 
@@ -102,7 +102,7 @@ class LongBlinkTrigger:
         if self.config.fire_on == "reopen" and duration > self.config.max_duration_s:
             self._log(
                 f"{self.name}: closed {duration:.2f}s "
-                f"(too long, cancelled; max {self.config.max_duration_s:.2f}s)"
+                f"(too long, canceled; max {self.config.max_duration_s:.2f}s)"
             )
             return None
         if self.config.fire_on == "reopen":
@@ -175,7 +175,7 @@ class HeadNodTrigger:
     def __init__(self, config: HeadNodConfig, log: Callable[[str], None] | None = None) -> None:
         self.config = config
         self._log = log or (lambda _msg: None)
-        self._side = 0  # -1 (down), 0 (centre), +1 (up)
+        self._side = 0  # -1 (down), 0 (center), +1 (up)
         self._last_fire: float | None = None
         self._pitch: float | None = None
         self._peak: float = 0.0  # peak absolute pitch since last reset
