@@ -85,7 +85,37 @@ Difficulty estimate:
 - Dwell-zone with webcam gaze: **moderate** (calibration, smoothing, drift).
 - Reliable implicit end-of-reading detection: **hard** (research-level; realistic with an IR tracker).
 
-## 6. Suggested next steps (Stage 2 prototype)
+## 6. Licences of candidate libraries
+
+Checked October 2026 (PyPI metadata, project LICENSE files, vendor terms).
+Verify again before release, as licences can change between versions.
+
+| Library | Purpose | Licence | OK to use in an open-source project? |
+| --- | --- | --- | --- |
+| MediaPipe (incl. Face Landmarker model) | Face/iris landmarks, blinks | Apache-2.0 | Yes – permissive |
+| OpenCV (`opencv-python`) | Camera capture, image processing | Apache-2.0 | Yes |
+| NumPy | Maths | BSD-3-Clause (+ other permissive) | Yes |
+| dlib | Older face landmark approach | Boost Software License | Yes |
+| EyeTrax | Webcam gaze + calibration | MIT | Yes |
+| GazeTracking (antoinelame) | Pupil position / blink | MIT | Yes |
+| Project Gameface (google) | Reference code for gesture → input | Apache-2.0 (repo archived Sep 2025) | Yes, but unmaintained |
+| **GazeFollower** | Deep-learning webcam gaze | **CC BY-NC-SA 4.0** | Only non-commercially, and derivatives must keep the same licence; it can't be bundled into an MIT/Apache project without imposing these terms |
+| **WebGazer.js** | Browser webcam gaze | **GPL-3.0** (LGPL-3.0 option for small companies) | Copyleft – using it makes the combined work GPL |
+| pyautogui | Send key/mouse input | BSD-3-Clause | Yes |
+| keyboard (boppreh) | Send key input | MIT | Yes |
+| pynput | Send key/mouse input | LGPL-3.0 | Yes as an unmodified dependency; modifications to pynput itself must be shared |
+| Textractor / LunaTranslator | Hook current VN line text | GPL-3.0 | Use as a separate program (e.g. read its output) rather than linking/bundling, unless we go GPL |
+| **Tobii Stream Engine** (Eye Tracker 5) | IR tracker access | **Proprietary** (Tobii SDK licence) | Usable for "Interactive Use" only: gaze as live input is allowed, but storing/analysing gaze data or exposing it via an API is not. Cannot be redistributed in our repo; users install Tobii's runtime themselves |
+| tobii-research (Tobii Pro SDK) | Pro tracker access | Proprietary | Pro hardware only |
+| python-tobii-stream-engine, PyEyetracker | Community Python wrappers | No clear licence found | Treat as "all rights reserved" until a licence is confirmed; writing our own small ctypes wrapper is the safer path |
+
+Takeaways:
+- A permissive stack is available: **MediaPipe + OpenCV + EyeTrax/own code + pyautogui or keyboard** are all Apache/MIT/BSD.
+- Avoid GazeFollower if we want commercial freedom or a permissive licence; it's fine for experiments.
+- Tobii support must stay an optional backend that loads the user's installed runtime and never logs gaze data.
+- This repo has no LICENSE file yet. With the stack above, MIT or Apache-2.0 would be compatible.
+
+## 7. Suggested next steps (Stage 2 prototype)
 
 1. Python + OpenCV + MediaPipe script that detects a long blink and sends `Enter` to the foreground window, with configurable thresholds and a cooldown.
 2. Test with 2–3 popular VN engines to confirm input injection works.
@@ -111,3 +141,12 @@ Difficulty estimate:
 - Windows Eye Control: https://support.microsoft.com/en-us/windows/get-started-with-eye-control-in-windows-1a170a20-1083-2452-8f42-17a7d4fe89a9
 - Python Tobii Stream Engine bindings: https://github.com/betaboon/python-tobii-stream-engine
 - Return sweeps in reading: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6863793/
+- GazeFollower licence (CC BY-NC-SA 4.0): https://github.com/GanchengZhu/GazeFollower
+- GazeTracking licence: https://github.com/antoinelame/GazeTracking/blob/master/LICENSE
+- WebGazer licence: https://github.com/brownhci/WebGazer/blob/master/LICENSE.md
+- Project Gameface licence: https://github.com/google/project-gameface/blob/main/LICENSE
+- MediaPipe Face Mesh V2 model card: https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Face%20Mesh%20V2.pdf
+- Tobii SDK licence agreement: https://www.tobii.com/products/integration/tobii-sdk-license
+- Tobii Core/Gaming SDK licence (Interactive vs Analytical use): https://developer.tobii.com/license-agreement/
+- Textractor: https://github.com/Artikash/Textractor
+- PyPI metadata for mediapipe, opencv-python, eyetrax, pynput, pyautogui, keyboard, dlib, numpy, tobii-research: https://pypi.org/
