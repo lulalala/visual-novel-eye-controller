@@ -47,7 +47,7 @@ cooldown_s = 1.5
 
 [head_nod]
 # Tilt head up or down past amplitude_deg to send the mapped key
-enabled = true
+enabled = false
 amplitude_deg = 15.0
 cooldown_s = 1.0
 
