@@ -25,7 +25,7 @@ require_both_eyes = true
 
 [long_blink]
 enabled = true
-min_duration_s = 0.38
+min_duration_s = 0.35
 max_duration_s = 2.0
 # "reopen": fire when you open your eyes (hold past max_duration_s to cancel)
 # "hold":   fire as soon as min_duration_s is reached

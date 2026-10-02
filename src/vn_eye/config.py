@@ -43,7 +43,7 @@ class EyeConfig:
 class LongBlinkConfig:
     enabled: bool = True
     # Normal blinks last ~100-400 ms; a deliberate closure is longer.
-    min_duration_s: float = 0.38
+    min_duration_s: float = 0.35
     # Closures longer than this are ignored (resting your eyes, looking away).
     max_duration_s: float = 2.0
     # "reopen": fire when the eyes reopen (allows cancelling by holding past max).
