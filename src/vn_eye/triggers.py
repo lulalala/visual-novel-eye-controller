@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Protocol
 
-from vn_eye.config import Config, HeadNodConfig, HeadShakeConfig, LongBlinkConfig
+from vn_eye.config import Config, HeadNodConfig, HeadShakeConfig, LongBlinkConfig, NodConfig
 from vn_eye.eyes import Observation
 
 
@@ -220,10 +220,69 @@ class HeadNodTrigger:
         if self._last_fire is not None and t - self._last_fire < self.config.cooldown_s:
             self._log(f"{self.name}: pitch {obs.head_pitch:+.0f}° ignored (cooldown)")
             return None
-        event_name = "head_nod_up" if side == 1 else "head_nod_down"
+        event_name = "head_nod_down" if side == 1 else "head_nod_up"
         self._last_fire = t
         self._peak = 0.0
         return TriggerEvent(self.name, event_name, t, f"pitch {obs.head_pitch:+.0f}°")
+
+    def status(self) -> str:
+        return "no head pose" if self._pitch is None else f"pitch {self._pitch:+.0f}°"
+
+
+class NodTrigger:
+    """Fires when the head dips or lifts past the threshold and returns to neutral quickly."""
+
+    name = "nod"
+
+    def __init__(self, config: NodConfig, log: Callable[[str], None] | None = None) -> None:
+        self.config = config
+        self._log = log or (lambda _msg: None)
+        self._side = 0
+        self._entered_at: float | None = None
+        self._last_fire: float | None = None
+        self._pitch: float | None = None
+
+    def reset(self) -> None:
+        self._side = 0
+        self._entered_at = None
+
+    def update(self, obs: Observation) -> TriggerEvent | None:
+        self._pitch = obs.head_pitch
+        if not obs.face_present or obs.head_pitch is None:
+            self.reset()
+            return None
+        t = obs.timestamp
+        amp = self.config.amplitude_deg
+        side = 1 if obs.head_pitch > amp else -1 if obs.head_pitch < -amp else 0
+
+        if side == self._side:
+            return None
+
+        if side == 0:
+            # Returned to neutral — check if it was quick enough.
+            entered_at = self._entered_at
+            prev_side = self._side
+            self._side = 0
+            self._entered_at = None
+            if entered_at is None:
+                return None
+            elapsed = t - entered_at
+            if elapsed > self.config.max_duration_s:
+                self._log(
+                    f"{self.name}: {elapsed:.2f}s tilt (too slow, max {self.config.max_duration_s:.2f}s)"
+                )
+                return None
+            if self._last_fire is not None and t - self._last_fire < self.config.cooldown_s:
+                self._log(f"{self.name}: ignored (cooldown)")
+                return None
+            event_name = "nod_down" if prev_side == 1 else "nod_up"
+            self._last_fire = t
+            return TriggerEvent(self.name, event_name, t, f"nod in {elapsed:.2f}s")
+
+        # Entering a threshold zone (or switching directly to the opposite side).
+        self._side = side
+        self._entered_at = t
+        return None
 
     def status(self) -> str:
         return "no head pose" if self._pitch is None else f"pitch {self._pitch:+.0f}°"
@@ -237,4 +296,6 @@ def create_triggers(config: Config, log: Callable[[str], None] | None = None) ->
         triggers.append(HeadShakeTrigger(config.head_shake))
     if config.head_nod.enabled:
         triggers.append(HeadNodTrigger(config.head_nod, log))
+    if config.nod.enabled:
+        triggers.append(NodTrigger(config.nod, log))
     return triggers

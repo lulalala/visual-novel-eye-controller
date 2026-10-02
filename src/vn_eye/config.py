@@ -80,6 +80,15 @@ class HeadNodConfig:
 
 
 @dataclass(frozen=True)
+class NodConfig:
+    enabled: bool = False
+    # Tilt past amplitude_deg and return to neutral within max_duration_s.
+    amplitude_deg: float = 12.0
+    max_duration_s: float = 0.8
+    cooldown_s: float = 1.0
+
+
+@dataclass(frozen=True)
 class OutputConfig:
     # Maps trigger event names to outputs.
     # Keystroke outputs: enter, space, left_click, wheel_down, up, down.
@@ -90,6 +99,8 @@ class OutputConfig:
             "head_shake": "app:toggle_pause",
             "head_nod_up": "up",
             "head_nod_down": "down",
+            "nod_up": "up",
+            "nod_down": "down",
         }
     )
     cooldown_s: float = 1.0
@@ -118,6 +129,7 @@ class Config:
     long_blink: LongBlinkConfig = field(default_factory=LongBlinkConfig)
     head_shake: HeadShakeConfig = field(default_factory=HeadShakeConfig)
     head_nod: HeadNodConfig = field(default_factory=HeadNodConfig)
+    nod: NodConfig = field(default_factory=NodConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
     hotkeys: HotkeyConfig = field(default_factory=HotkeyConfig)

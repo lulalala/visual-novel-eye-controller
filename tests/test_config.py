@@ -16,6 +16,8 @@ def test_defaults():
         "head_shake": "app:toggle_pause",
         "head_nod_up": "up",
         "head_nod_down": "down",
+        "nod_up": "up",
+        "nod_down": "down",
     }
     assert config.feedback.log_blinks
 

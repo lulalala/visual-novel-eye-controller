@@ -1,9 +1,9 @@
-from vn_eye.config import HeadConfig, HeadShakeConfig, LongBlinkConfig
+from vn_eye.config import HeadConfig, HeadShakeConfig, LongBlinkConfig, NodConfig
 from vn_eye.eyes import Observation
 from vn_eye.head import HeadTracker
 from vn_eye.landmarks import FaceFrame
 from vn_eye.outputs import ActionDispatcher
-from vn_eye.triggers import HeadShakeTrigger, LongBlinkTrigger, TriggerEvent
+from vn_eye.triggers import HeadShakeTrigger, LongBlinkTrigger, NodTrigger, TriggerEvent
 
 FPS = 30
 
@@ -155,6 +155,42 @@ def test_head_shake_cooldown_blocks_continued_shaking():
     trigger = HeadShakeTrigger(HeadShakeConfig(cooldown_s=1.5))
     one = sweep(0, -25, 4) + sweep(-25, 25, 6) + sweep(25, 0, 4)
     assert len(shake(trigger, [0.0] * 5 + one + one)) == 1
+
+
+def nod(trigger, pitches, start=0.0):
+    events = []
+    for i, pitch in enumerate(pitches):
+        event = trigger.update(Observation(start + i / FPS, face_present=True, head_pitch=pitch))
+        if event:
+            events.append(event)
+    return events
+
+
+def test_nod_down_fires_on_return():
+    trigger = NodTrigger(NodConfig())
+    pitches = [0.0] * 5 + sweep(0, 20, 5) + sweep(20, 0, 5) + [0.0] * 5
+    events = nod(trigger, pitches)
+    assert len(events) == 1 and events[0].action == "nod_down"
+
+
+def test_nod_up_fires_on_return():
+    trigger = NodTrigger(NodConfig())
+    pitches = [0.0] * 5 + sweep(0, -20, 5) + sweep(-20, 0, 5) + [0.0] * 5
+    events = nod(trigger, pitches)
+    assert len(events) == 1 and events[0].action == "nod_up"
+
+
+def test_slow_tilt_does_not_fire():
+    trigger = NodTrigger(NodConfig(amplitude_deg=12.0, max_duration_s=0.8))
+    # Hold past threshold for 1.5 s then return — too slow
+    pitches = [0.0] * 5 + [20.0] * 45 + [0.0] * 5
+    assert nod(trigger, pitches) == []
+
+
+def test_nod_cooldown_blocks_rapid_repeat():
+    trigger = NodTrigger(NodConfig(cooldown_s=1.0))
+    one = sweep(0, 20, 5) + sweep(20, 0, 5)
+    assert len(nod(trigger, [0.0] * 5 + one + [0.0] * 3 + one)) == 1
 
 
 def test_head_tracker_is_relative_to_usual_pose():
