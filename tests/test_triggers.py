@@ -39,10 +39,11 @@ def test_too_long_closure_is_cancelled():
 
 
 def test_hold_mode_fires_once_while_closed():
-    trigger = LongBlinkTrigger(LongBlinkConfig(fire_on="hold"))
+    config = LongBlinkConfig(fire_on="hold")
+    trigger = LongBlinkTrigger(config)
     events = run(trigger, [(1.0, False), (3.0, True), (1.0, False)])
     assert len(events) == 1
-    assert 1.45 <= events[0].timestamp < 1.5
+    assert 1.0 + config.min_duration_s <= events[0].timestamp < 1.0 + config.min_duration_s + 1 / FPS
 
 
 def test_losing_face_cancels_closure():

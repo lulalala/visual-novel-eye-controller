@@ -12,7 +12,7 @@ Initial findings are collected in [docs/research.md](docs/research.md).
 
 # Stage 2 - Prototype: long blink → Enter
 
-`vn-eye` watches your webcam and sends `Enter` (or space, left click, or scroll-down) to the foreground window when you close both eyes deliberately. By default that means 0.45–2 s, while a normal blink is about 0.1–0.4 s. It needs only a webcam. Frames are processed locally and never stored.
+`vn-eye` watches your webcam and sends `Enter` (or space, left click, or scroll-down) to the foreground window when you close both eyes deliberately. By default that means 0.38–2 s, while normal blinks are usually shorter (0.17–0.34 s in our first test). It needs only a webcam. Frames are processed locally and never stored.
 
 ## Setup
 
@@ -35,7 +35,7 @@ vn-eye --config config.toml  # custom settings (copy config.example.toml)
 ```
 
 - Keep your eyes open normally for ~2 s at start so it can learn your "eyes open" level. It keeps adapting as your posture changes.
-- Close both eyes for about half a second, then open them: you'll hear a beep and `Enter` is sent. Closing them for more than 2 s cancels.
+- Close both eyes for about 0.4 s or longer, then open them: you'll hear a beep and `Enter` is sent. Closing them for more than 2 s cancels.
 - `Ctrl+Alt+P` pauses and resumes (also `p` in the preview window). `q`/`Esc` closes the preview; `Ctrl+C` stops it from the terminal.
 - `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
 

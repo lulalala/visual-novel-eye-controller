@@ -141,11 +141,30 @@ class PynputOutput:
             raise ValueError(f"Unknown output: {name}")
 
 
+def macos_accessibility_trusted() -> bool:
+    """Whether this process may post input events (System Settings → Accessibility)."""
+    import ctypes
+    import ctypes.util
+
+    lib = ctypes.cdll.LoadLibrary(ctypes.util.find_library("ApplicationServices"))
+    lib.AXIsProcessTrusted.restype = ctypes.c_bool
+    return bool(lib.AXIsProcessTrusted())
+
+
 def create_output(dry_run: bool) -> Output:
     if dry_run:
         return DryRunOutput()
     if sys.platform == "win32":
         return Win32Output()
+    if sys.platform == "darwin" and not macos_accessibility_trusted():
+        # Without this permission macOS silently drops injected events.
+        print(
+            "WARNING: no Accessibility permission, so key presses will be ignored by macOS.\n"
+            "Add your terminal app in System Settings → Privacy & Security → Accessibility,\n"
+            "then quit and reopen the terminal.",
+            file=sys.stderr,
+            flush=True,
+        )
     return PynputOutput()
 
 
