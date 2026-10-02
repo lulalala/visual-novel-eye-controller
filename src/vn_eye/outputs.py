@@ -177,6 +177,7 @@ class ActionDispatcher:
         actions: dict[str, str],
         cooldown_s: float,
         on_fire: Callable[[TriggerEvent, str], None] | None = None,
+        log: Callable[[str], None] | None = None,
     ) -> None:
         for action, name in actions.items():
             if name not in OUTPUT_NAMES:
@@ -188,6 +189,7 @@ class ActionDispatcher:
         self._actions = actions
         self._cooldown_s = cooldown_s
         self._on_fire = on_fire
+        self._log = log or (lambda _msg: None)
         self._last_fire: float | None = None
 
     def dispatch(self, event: TriggerEvent) -> bool:
@@ -196,6 +198,7 @@ class ActionDispatcher:
             print(f"No output configured for action {event.action!r}", file=sys.stderr)
             return False
         if self._last_fire is not None and event.timestamp - self._last_fire < self._cooldown_s:
+            self._log(f"{event.trigger}: {event.detail} -> ignored (cooldown {self._cooldown_s:.1f}s)")
             return False
         self._last_fire = event.timestamp
         self._output.send(name)

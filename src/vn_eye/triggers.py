@@ -7,7 +7,7 @@ register it in ``create_triggers``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Callable, Protocol
 
 from vn_eye.config import Config, LongBlinkConfig
 from vn_eye.eyes import EyeObservation
@@ -38,10 +38,11 @@ class LongBlinkTrigger:
 
     name = "long_blink"
 
-    def __init__(self, config: LongBlinkConfig) -> None:
+    def __init__(self, config: LongBlinkConfig, log: Callable[[str], None] | None = None) -> None:
         if config.fire_on not in ("reopen", "hold"):
             raise ValueError(f"long_blink.fire_on must be 'reopen' or 'hold', not {config.fire_on!r}")
         self.config = config
+        self._log = log or (lambda _msg: None)
         self._closed_since: float | None = None
         self._fired = False
         self._last_duration = 0.0
@@ -53,6 +54,8 @@ class LongBlinkTrigger:
     def update(self, obs: EyeObservation) -> TriggerEvent | None:
         if not obs.face_present or not obs.ready:
             # Losing the face mid-closure (turning away, leaning out) cancels it.
+            if self._closed_since is not None and not self._fired:
+                self._log(f"{self.name}: closure cancelled (face lost)")
             self.reset()
             return None
 
@@ -77,10 +80,20 @@ class LongBlinkTrigger:
         duration = t - self._closed_since
         self._last_duration = duration
         self._closed_since = None
-        if (
-            self.config.fire_on == "reopen"
-            and self.config.min_duration_s <= duration <= self.config.max_duration_s
-        ):
+        if self._fired:  # "hold" mode already fired during this closure
+            return None
+        if duration < self.config.min_duration_s:
+            self._log(
+                f"{self.name}: blink {duration:.2f}s (too short, min {self.config.min_duration_s:.2f}s)"
+            )
+            return None
+        if self.config.fire_on == "reopen" and duration > self.config.max_duration_s:
+            self._log(
+                f"{self.name}: closed {duration:.2f}s "
+                f"(too long, cancelled; max {self.config.max_duration_s:.2f}s)"
+            )
+            return None
+        if self.config.fire_on == "reopen":
             return self._event(t, duration)
         return None
 
@@ -93,8 +106,8 @@ class LongBlinkTrigger:
         return TriggerEvent(self.name, self.config.action, t, f"closed {duration:.2f}s")
 
 
-def create_triggers(config: Config) -> list[Trigger]:
+def create_triggers(config: Config, log: Callable[[str], None] | None = None) -> list[Trigger]:
     triggers: list[Trigger] = []
     if config.long_blink.enabled:
-        triggers.append(LongBlinkTrigger(config.long_blink))
+        triggers.append(LongBlinkTrigger(config.long_blink, log))
     return triggers

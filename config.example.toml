@@ -42,6 +42,8 @@ next = "enter"
 
 [feedback]
 sound = true
+# Print closures that didn't trigger (too short, too long, cooldown, paused)
+log_blinks = true
 
 [hotkeys]
 # pynput syntax, e.g. "<ctrl>+<alt>+p", "<f8>". Empty string disables it.

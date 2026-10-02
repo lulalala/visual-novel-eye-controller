@@ -32,11 +32,16 @@ The face landmark model (~4 MB) is downloaded on first run.
 vn-eye --preview --dry-run   # try it out: debug window, prints instead of pressing keys
 vn-eye                       # real use: start it, then switch to the game
 vn-eye --config config.toml  # custom settings (copy config.example.toml)
+vn-eye --min-duration 0.5 --output left_click   # common settings as flags
+vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
 ```
+
+`vn-eye --help` lists all flags. Command-line settings override the config file.
 
 - Keep your eyes open normally for ~2 s at start so it can learn your "eyes open" level. It keeps adapting as your posture changes.
 - Close both eyes for about 0.35 s or longer, then open them: you'll hear a beep and `Enter` is sent. Closing them for more than 2 s cancels.
 - `Ctrl+Alt+P` pauses and resumes (also `p` in the preview window). `q`/`Esc` closes the preview; `Ctrl+C` stops it from the terminal.
+- Every closure that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. `--no-blink-log` turns this off.
 - `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
 
 Platform notes:

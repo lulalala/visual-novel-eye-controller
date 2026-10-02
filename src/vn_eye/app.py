@@ -6,32 +6,78 @@ import argparse
 import csv
 import sys
 import time
-from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import cv2
 
 from vn_eye import preview
-from vn_eye.config import Config, load_config
+from vn_eye.config import Config, apply_overrides, load_config, nested, parse_override
 from vn_eye.eyes import EyeStateTracker
 from vn_eye.feedback import play_trigger_sound
 from vn_eye.hotkeys import PauseSwitch
 from vn_eye.landmarks import create_backend
-from vn_eye.outputs import ActionDispatcher, create_output
+from vn_eye.outputs import OUTPUT_NAMES, ActionDispatcher, create_output
 from vn_eye.triggers import TriggerEvent, create_triggers
 
 _FLASH_S = 0.3
 
 
+# Shortcut flags: (flag, config path, argparse options). Anything else can be
+# set with --set SECTION.KEY=VALUE.
+_SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
+    ("--camera", "camera.index", {"type": int, "metavar": "N", "help": "camera index"}),
+    ("--min-duration", "long_blink.min_duration_s", {"type": float, "metavar": "S",
+     "help": "shortest closure that triggers, in seconds"}),
+    ("--max-duration", "long_blink.max_duration_s", {"type": float, "metavar": "S",
+     "help": "longer closures are cancelled, in seconds"}),
+    ("--fire-on", "long_blink.fire_on", {"choices": ["reopen", "hold"],
+     "help": "fire when the eyes reopen, or as soon as --min-duration is reached"}),
+    ("--output", "output.actions.next", {"choices": OUTPUT_NAMES,
+     "help": "what to send to the game"}),
+    ("--cooldown", "output.cooldown_s", {"type": float, "metavar": "S",
+     "help": "minimum time between triggers, in seconds"}),
+    ("--close-ratio", "eyes.close_ratio", {"type": float, "metavar": "R",
+     "help": "closed below baseline * R (lower = needs a firmer closure)"}),
+    ("--metric", "eyes.metric", {"choices": ["ear", "blendshape"], "help": "eye openness measure"}),
+    ("--dry-run", "output.dry_run", {"action": "store_const", "const": True,
+     "help": "print actions instead of sending input"}),
+    ("--no-sound", "feedback.sound", {"action": "store_const", "const": False,
+     "help": "don't beep when triggering"}),
+    ("--no-blink-log", "feedback.log_blinks", {"action": "store_const", "const": False,
+     "help": "don't print closures that didn't trigger"}),
+]
+
+
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(prog="vn-eye", description=__doc__)
+    p = argparse.ArgumentParser(
+        prog="vn-eye",
+        description=__doc__,
+        epilog="Precedence: built-in defaults < --config file < shortcut flags < --set.",
+    )
     p.add_argument("-c", "--config", type=Path, help="TOML config file (see config.example.toml)")
     p.add_argument("--preview", action="store_true", help="show the camera debug window")
-    p.add_argument("--dry-run", action="store_true", help="print actions instead of sending input")
-    p.add_argument("--camera", type=int, help="camera index (overrides config)")
     p.add_argument("--log", type=Path, help="write per-frame eye values to a CSV file (no images)")
     p.add_argument("--duration", type=float, help="stop after this many seconds")
+    settings = p.add_argument_group("settings (override the config file)")
+    for flag, path, options in _SHORTCUTS:
+        settings.add_argument(flag, dest=path, default=None, **options)
+    settings.add_argument(
+        "--set", action="append", default=[], metavar="SECTION.KEY=VALUE",
+        help="set any config value, e.g. --set eyes.open_ratio=0.8 (repeatable)",
+    )
     return p.parse_args(argv)
+
+
+def build_config(args: argparse.Namespace) -> Config:
+    config = load_config(args.config)
+    for _, path, _ in _SHORTCUTS:
+        value = getattr(args, path)
+        if value is not None:
+            config = apply_overrides(config, nested(path, value))
+    for item in args.set:
+        config = apply_overrides(config, parse_override(item))
+    return config
 
 
 def open_camera(config: Config) -> cv2.VideoCapture:
@@ -52,7 +98,8 @@ def run(config: Config, args: argparse.Namespace) -> int:
     cap = open_camera(config)
     backend = create_backend(config.backend.name, config.backend.delegate)
     tracker = EyeStateTracker(config.eyes)
-    triggers = create_triggers(config)
+    log_blink = print if config.feedback.log_blinks else None
+    triggers = create_triggers(config, log_blink)
     last_fire_at = -1e9
 
     def on_fire(event: TriggerEvent, output_name: str) -> None:
@@ -67,6 +114,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
         config.output.actions,
         config.output.cooldown_s,
         on_fire,
+        log_blink,
     )
     pause = PauseSwitch()
     pause.start_global_hotkey(config.hotkeys.pause)
@@ -97,8 +145,13 @@ def run(config: Config, args: argparse.Namespace) -> int:
             fired = False
             for trigger in triggers:
                 event = trigger.update(obs)
-                if event is not None and not pause.paused:
-                    fired = dispatcher.dispatch(event) or fired
+                if event is None:
+                    continue
+                if pause.paused:
+                    if log_blink:
+                        log_blink(f"{event.trigger}: {event.detail} -> ignored (paused)")
+                    continue
+                fired = dispatcher.dispatch(event) or fired
 
             if log:
                 log.writerow([
@@ -136,9 +189,9 @@ def run(config: Config, args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    config = load_config(args.config)
-    if args.dry_run:
-        config = replace(config, output=replace(config.output, dry_run=True))
-    if args.camera is not None:
-        config = replace(config, camera=replace(config.camera, index=args.camera))
+    try:
+        config = build_config(args)
+    except (ValueError, OSError) as e:
+        print(f"vn-eye: {e}", file=sys.stderr)
+        return 2
     return run(config, args)

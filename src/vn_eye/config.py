@@ -63,6 +63,8 @@ class OutputConfig:
 @dataclass(frozen=True)
 class FeedbackConfig:
     sound: bool = True
+    # Print every closure that didn't trigger (too short, too long, cooldown...).
+    log_blinks: bool = True
 
 
 @dataclass(frozen=True)
@@ -113,3 +115,35 @@ def load_config(path: Path | None) -> Config:
         return config
     with path.open("rb") as f:
         return _merge(config, tomllib.load(f), "")
+
+
+def apply_overrides(config: Config, overrides: dict[str, Any]) -> Config:
+    """Apply nested overrides, e.g. {"long_blink": {"min_duration_s": 0.5}}."""
+    return _merge(config, overrides, "")
+
+
+def parse_override(text: str) -> dict[str, Any]:
+    """Turn ``section.key=value`` into a nested dict.
+
+    The value is read as TOML (``0.5``, ``true``, ``"enter"``); anything that
+    isn't valid TOML is taken as a plain string, so ``fire_on=hold`` works.
+    """
+    key, sep, raw = text.partition("=")
+    if not sep or not key.strip():
+        raise ValueError(f"Expected KEY=VALUE, got {text!r}")
+    try:
+        value = tomllib.loads(f"v = {raw.strip()}")["v"]
+    except tomllib.TOMLDecodeError:
+        value = raw.strip()
+    return nested(key.strip(), value)
+
+
+def nested(path: str, value: Any) -> dict[str, Any]:
+    """``nested("a.b", 1)`` -> ``{"a": {"b": 1}}``."""
+    result: dict[str, Any] = {}
+    node = result
+    parts = path.split(".")
+    for part in parts[:-1]:
+        node = node.setdefault(part, {})
+    node[parts[-1]] = value
+    return result

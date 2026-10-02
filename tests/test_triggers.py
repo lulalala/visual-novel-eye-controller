@@ -75,3 +75,27 @@ def test_dispatcher_maps_actions_and_applies_cooldown():
     assert not dispatcher.dispatch(TriggerEvent("long_blink", "next", 0.5))
     assert dispatcher.dispatch(TriggerEvent("long_blink", "next", 1.2))
     assert out.sent == ["enter", "enter"]
+
+
+def test_short_and_too_long_closures_are_logged():
+    messages = []
+    trigger = LongBlinkTrigger(LongBlinkConfig(), log=messages.append)
+    run(trigger, [(1.0, False), (0.2, True), (0.5, False), (3.0, True), (0.5, False)])
+    assert len(messages) == 2
+    assert "too short" in messages[0]
+    assert "too long" in messages[1]
+
+
+def test_successful_long_blink_is_not_logged_by_trigger():
+    messages = []
+    trigger = LongBlinkTrigger(LongBlinkConfig(), log=messages.append)
+    assert len(run(trigger, [(1.0, False), (0.6, True), (0.5, False)])) == 1
+    assert messages == []
+
+
+def test_dispatcher_logs_cooldown_skips():
+    messages = []
+    dispatcher = ActionDispatcher(RecordingOutput(), {"next": "enter"}, 1.0, log=messages.append)
+    dispatcher.dispatch(TriggerEvent("long_blink", "next", 0.0))
+    dispatcher.dispatch(TriggerEvent("long_blink", "next", 0.5))
+    assert len(messages) == 1 and "cooldown" in messages[0]
