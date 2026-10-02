@@ -35,6 +35,38 @@ coarse gaze (a few large screen regions) or no gaze position at all
 (blinks, eye closure, glance direction). With an **IR tracker**, true
 "finished reading this line" detection becomes feasible.
 
+### Minimum webcam spec for the long-blink prototype
+
+Tested so far only on a MacBook built-in camera, where it works well. The
+figures below come from what the code needs, not from testing desktop
+webcams. `vn-eye` requests 640×480 at 30 fps. MediaPipe works on a small
+face crop, so higher resolution adds little. Frame rate, exposure and
+placement matter more.
+
+| | Minimum | Recommended | Why |
+| --- | --- | --- | --- |
+| Frame rate | 15 fps, actually delivered | 30 fps | Blink length is timed between frames: a 0.15 s blink is ~2 frames at 15 fps vs ~4–5 at 30 fps. Below 15 fps, short blinks get missed or measured wrong. |
+| Resolution | 640×480 | 720p | Each eye needs roughly 25+ px width. 1080p/4K only costs CPU. |
+| Field of view | Any (~60–90°) | ~65–78° | Wide angle makes the face small. Sit closer if the face fills less than about a quarter of the frame width. |
+| Low light | — | Holds 30 fps indoors | The usual failure: cheap cameras drop to 10–15 fps in dim rooms to get more exposure. |
+| Connection | USB 2.0, UVC (driver-free) | — | Standard UVC works with OpenCV on Windows and macOS. |
+
+In short: any 720p/30fps UVC webcam (Logitech C270/C920 class) should do,
+as long as it holds 30 fps in the room's lighting. No 1080p, 60 fps, IR or
+depth needed.
+
+Setup matters more than the camera:
+- Light the face from the front (lamp or monitor). A window behind the user hurts.
+- Mount the camera on top of the monitor, centred. If it is off to the side, the head looks turned: blinks are ignored beyond 12° of turn, and head-shake detection gets less reliable.
+- Glare on glasses can hide the eyelids. Tilt the camera or lamp a little.
+- Turn off driver "low-light compensation" or auto-exposure modes that lower fps.
+
+To check a camera, run `vn-eye --preview --dry-run`. The preview shows live
+fps. It should stay near 30. Blink normally for a minute: if ordinary blinks
+are logged as "too short", or fps drops below about 20, improve the lighting
+or try another camera. Select a non-default camera with
+`--set camera.index=1`.
+
 ## 3. Software building blocks
 
 Webcam:

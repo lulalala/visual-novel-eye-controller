@@ -75,9 +75,21 @@ class HeadShakeConfig:
 
 
 @dataclass(frozen=True)
+class HeadNodConfig:
+    enabled: bool = False
+    # Tilt past amplitude_deg up or down to trigger.
+    amplitude_deg: float = 15.0
+    cooldown_s: float = 1.0
+    action_up: str = "head_up"
+    action_down: str = "head_down"
+
+
+@dataclass(frozen=True)
 class OutputConfig:
-    # Maps trigger actions to an output: enter, space, left_click, wheel_down.
-    actions: dict[str, str] = field(default_factory=lambda: {"next": "enter"})
+    # Maps trigger actions to an output: enter, space, left_click, wheel_down, up, down.
+    actions: dict[str, str] = field(
+        default_factory=lambda: {"next": "enter", "head_up": "up", "head_down": "down"}
+    )
     cooldown_s: float = 1.0
     dry_run: bool = False
 
@@ -103,6 +115,7 @@ class Config:
     head: HeadConfig = field(default_factory=HeadConfig)
     long_blink: LongBlinkConfig = field(default_factory=LongBlinkConfig)
     head_shake: HeadShakeConfig = field(default_factory=HeadShakeConfig)
+    head_nod: HeadNodConfig = field(default_factory=HeadNodConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
     hotkeys: HotkeyConfig = field(default_factory=HotkeyConfig)

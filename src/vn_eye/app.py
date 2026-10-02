@@ -133,7 +133,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
     log_file = args.log.open("w", newline="") if args.log else None
     log = csv.writer(log_file) if log_file else None
     if log:
-        log.writerow(["t", "face", "left", "right", "combined", "baseline", "ready", "closed", "head_yaw", "fired"])
+        log.writerow(["t", "face", "left", "right", "combined", "baseline", "ready", "closed", "head_yaw", "head_pitch", "fired"])
 
     print("Running. Keep your eyes open normally for a couple of seconds to calibrate.", flush=True)
     start = time.monotonic()
@@ -151,7 +151,8 @@ def run(config: Config, args: argparse.Namespace) -> int:
             prev = now
 
             face = backend.process(frame, now)
-            obs = replace(tracker.update(face), head_yaw=head.update(face))
+            head_yaw, head_pitch = head.update(face)
+            obs = replace(tracker.update(face), head_yaw=head_yaw, head_pitch=head_pitch)
 
             fired = False
             for trigger in triggers:
@@ -174,7 +175,8 @@ def run(config: Config, args: argparse.Namespace) -> int:
                     *(f"{v:.4f}" if v is not None else "" for v in
                       (obs.left, obs.right, obs.combined, obs.baseline)),
                     int(obs.ready), int(obs.closed),
-                    f"{obs.head_yaw:.1f}" if obs.head_yaw is not None else "", int(fired),
+                    f"{obs.head_yaw:.1f}" if obs.head_yaw is not None else "",
+                    f"{obs.head_pitch:.1f}" if obs.head_pitch is not None else "", int(fired),
                 ])
 
             if args.preview:

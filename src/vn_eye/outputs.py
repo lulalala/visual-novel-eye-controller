@@ -13,7 +13,7 @@ from typing import Callable, Protocol
 
 from vn_eye.triggers import TriggerEvent
 
-OUTPUT_NAMES = ("enter", "space", "left_click", "wheel_down")
+OUTPUT_NAMES = ("enter", "space", "left_click", "wheel_down", "up", "down")
 
 # Some engines poll key state once per frame, so hold keys down briefly.
 _PRESS_DURATION_S = 0.03
@@ -29,7 +29,9 @@ class DryRunOutput:
 
 
 class Win32Output:
-    _SCAN_CODES = {"enter": 0x1C, "space": 0x39}
+    _SCAN_CODES = {"enter": 0x1C, "space": 0x39, "up": 0x48, "down": 0x50}
+    # Arrow keys are extended keys and need KEYEVENTF_EXTENDEDKEY.
+    _EXTENDED_KEYS = frozenset({"up", "down"})
 
     def __init__(self) -> None:
         import ctypes
@@ -81,9 +83,10 @@ class Win32Output:
     def send(self, name: str) -> None:
         if name in self._SCAN_CODES:
             scan = self._SCAN_CODES[name]
-            self._key(scan, up=False)
+            extended = name in self._EXTENDED_KEYS
+            self._key(scan, up=False, extended=extended)
             time.sleep(_PRESS_DURATION_S)
-            self._key(scan, up=True)
+            self._key(scan, up=True, extended=extended)
         elif name == "left_click":
             self._mouse(0x0002)  # MOUSEEVENTF_LEFTDOWN
             time.sleep(_PRESS_DURATION_S)
@@ -94,8 +97,8 @@ class Win32Output:
         else:
             raise ValueError(f"Unknown output: {name}")
 
-    def _key(self, scan: int, up: bool) -> None:
-        flags = 0x0008 | (0x0002 if up else 0)  # KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP
+    def _key(self, scan: int, up: bool, extended: bool = False) -> None:
+        flags = 0x0008 | (0x0002 if up else 0) | (0x0001 if extended else 0)
         inp = self._INPUT(type=1, ki=self._KEYBDINPUT(wVk=0, wScan=scan, dwFlags=flags))
         self._send(inp)
 
@@ -122,7 +125,12 @@ class PynputOutput:
 
         self._keyboard = keyboard.Controller()
         self._mouse = mouse.Controller()
-        self._keys = {"enter": keyboard.Key.enter, "space": keyboard.Key.space}
+        self._keys = {
+            "enter": keyboard.Key.enter,
+            "space": keyboard.Key.space,
+            "up": keyboard.Key.up,
+            "down": keyboard.Key.down,
+        }
         self._button = mouse.Button.left
 
     def send(self, name: str) -> None:

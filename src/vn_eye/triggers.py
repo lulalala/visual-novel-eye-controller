@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Protocol
 
-from vn_eye.config import Config, HeadShakeConfig, LongBlinkConfig
+from vn_eye.config import Config, HeadNodConfig, HeadShakeConfig, LongBlinkConfig
 from vn_eye.eyes import Observation
 
 
@@ -167,10 +167,74 @@ class HeadShakeTrigger:
         return "no head pose" if self._yaw is None else f"yaw {self._yaw:+.0f}°"
 
 
+class HeadNodTrigger:
+    """Fires when the head tilts up or down past the threshold."""
+
+    name = "head_nod"
+
+    def __init__(self, config: HeadNodConfig, log: Callable[[str], None] | None = None) -> None:
+        self.config = config
+        self._log = log or (lambda _msg: None)
+        self._side = 0  # -1 (down), 0 (centre), +1 (up)
+        self._last_fire: float | None = None
+        self._pitch: float | None = None
+        self._peak: float = 0.0  # peak absolute pitch since last reset
+        self._seen_pitch = False
+
+    def reset(self) -> None:
+        self._side = 0
+        self._peak = 0.0
+
+    def update(self, obs: Observation) -> TriggerEvent | None:
+        self._pitch = obs.head_pitch
+        if not obs.face_present or obs.head_pitch is None:
+            if self._peak >= 3.0:
+                self._log(f"{self.name}: face lost (peak pitch was {self._peak:.1f}°)")
+            self.reset()
+            return None
+
+        if not self._seen_pitch:
+            self._seen_pitch = True
+            self._log(f"{self.name}: pitch data active, threshold ±{self.config.amplitude_deg:.0f}°")
+
+        t = obs.timestamp
+        amp = self.config.amplitude_deg
+        self._peak = max(self._peak, abs(obs.head_pitch))
+
+        # Log any notable pitch excursion that returns to near-zero without triggering.
+        if abs(obs.head_pitch) < 2.0 and self._peak >= 3.0 and self._side == 0:
+            self._log(
+                f"{self.name}: peak pitch {self._peak:.1f}° "
+                f"(threshold ±{amp:.0f}°)"
+            )
+            self._peak = 0.0
+
+        side = 1 if obs.head_pitch > amp else -1 if obs.head_pitch < -amp else 0
+        if side == self._side:
+            return None
+        prev_side = self._side
+        self._side = side
+        if side == 0:
+            self._peak = 0.0
+            return None
+        if self._last_fire is not None and t - self._last_fire < self.config.cooldown_s:
+            self._log(f"{self.name}: pitch {obs.head_pitch:+.0f}° ignored (cooldown)")
+            return None
+        action = self.config.action_up if side == 1 else self.config.action_down
+        self._last_fire = t
+        self._peak = 0.0
+        return TriggerEvent(self.name, action, t, f"pitch {obs.head_pitch:+.0f}°")
+
+    def status(self) -> str:
+        return "no head pose" if self._pitch is None else f"pitch {self._pitch:+.0f}°"
+
+
 def create_triggers(config: Config, log: Callable[[str], None] | None = None) -> list[Trigger]:
     triggers: list[Trigger] = []
     if config.long_blink.enabled:
         triggers.append(LongBlinkTrigger(config.long_blink, log))
     if config.head_shake.enabled:
         triggers.append(HeadShakeTrigger(config.head_shake))
+    if config.head_nod.enabled:
+        triggers.append(HeadNodTrigger(config.head_nod, log))
     return triggers

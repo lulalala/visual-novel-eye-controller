@@ -11,7 +11,7 @@ def config_from(*argv):
 def test_defaults():
     config = config_from()
     assert config.long_blink.min_duration_s == LongBlinkConfig().min_duration_s
-    assert config.output.actions == {"next": "enter"}
+    assert config.output.actions == {"next": "enter", "head_up": "up", "head_down": "down"}
     assert config.feedback.log_blinks
 
 

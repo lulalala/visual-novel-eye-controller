@@ -62,6 +62,8 @@ class Observation:
     closed: bool = False
     head_yaw: float | None = None
     """Head turn in degrees relative to the user's usual pose (sign: left/right)."""
+    head_pitch: float | None = None
+    """Head tilt in degrees relative to the user's usual pose (positive = up)."""
 
 
 class EyeStateTracker:

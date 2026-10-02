@@ -34,6 +34,8 @@ class FaceFrame:
     """Optional named expression scores in [0, 1], e.g. ``eyeBlinkLeft``."""
     head_yaw_deg: float | None = None
     """Absolute head turn left/right in degrees, if the backend estimates head pose."""
+    head_pitch_deg: float | None = None
+    """Absolute head tilt up/down in degrees (positive = up), if available."""
 
 
 class LandmarkBackend(Protocol):
@@ -116,10 +118,12 @@ class MediaPipeBackend:
         if result.face_blendshapes:
             blendshapes = {c.category_name: c.score for c in result.face_blendshapes[0]}
         yaw = None
+        pitch = None
         if result.facial_transformation_matrixes:
             r = np.asarray(result.facial_transformation_matrixes[0])[:3, :3]
             yaw = math.degrees(math.atan2(r[0, 2], r[2, 2]))
-        return FaceFrame(timestamp, points, blendshapes, yaw)
+            pitch = math.degrees(math.atan2(-r[1, 2], r[2, 2]))
+        return FaceFrame(timestamp, points, blendshapes, yaw, pitch)
 
     def close(self) -> None:
         self._landmarker.close()

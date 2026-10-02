@@ -161,4 +161,6 @@ def test_head_tracker_is_relative_to_usual_pose():
     tracker = HeadTracker(HeadConfig())
     for i in range(60):
         tracker.update(FaceFrame(i / FPS, None, head_yaw_deg=10.0))
-    assert tracker.update(FaceFrame(2.0, None, head_yaw_deg=35.0)) == 25.0
+    yaw, pitch = tracker.update(FaceFrame(2.0, None, head_yaw_deg=35.0))
+    assert yaw == 25.0
+    assert pitch is None
