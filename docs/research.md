@@ -54,7 +54,6 @@ To check a camera, run `vn-eye --preview --dry-run`. The preview shows live fps.
 
 Webcam:
 - **MediaPipe Face Landmarker** – 478 landmarks incl. iris; runs real-time on CPU. Gives eye openness (Eye Aspect Ratio) for blinks and iris position relative to the eye corners for coarse gaze direction. Head pose can be estimated from the same mesh, which allows head-movement compensation.
-- **GazeFollower** (Python, `pip install gazefollower`) – deep-learning webcam gaze with calibration; ~1.1 cm accuracy reported.
 - **EyeTrax** (Python) – webcam gaze with calibration workflows and filtering.
 - **GazeTracking** (antoinelame) – simple pupil-position / blink library; older dlib-based approach.
 - **WebGazer.js** – browser-based; less relevant for a desktop tool.
@@ -120,28 +119,15 @@ Verify again before release, as licenses can change between versions.
 
 Takeaways:
 - A permissive stack is available: **MediaPipe + OpenCV + EyeTrax/own code + pyautogui or keyboard** are all Apache/MIT/BSD.
-- Avoid GazeFollower if you want commercial freedom or a permissive license; it is fine for experiments.
+- Avoid GazeFollower due to license for now.
 - Tobii support must stay an optional backend that loads the user's installed runtime and never logs gaze data.
 - This repo has no LICENSE file yet. With the stack above, MIT or Apache-2.0 would be compatible.
-
-### GazeFollower vs. permissive alternatives
-
-GazeFollower is probably the most accurate webcam option on paper:
-
-- It uses a deep appearance-based model trained on millions of face images and runs at up to 60 Hz. The paper reports **~1.4° accuracy** (about 0.5° worse than an EyeLink lab tracker), or 1.11 cm on screen after calibration (N=31). The authors say this is on par with budget commercial trackers.
-- EyeTrax (MIT) maps MediaPipe landmarks to the screen with a per-user regression fitted during calibration. It has **no published accuracy figure**. Landmark-and-regression methods like it, and WebGazer, are usually reported in the ~2–4° range.
-
-Caveats:
-- The **public GazeFollower model was trained on 7M images**. The 32M-image "base model" (presumably the one benchmarked) and the fine-tuning code are available only by email, for academic use, on condition they are *not shared*. That model cannot be shipped to users.
-- Accuracy matters only for some gestures. Deliberate eye closure needs no gaze. A dwell zone a few cm wide tolerates 3–4° (1° ≈ 1 cm at 60 cm viewing distance). Only implicit end-of-reading needs ~1°, roughly one VN text line. A good IR tracker is still the realistic option there.
-
-Decision: keep the core under a permissive license, and make the gaze source a **pluggable backend**. A GazeFollower backend can be an optional add-on that users install themselves (`pip install gazefollower`). Its NC/SA terms then apply to that add-on, not to the core. CC licenses are not designed for software, so how share-alike applies across a plugin boundary is legally unclear; get advice before any commercial distribution. If benchmarks later show GazeFollower is decisively better, ask the authors for a different license.
 
 ## Next steps for Stage 2
 
 1. Python + OpenCV + MediaPipe script that detects a blink and sends `Enter` to the foreground window, with configurable thresholds and a cooldown.
 2. Test with 2–3 popular VN engines to confirm input injection works.
-3. Add calibration + coarse gaze behind a pluggable backend interface (MediaPipe/EyeTrax first, optional GazeFollower), benchmark them on the same 9-point test, and add a dwell-zone trigger.
+3. Add calibration + coarse gaze behind a pluggable backend interface (MediaPipe/EyeTrax first), benchmark them on the same 9-point test, and add a dwell-zone trigger.
 4. Optional backend for Tobii IR trackers; experiment with end-of-reading detection.
 
 ## Sources
