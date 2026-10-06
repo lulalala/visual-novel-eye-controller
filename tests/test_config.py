@@ -19,20 +19,20 @@ def test_defaults():
         "nod_up": "up",
         "nod_down": "down",
     }
-    assert config.feedback.log_blinks
+    assert config.feedback.log_rejected
 
 
 def test_shortcut_flags():
     config = config_from(
         "--min-duration", "0.6", "--fire-on", "hold", "--output", "space",
-        "--dry-run", "--no-sound", "--no-blink-log", "--camera", "1",
+        "--dry-run", "--no-sound", "--no-rejected-log", "--camera", "1",
     )
     assert config.blink.min_duration_s == 0.6
     assert config.blink.fire_on == "hold"
     assert config.output.actions["blink"] == "space"
     assert config.output.dry_run
     assert not config.feedback.sound
-    assert not config.feedback.log_blinks
+    assert not config.feedback.log_rejected
     assert config.camera.index == 1
 
 

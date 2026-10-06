@@ -110,8 +110,8 @@ class OutputConfig:
 @dataclass(frozen=True)
 class FeedbackConfig:
     sound: bool = True
-    # Print every closure that didn't trigger (too short, too long, cooldown...).
-    log_blinks: bool = True
+    # Print every gesture that didn't trigger (too short, too long, cooldown...).
+    log_rejected: bool = True
 
 
 @dataclass(frozen=True)

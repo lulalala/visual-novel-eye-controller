@@ -74,8 +74,8 @@ nod_down = "down"
 
 [feedback]
 sound = true
-# Print closures that didn't trigger (too short, too long, cooldown, paused)
-log_blinks = true
+# Print gestures that didn't trigger (too short, too long, cooldown, paused)
+log_rejected = true
 
 [hotkeys]
 # pynput syntax, e.g. "<ctrl>+<alt>+p", "<f8>". Empty string disables it.

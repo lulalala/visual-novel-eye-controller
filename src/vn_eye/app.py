@@ -52,8 +52,8 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
      "help": "print actions instead of sending input"}),
     ("--no-sound", "feedback.sound", {"action": "store_const", "const": False,
      "help": "don't beep when triggering"}),
-    ("--no-blink-log", "feedback.log_blinks", {"action": "store_const", "const": False,
-     "help": "don't print closures that didn't trigger"}),
+    ("--no-rejected-log", "feedback.log_rejected", {"action": "store_const", "const": False,
+     "help": "don't print gestures that didn't trigger"}),
 ]
 
 
@@ -161,8 +161,8 @@ def run(config: Config, args: argparse.Namespace) -> int:
     backend = create_backend(config.backend.name, config.backend.delegate)
     tracker = EyeStateTracker(config.eyes)
     head = HeadTracker(config.head)
-    log_blink = print if config.feedback.log_blinks else None
-    triggers = create_triggers(config, log_blink)
+    log_rejected = print if config.feedback.log_rejected else None
+    triggers = create_triggers(config, log_rejected)
     last_fire_at = -1e9
 
     def on_fire(event: TriggerEvent, output_name: str) -> None:
@@ -181,7 +181,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
         key_actions,
         config.output.cooldown_s,
         on_fire,
-        log_blink,
+        log_rejected,
     )
     def on_pause_change(paused: bool) -> None:
         if config.feedback.sound:
@@ -228,8 +228,8 @@ def run(config: Config, args: argparse.Namespace) -> int:
                         pause.toggle()
                     continue
                 if pause.paused:
-                    if log_blink:
-                        log_blink(f"{event.trigger}: {event.detail} -> ignored (paused)")
+                    if log_rejected:
+                        log_rejected(f"{event.trigger}: {event.detail} -> ignored (paused)")
                     continue
                 fired = dispatcher.dispatch(event) or fired
 

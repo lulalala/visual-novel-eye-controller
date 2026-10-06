@@ -42,7 +42,7 @@ vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
 - Blink (both eyes, at least 0.15 s): you'll hear a beep and `Enter` is sent. Closing them for more than 2 s cancels. Blinks while your head is turned more than 12° are ignored.
 - **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. Use `--shake-degrees` to adjust, or `--no-head-shake` to turn it off.
 - `Ctrl+Alt+P` also pauses and resumes (also `p` in the preview window). `q`/`Esc` closes the preview; `Ctrl+C` stops it from the terminal.
-- Every closure that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. `--no-blink-log` turns this off.
+- Every gesture that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. `--no-rejected-log` turns this off.
 - `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
 - If the camera stops sending frames (for example, it briefly disconnects), `vn-eye` reopens it every second until frames come back. Gestures are not detected during the gap.
 
