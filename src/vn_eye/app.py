@@ -45,7 +45,7 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
      "help": "closed below baseline * R (lower = needs a firmer closure)"}),
     ("--metric", "eyes.metric", {"choices": ["ear", "blendshape"], "help": "eye openness measure"}),
     ("--backend", "backend.name", {"choices": BACKEND_NAMES,
-     "help": "run the face model with mediapipe, or with OpenCV only"}),
+     "help": "run the face model with OpenCV only, or with the optional mediapipe package"}),
     ("--shake-degrees", "head_shake.amplitude_deg", {"type": float, "metavar": "DEG",
      "help": "how far to turn the head each way for the pause/resume shake"}),
     ("--no-head-shake", "head_shake.enabled", {"action": "store_const", "const": False,

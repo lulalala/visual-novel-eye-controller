@@ -13,7 +13,7 @@ Instructions for AI coding agents working in this repo. Read all of it before ch
 ## Stack
 
 - Python ≥ 3.11 (the local `.venv` uses 3.14). `src/` layout, package `vn_eye`, installed with `pip install -e ".[dev]"`.
-- MediaPipe Face Landmarker (face landmarks, blendshapes, head pose matrix), OpenCV (camera and preview window), NumPy.
+- MediaPipe's Face Landmarker models (face detector + face mesh), run by OpenCV's DNN module by default (`backend.name = "opencv"`). The `mediapipe` package is an optional extra (`.[mediapipe]`) for `backend.name = "mediapipe"`, which adds blendshapes but includes telemetry. OpenCV also handles the camera and preview window. NumPy.
 - `pynput`: key output on macOS/Linux and the global pause hotkey on every OS. On Windows, key output uses `SendInput` through `ctypes` with hardware scan codes.
 - Tests: `pytest` only. There is no linter, formatter or type checker set up. Don't add one unless asked.
 - Config: TOML (`tomllib`), loaded into frozen dataclasses.
@@ -24,7 +24,7 @@ There is one pipeline. Each stage only talks to the next one:
 
 ```
 camera frame
-  → landmarks.py  FaceFrame          (MediaPipe backend; other backends plug in here)
+  → landmarks.py  FaceFrame          (OpenCV and MediaPipe backends; other backends plug in here)
   → eyes.py       EyeStateTracker    (eye openness vs. a rolling open-eye baseline)
     head.py       HeadTracker        (yaw/pitch relative to a rolling median pose)
   → Observation                      (one per frame: timestamp, face_present, ready, closed, head_yaw, head_pitch)

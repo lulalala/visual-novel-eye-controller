@@ -18,9 +18,9 @@ class CameraConfig:
 
 @dataclass(frozen=True)
 class BackendConfig:
-    # "mediapipe" runs the face model with the mediapipe package. "opencv" runs the
-    # same model with OpenCV, without importing mediapipe, but has no blendshapes.
-    name: str = "mediapipe"
+    # "opencv" runs the face model with OpenCV only. "mediapipe" runs the same model
+    # with the optional mediapipe package, which adds blendshapes but includes telemetry.
+    name: str = "opencv"
     # MediaPipe only: "auto", "cpu" or "gpu". Auto picks GPU on macOS and CPU elsewhere.
     delegate: str = "auto"
 

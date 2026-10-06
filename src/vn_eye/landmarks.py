@@ -70,7 +70,13 @@ class MediaPipeBackend:
     """MediaPipe Face Landmarker (478 face + iris landmarks, 52 blendshapes)."""
 
     def __init__(self, delegate: str = "auto", model_path: Path | None = None) -> None:
-        import mediapipe as mp
+        try:
+            import mediapipe as mp
+        except ImportError:
+            raise SystemExit(
+                'backend.name "mediapipe" needs the mediapipe package. '
+                'Install it with: pip install -e ".[mediapipe]"'
+            ) from None
         from mediapipe.tasks.python import BaseOptions
         from mediapipe.tasks.python import vision
 

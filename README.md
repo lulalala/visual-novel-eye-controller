@@ -44,7 +44,7 @@ vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
 - `Ctrl+Alt+P` also pauses and resumes (also `p` in the preview window). `q`/`Esc` closes the preview; `Ctrl+C` stops it from the terminal.
 - Every gesture that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. `--no-rejected-log` turns this off.
 - `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
-- `--backend opencv` runs the same face model with OpenCV instead of the `mediapipe` package, so `mediapipe` is never imported. Blinks and head gestures work the same way, but `--metric blendshape` is not available.
+- The face model runs with OpenCV only, and nothing is sent over the network after the one-time model download. To use the `mediapipe` package instead (it adds `--metric blendshape` but includes telemetry), install it with `pip install -e ".[mediapipe]"` and run with `--backend mediapipe`.
 - If the camera stops sending frames (for example, it briefly disconnects), `vn-eye` reopens it every second until frames come back. Gestures are not detected during the gap.
 
 Platform notes:
