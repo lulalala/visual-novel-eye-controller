@@ -7,6 +7,7 @@ GazeFollower, a Tobii tracker) can be added without touching the triggers.
 
 from __future__ import annotations
 
+import hashlib
 import math
 import os
 import sys
@@ -19,10 +20,13 @@ from typing import Protocol
 import cv2
 import numpy as np
 
+# Pinned to version 1: OpenCVBackend relies on this model's input sizes, output
+# names and anchor layout, which a newer "latest" model could change.
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/face_landmarker/"
-    "face_landmarker/float16/latest/face_landmarker.task"
+    "face_landmarker/float16/1/face_landmarker.task"
 )
+MODEL_SHA256 = "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff"
 
 
 @dataclass(frozen=True)
@@ -55,14 +59,29 @@ def cache_dir() -> Path:
     return base / "vn-eye"
 
 
+def _sha256(path: Path) -> str:
+    with path.open("rb") as f:
+        return hashlib.file_digest(f, "sha256").hexdigest()
+
+
 def ensure_model(path: Path | None = None) -> Path:
     path = path or cache_dir() / "face_landmarker.task"
-    if not path.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        print(f"Downloading face landmark model to {path} ...", flush=True)
-        tmp = path.with_suffix(".part")
-        urllib.request.urlretrieve(MODEL_URL, tmp)
-        tmp.replace(path)
+    if path.exists() and _sha256(path) == MODEL_SHA256:
+        return path
+    if path.exists():
+        print(f"Cached face landmark model at {path} is not the pinned version; downloading it again.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Downloading face landmark model to {path} ...", flush=True)
+    tmp = path.with_suffix(".part")
+    urllib.request.urlretrieve(MODEL_URL, tmp)
+    digest = _sha256(tmp)
+    if digest != MODEL_SHA256:
+        tmp.unlink()
+        raise SystemExit(
+            f"Downloaded face landmark model has SHA-256 {digest}, expected {MODEL_SHA256}; "
+            "not using it. Run vn-eye again to retry the download."
+        )
+    tmp.replace(path)
     return path
 
 
