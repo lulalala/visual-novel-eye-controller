@@ -47,6 +47,7 @@ class BlinkTrigger:
         self._fired = False
         self._last_duration = 0.0
         self._max_yaw = 0.0
+        self._last_fire: float | None = None
 
     def reset(self) -> None:
         self._closed_since = None
@@ -77,8 +78,8 @@ class BlinkTrigger:
                 and duration >= self.config.min_duration_s
                 and self._max_yaw <= self.config.max_head_yaw_deg
             ):
-                self._fired = True
-                return self._event(t, duration)
+                self._fired = True  # prevent retry within this closure
+                return self._try_fire(t, duration)
             return None
 
         if self._closed_since is None:
@@ -106,7 +107,7 @@ class BlinkTrigger:
             )
             return None
         if self.config.fire_on == "reopen":
-            return self._event(t, duration)
+            return self._try_fire(t, duration)
         return None
 
     def status(self) -> str:
@@ -114,7 +115,11 @@ class BlinkTrigger:
             return f"closed {self._last_duration:.2f}s"
         return f"open (last closure {self._last_duration:.2f}s)"
 
-    def _event(self, t: float, duration: float) -> TriggerEvent:
+    def _try_fire(self, t: float, duration: float) -> TriggerEvent | None:
+        if self.config.cooldown_s > 0 and self._last_fire is not None and t - self._last_fire < self.config.cooldown_s:
+            self._log(f"{self.name}: closed {duration:.2f}s (cooldown {self.config.cooldown_s:.2f}s)")
+            return None
+        self._last_fire = t
         return TriggerEvent(self.name, self.name, t, f"closed {duration:.2f}s")
 
 

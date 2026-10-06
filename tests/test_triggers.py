@@ -103,6 +103,19 @@ def test_dispatcher_logs_cooldown_skips():
     assert len(messages) == 1 and "cooldown" in messages[0]
 
 
+def test_blink_cooldown_blocks_rapid_repeat():
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15, cooldown_s=1.0))
+    # Two deliberate blinks close together — only the first should fire.
+    events = run(trigger, [(0.5, False), (0.3, True), (0.5, False), (0.3, True), (0.5, False)])
+    assert len(events) == 1
+
+
+def test_blink_cooldown_allows_after_expiry():
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15, cooldown_s=1.0))
+    events = run(trigger, [(0.5, False), (0.3, True), (1.5, False), (0.3, True), (0.5, False)])
+    assert len(events) == 2
+
+
 def test_blink_with_head_turned_is_ignored():
     messages = []
     trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15), log=messages.append)
