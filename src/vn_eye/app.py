@@ -77,6 +77,24 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
+_APP_OUTPUTS = frozenset({"app:toggle_pause"})
+
+
+def _validate_actions(config: Config) -> None:
+    for event, output in config.output.actions.items():
+        if output.startswith("app:"):
+            if output not in _APP_OUTPUTS:
+                raise ValueError(
+                    f"output.actions.{event}: unknown app output {output!r}; "
+                    f"choose from {', '.join(sorted(_APP_OUTPUTS))}"
+                )
+        elif output not in OUTPUT_NAMES:
+            raise ValueError(
+                f"output.actions.{event}: unknown output {output!r}; "
+                f"choose from {', '.join(OUTPUT_NAMES)}"
+            )
+
+
 def build_config(args: argparse.Namespace) -> Config:
     config = load_config(args.config)
     for _, path, _ in _SHORTCUTS:
@@ -85,6 +103,7 @@ def build_config(args: argparse.Namespace) -> Config:
             config = apply_overrides(config, nested(path, value))
     for item in args.set:
         config = apply_overrides(config, parse_override(item))
+    _validate_actions(config)
     return config
 
 

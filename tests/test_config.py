@@ -61,3 +61,13 @@ def test_set_wins_over_shortcut_and_file(tmp_path):
 def test_bad_set_is_rejected(bad):
     with pytest.raises(ValueError):
         config_from("--set", bad)
+
+
+def test_invalid_keystroke_action_is_rejected():
+    with pytest.raises(ValueError, match="output.actions"):
+        config_from("--set", "output.actions.blink=notakey")
+
+
+def test_invalid_app_action_is_rejected():
+    with pytest.raises(ValueError, match="output.actions"):
+        config_from("--set", "output.actions.blink=app:notacommand")
