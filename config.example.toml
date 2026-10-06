@@ -8,8 +8,10 @@ height = 480
 fps = 30
 
 [backend]
+# "mediapipe" or "opencv" (same face model run with OpenCV only, no mediapipe
+# package; supports eyes.metric = "ear" only)
 name = "mediapipe"
-# "auto" (GPU on macOS, CPU elsewhere), "cpu" or "gpu"
+# MediaPipe only: "auto" (GPU on macOS, CPU elsewhere), "cpu" or "gpu"
 delegate = "auto"
 
 [eyes]

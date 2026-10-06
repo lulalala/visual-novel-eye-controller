@@ -68,6 +68,20 @@ def test_invalid_keystroke_action_is_rejected():
         config_from("--set", "output.actions.blink=notakey")
 
 
+def test_backend_flag_selects_opencv():
+    assert config_from("--backend", "opencv").backend.name == "opencv"
+
+
+def test_unknown_backend_is_rejected():
+    with pytest.raises(ValueError, match="backend.name"):
+        config_from("--set", "backend.name=dlib")
+
+
+def test_blendshape_metric_is_rejected_with_opencv_backend():
+    with pytest.raises(ValueError, match="blendshape"):
+        config_from("--backend", "opencv", "--metric", "blendshape")
+
+
 def test_invalid_app_action_is_rejected():
     with pytest.raises(ValueError, match="output.actions"):
         config_from("--set", "output.actions.blink=app:notacommand")

@@ -44,6 +44,7 @@ vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
 - `Ctrl+Alt+P` also pauses and resumes (also `p` in the preview window). `q`/`Esc` closes the preview; `Ctrl+C` stops it from the terminal.
 - Every gesture that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. `--no-rejected-log` turns this off.
 - `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
+- `--backend opencv` runs the same face model with OpenCV instead of the `mediapipe` package, so `mediapipe` is never imported. Blinks and head gestures work the same way, but `--metric blendshape` is not available.
 - If the camera stops sending frames (for example, it briefly disconnects), `vn-eye` reopens it every second until frames come back. Gestures are not detected during the gap.
 
 Platform notes:
@@ -54,7 +55,7 @@ Platform notes:
 
 ```
 src/vn_eye/
-  landmarks.py  camera frame -> FaceFrame (MediaPipe backend; other backends plug in here)
+  landmarks.py  camera frame -> FaceFrame (MediaPipe and OpenCV backends; other backends plug in here)
   eyes.py       FaceFrame -> EyeObservation (eye openness, adaptive open/closed state)
   triggers.py   EyeObservation -> TriggerEvent (BlinkTrigger; add gaze triggers here)
   outputs.py    TriggerEvent -> key/mouse input, with cooldown
