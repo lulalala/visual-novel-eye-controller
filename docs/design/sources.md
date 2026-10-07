@@ -1,40 +1,50 @@
 # Signal sources and plugins
 
-Status: proposal. Nothing in this document is implemented yet.
+Status: proposal. Nothing in this document is implemented yet. Only step 1 of the [migration plan](#migration-plan) is scheduled; plugin loading is deferred (see [Priority](#priority)).
 
 This document describes how `vn-eye` separates *sensing* (camera, face model, eye tracker) from *recognizing gestures*, and how a third party can add a new sensing method as a separate pip package without changing `vn-eye` itself.
 
+## Priority
+
+The users `vn-eye` most needs to reach are less technical Windows users, many of them with iPhones. They install apps, not pip packages, so a plugin system doesn't help them directly. What they need first is an installer, a simple GUI, and a camera picker that shows camera names.
+
+For that reason, only step 1 of the migration plan is scheduled:
+
+- **Step 1 (scheduled):** the `Source` and `Signals` refactor, with one built-in source, `OpenCVSource`. It removes the leaks listed below whether or not plugins ever exist, and it is what any future built-in source needs, such as a receiver for a `vn-eye` phone app.
+- **Step 2 (deferred):** plugin loading and per-source configuration. Start it when a developer wants to write a source outside this repository, or when `vn-eye` gets a second built-in source.
+
+A future source for these users, such as a phone app receiver, must be built in so that it works from the installer.
+
 ## Problems with the current design
 
-The current boundary is the landmark backend (`landmarks.py`). It leaks in four ways:
+The current boundary is the landmark backend (`landmarks.py`). Removing the MediaPipe backend (commit `b58f9c9`) also removed its settings (`eyes.metric`, `backend.delegate`) from the core config. Three leaks remain:
 
 - **The app owns the camera.** `app.py` opens the webcam and passes frames to the backend, so a device without webcam frames (an eye tracker, a phone) cannot be a backend.
 - **The core assumes MediaPipe's landmark layout.** `eyes.py` and `preview.py` read fixed indices of the 478-point face mesh (`LEFT_EYE = (362, 385, …)`). A backend with another layout gives wrong eye values without an error.
-- **Backend settings live in the core config.** `eyes.metric = "blendshape"` and `backend.delegate` only apply to MediaPipe. `app.py` needs a special check that rejects `blendshape` with the `opencv` backend.
-- **Only built-in backends exist.** Adding one means editing `create_backend`.
+- **Only one backend is possible.** `app.py` creates `OpenCVBackend` directly, so adding another means editing the main loop.
 
 ## Pipeline
 
 The new pipeline has three stages. Each stage only talks to the next one.
 
 ```
-Source (plugin)           core                                  core
-───────────────           ────                                  ────
+Source                    core                                  core
+──────                    ────                                  ────
 owns its input      →     Signals  →  EyeStateTracker     →     Observation  →  triggers  →  outputs
 (camera, model,           (raw         HeadTracker
  tracker device)           measurements) (baseline, median)
 ```
 
 - A **source** owns its input device and its model, and reports raw measurements as `Signals`. Camera frames never leave the source.
-- The **core** turns raw measurements into per-user, relative values: the rolling "eyes open" baseline (`EyeStateTracker`) and the rolling median head pose (`HeadTracker`). Every source gets this adaptation for free, so plugins don't reimplement it.
+- The **core** turns raw measurements into per-user, relative values: the rolling "eyes open" baseline (`EyeStateTracker`) and the rolling median head pose (`HeadTracker`). Every source gets this adaptation for free, so sources don't reimplement it.
 - **Triggers** and **outputs** don't change. Triggers still receive `Observation`, emit fixed event names, and `output.actions` still maps events to outputs.
 
 ## Source contract
 
-The plugin API lives in one module, `vn_eye.api`. A plugin must import only from that module. Everything else in `vn_eye` is internal and can change without notice.
+In step 1, these types live in the internal module `vn_eye.sources`, and only the built-in source uses them. Step 2 moves them to a public module, `vn_eye.api`, and adds `API_VERSION`. A plugin must import only from `vn_eye.api`. Everything else in `vn_eye` is internal and can change without notice.
 
 ```python
-API_VERSION = 1
+API_VERSION = 1  # added in step 2
 
 EYE_OPENNESS = "eye_openness"
 HEAD_POSE = "head_pose"
@@ -74,7 +84,7 @@ class Source(Protocol):
 
 ### Rules for sources
 
-1. `eye_openness` must be proportional with 0 meaning closed. The core decides "closed" as a ratio of the open-eye baseline (`close_ratio = 0.55`), so a scale with an offset breaks it. Eye aspect ratio and `1 - eyeBlink` blendshape scores both satisfy this. A device that only reports open or closed can send `1.0` and `0.0`.
+1. `eye_openness` must be proportional with 0 meaning closed. The core decides "closed" as a ratio of the open-eye baseline (`close_ratio = 0.55`), so a scale with an offset breaks it. Eye aspect ratio and `1 - eyeBlink` blendshape scores (for example from ARKit) both satisfy this. A device that only reports open or closed can send `1.0` and `0.0`.
 2. A source handles its own device problems. For example, the webcam source reopens the camera when frames stop (the current `ReconnectingCamera`). During a gap, `read()` returns `face_present=False`, so triggers cancel half-done gestures as they do today.
 3. Camera frames must stay inside the source. `debug_view()` is the only way an image leaves it, and the core only displays that image in the preview window.
 4. A source must not write frames to disk or send them over the network (see [Privacy](#privacy)).
@@ -89,15 +99,17 @@ Each trigger declares the signals it needs:
 | `head_shake` | `head_pose` | |
 | `head_nod`, `nod` | `head_pose` | |
 
-At startup, the core compares each enabled trigger's needs with the source's `provides`. This replaces backend-specific checks such as "blendshape needs mediapipe".
+At startup, the core compares each enabled trigger's needs with the source's `provides`. `OpenCVSource` provides both signals, so the check never fails in step 1. It is part of step 1 anyway, so that a future source without head pose, such as an eye tracker, works without changes to the core.
 
 ## Plugin discovery
+
+This section is deferred to step 2. In step 1, `app.py` creates `OpenCVSource` directly.
 
 A source plugin is a pip package that registers a class under the `vn_eye.sources` entry point group in its `pyproject.toml`:
 
 ```toml
 [project.entry-points."vn_eye.sources"]
-mediapipe = "vn_eye_mediapipe:MediaPipeSource"
+tobii = "vn_eye_tobii:TobiiSource"
 ```
 
 The class must have:
@@ -106,13 +118,15 @@ The class must have:
 - `Options`: a frozen dataclass with defaults, the plugin's settings.
 - `__init__(self, options: Options, log: Callable[[str], None])`.
 
-The built-in OpenCV source registers through the same entry point group in `vn-eye`'s own `pyproject.toml`. The core has no special case for built-in sources.
+The built-in `OpenCVSource` registers through the same entry point group in `vn-eye`'s own `pyproject.toml`. The core has no special case for built-in sources.
 
 The core imports a plugin only when it is selected. Installed but unused plugins never run.
 
 ## Configuration
 
-`[camera]`, `[backend]` and `eyes.metric` move into per-source sections. Each source reads its options from `[source.<name>]`:
+In step 1, the configuration doesn't change: `OpenCVSource` reads the existing `[camera]` section.
+
+In step 2, each source reads its options from its own section, `[source.<name>]`, and `[camera]` moves into `[source.opencv]`:
 
 ```toml
 [source]
@@ -124,16 +138,14 @@ width = 640
 height = 480
 fps = 30
 
-[source.mediapipe]   # only read when source.name = "mediapipe"
-camera = 0
-delegate = "auto"
-metric = "blendshape"
+[source.tobii]   # only read when source.name = "tobii"
+device = "auto"
 ```
 
-- The core merges `[source.<name>]` into the plugin's `Options` dataclass with the same rules as the rest of the config: unknown keys are rejected, and `--set source.opencv.camera=1` works.
+- The core merges `[source.<name>]` into the source's `Options` dataclass with the same rules as the rest of the config: unknown keys are rejected, and `--set source.opencv.camera=1` works.
 - Sections for sources that aren't selected are not validated, so one config file works on machines with different plugins installed.
 - `--source NAME` selects the source. `--camera N` stays as a shortcut for `source.<selected>.camera`.
-- `--help` lists the installed sources.
+- `--help` lists the available sources: the built-in one and installed plugins.
 
 ## Preview
 
@@ -147,27 +159,29 @@ The privacy rule (frames stay in memory and are never written or sent) becomes s
 
 `vn-eye` cannot enforce the rule for third-party code. To make that visible:
 
-- When the selected source comes from another package, the core prints one line at startup, for example `Using source "mediapipe" from vn-eye-mediapipe 0.1.0 (third-party code)`.
+- When the selected source comes from another package (step 2), the core prints one line at startup, for example `Using source "tobii" from vn-eye-tobii 0.1.0 (third-party code)`.
 - The README states that the privacy guarantee covers `vn-eye`'s built-in sources only.
 
 ## Migration plan
 
 Each step is one commit. Tests pass after every step.
 
-1. **Introduce `Signals` and `Source` inside `vn-eye`.**
-   - Move the camera, reconnect logic, OpenCV model code and EAR into `OpenCVSource`. Move `MediaPipeBackend` into `MediaPipeSource` (still built in for now).
-   - `EyeStateTracker` and `HeadTracker` consume `Signals` instead of `FaceFrame`. `FaceFrame` and `eyes.metric` disappear from the core.
-   - Add capability checks. Replace `[camera]` and `[backend]` with `[source]`.
+1. **Introduce `Signals` and `Source` inside `vn-eye` (scheduled).**
+   - Move the camera, reconnect logic, OpenCV model code and EAR into `OpenCVSource`, which reads `[camera]`.
+   - `EyeStateTracker` and `HeadTracker` consume `Signals` instead of `FaceFrame`. `FaceFrame` and the landmark indices disappear from the core.
+   - Add the capability check.
+   - Draw landmarks in the source's `debug_view()`, and draw the status overlay in the core.
    - Tests for `eyes.py` and `head.py` build `Signals` directly. EAR and landmark tests move to the OpenCV source's tests.
-2. **Add plugin loading.** Add `vn_eye.api`, entry point discovery, `api_version` checks, per-source options, the third-party notice, and `--source`. Register both built-in sources through entry points.
-3. **Move MediaPipe out** into its own package. The `mediapipe` extra in `pyproject.toml` goes away.
-4. **Update docs** in each step: README (config, flags, Layout), `config.example.toml`, AGENTS.md (architecture, privacy, trigger checklist with `needs`).
+2. **Add plugin loading (deferred).** Move the contract to `vn_eye.api`, add `API_VERSION` and `api_version` checks, discover sources through entry points, and print the third-party notice. Replace `[camera]` with `[source]` and per-source options, and add `--source`. Register `OpenCVSource` through an entry point.
 
-Each step changes behavior only where stated. Gestures must behave the same afterward, which needs a live check (`vn-eye --preview --dry-run`) after steps 1 and 3.
+Each step also updates the docs it affects: README (config, flags, Layout), `config.example.toml`, and AGENTS.md (architecture, privacy, trigger checklist with `needs`).
+
+Each step changes behavior only where stated. Gestures must behave the same afterward, which needs a live check (`vn-eye --preview --dry-run`) after step 1.
 
 ## Open questions
 
+Question 1 must be answered before step 1. Questions 2 and 3 wait for step 2.
+
 1. **Missing capabilities.** When an enabled trigger needs a signal the source doesn't provide, should the core stop with an error, or skip that trigger and print a notice? Skipping is friendlier for sources without head pose, because `head_shake` is on by default. An error is more explicit.
-2. **Old config keys.** `[camera]`, `[backend]` and `eyes.metric` stop working. Should the core reject them with a message that names the new key, or keep accepting them for one release?
-3. **Where the MediaPipe plugin lives.** In this repository as a second package (`plugins/vn-eye-mediapipe/`), which keeps it in step with API changes, or in its own repository, which proves that outside authors can build plugins?
-4. **Triggers and outputs as plugins.** This design only makes sources pluggable. Making triggers and outputs pluggable can reuse the same mechanism later. It is out of scope until someone needs it.
+2. **Old config keys.** Step 2 moves `[camera]` into `[source.opencv]`. Should the core reject `[camera]` with a message that names the new section, or keep accepting it for one release?
+3. **Triggers and outputs as plugins.** This design only makes sources pluggable. Making triggers and outputs pluggable can reuse the same mechanism later. It is out of scope until someone needs it.
