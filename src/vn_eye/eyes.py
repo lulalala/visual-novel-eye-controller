@@ -28,23 +28,14 @@ def eye_aspect_ratio(points: np.ndarray, idx: tuple[int, ...]) -> float:
     return float(vertical / (2.0 * horizontal))
 
 
-def eye_openness(face: FaceFrame, metric: str) -> tuple[float, float] | None:
-    """(left, right) openness; larger means more open. None if no face."""
+def eye_openness(face: FaceFrame) -> tuple[float, float] | None:
+    """(left, right) eye aspect ratios; larger means more open. None if no face."""
     if face.landmarks is None:
         return None
-    if metric == "ear":
-        return (
-            eye_aspect_ratio(face.landmarks, LEFT_EYE),
-            eye_aspect_ratio(face.landmarks, RIGHT_EYE),
-        )
-    if metric == "blendshape":
-        if not face.blendshapes:
-            return None
-        return (
-            1.0 - face.blendshapes.get("eyeBlinkLeft", 0.0),
-            1.0 - face.blendshapes.get("eyeBlinkRight", 0.0),
-        )
-    raise ValueError(f"Unknown eye metric: {metric}")
+    return (
+        eye_aspect_ratio(face.landmarks, LEFT_EYE),
+        eye_aspect_ratio(face.landmarks, RIGHT_EYE),
+    )
 
 
 @dataclass(frozen=True)
@@ -79,7 +70,7 @@ class EyeStateTracker:
         self._closed = False
 
     def update(self, face: FaceFrame) -> Observation:
-        values = eye_openness(face, self.config.metric)
+        values = eye_openness(face)
         t = face.timestamp
         if values is None:
             self._closed = False

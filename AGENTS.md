@@ -13,7 +13,7 @@ Instructions for AI coding agents working in this repo. Read all of it before ch
 ## Stack
 
 - Python ≥ 3.11 (the local `.venv` uses 3.14). `src/` layout, package `vn_eye`, installed with `pip install -e ".[dev]"`.
-- MediaPipe's Face Landmarker models (face detector + face mesh), run by OpenCV's DNN module by default (`backend.name = "opencv"`). The `mediapipe` package is an optional extra (`.[mediapipe]`) for `backend.name = "mediapipe"`, which adds blendshapes but includes telemetry. OpenCV also handles the camera and preview window. NumPy.
+- MediaPipe's Face Landmarker models (face detector + face mesh), run by OpenCV's DNN module. The `mediapipe` package is not used, because it includes telemetry. OpenCV also handles the camera and preview window. NumPy.
 - `pynput`: key output on macOS/Linux and the global pause hotkey on every OS. On Windows, key output uses `SendInput` through `ctypes` with hardware scan codes.
 - Tests: `pytest` only. There is no linter, formatter or type checker set up. Don't add one unless asked.
 - Config: TOML (`tomllib`), loaded into frozen dataclasses.
@@ -24,7 +24,7 @@ There is one pipeline. Each stage only talks to the next one:
 
 ```
 camera frame
-  → landmarks.py  FaceFrame          (OpenCV and MediaPipe backends; other backends plug in here)
+  → landmarks.py  FaceFrame          (MediaPipe's face model run with OpenCV)
   → eyes.py       EyeStateTracker    (eye openness vs. a rolling open-eye baseline)
     head.py       HeadTracker        (yaw/pitch relative to a rolling median pose)
   → Observation                      (one per frame: timestamp, face_present, ready, closed, head_yaw, head_pitch)
@@ -39,7 +39,7 @@ Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` 
 
 1. **Triggers emit fixed event names. They never choose the output.** The only place events are mapped to outputs is `output.actions` (`OutputConfig.actions` in code, `[output.actions]` in TOML). Current event names: `blink`, `head_shake`, `head_nod_up`, `head_nod_down`, `nod_up`, `nod_down`.
 2. Outputs come in two kinds. Keystroke/mouse outputs are listed in `OUTPUT_NAMES` in `outputs.py` (`enter`, `space`, `left_click`, `wheel_down`, `up`, `down`). App-level outputs start with `app:` (currently only `app:toggle_pause`). The event loop in `app.py` handles `app:` outputs before `ActionDispatcher` sees them.
-3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, MediaPipe, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
+3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, the face model, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
 4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.
 5. Head pitch sign: **positive pitch = head tilted down** (image y grows downward). `side == 1` maps to the `*_down` event.
 6. Config precedence: defaults < `--config` file < shortcut flags (`--min-duration`, `--output`, …) < `--set SECTION.KEY=VALUE`.
@@ -81,7 +81,7 @@ Adding a new output name: add it to `OUTPUT_NAMES` and implement it in **both** 
 
 ### Tests
 
-- Tests never use a real camera, MediaPipe model, OS input or sound. Build `Observation`/`FaceFrame` objects by hand.
+- Tests never use a real camera, face model, OS input or sound. Build `Observation`/`FaceFrame` objects by hand.
 - Use the plain `def test_*` function style with bare `assert`, and name tests after behavior (`test_too_long_closure_is_canceled`). No test classes and no mocking framework.
 
 ### Docs

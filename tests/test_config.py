@@ -20,7 +20,6 @@ def test_defaults():
         "nod_down": "down",
     }
     assert config.feedback.log_rejected
-    assert config.backend.name == "opencv"
 
 
 def test_shortcut_flags():
@@ -67,20 +66,6 @@ def test_bad_set_is_rejected(bad):
 def test_invalid_keystroke_action_is_rejected():
     with pytest.raises(ValueError, match="output.actions"):
         config_from("--set", "output.actions.blink=notakey")
-
-
-def test_backend_flag_selects_mediapipe():
-    assert config_from("--backend", "mediapipe").backend.name == "mediapipe"
-
-
-def test_unknown_backend_is_rejected():
-    with pytest.raises(ValueError, match="backend.name"):
-        config_from("--set", "backend.name=dlib")
-
-
-def test_blendshape_metric_is_rejected_with_opencv_backend():
-    with pytest.raises(ValueError, match="blendshape"):
-        config_from("--metric", "blendshape")
 
 
 def test_invalid_app_action_is_rejected():

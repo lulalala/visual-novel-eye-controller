@@ -17,18 +17,7 @@ class CameraConfig:
 
 
 @dataclass(frozen=True)
-class BackendConfig:
-    # "opencv" runs the face model with OpenCV only. "mediapipe" runs the same model
-    # with the optional mediapipe package, which adds blendshapes but includes telemetry.
-    name: str = "opencv"
-    # MediaPipe only: "auto", "cpu" or "gpu". Auto picks GPU on macOS and CPU elsewhere.
-    delegate: str = "auto"
-
-
-@dataclass(frozen=True)
 class EyeConfig:
-    # "ear": eye aspect ratio from landmarks; "blendshape": MediaPipe's eyeBlink scores.
-    metric: str = "ear"
     # Openness is tracked relative to a rolling "eyes open" baseline so the
     # thresholds adapt to the user's face, camera angle and posture.
     baseline_window_s: float = 10.0
@@ -132,7 +121,6 @@ class HotkeyConfig:
 @dataclass(frozen=True)
 class Config:
     camera: CameraConfig = field(default_factory=CameraConfig)
-    backend: BackendConfig = field(default_factory=BackendConfig)
     eyes: EyeConfig = field(default_factory=EyeConfig)
     head: HeadConfig = field(default_factory=HeadConfig)
     blink: BlinkConfig = field(default_factory=BlinkConfig)

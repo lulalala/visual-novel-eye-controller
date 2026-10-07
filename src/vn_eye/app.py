@@ -18,7 +18,7 @@ from vn_eye.eyes import EyeStateTracker
 from vn_eye.feedback import play_sound
 from vn_eye.head import HeadTracker
 from vn_eye.hotkeys import PauseSwitch
-from vn_eye.landmarks import BACKEND_NAMES, create_backend
+from vn_eye.landmarks import OpenCVBackend
 from vn_eye.outputs import OUTPUT_NAMES, ActionDispatcher, create_output
 from vn_eye.triggers import TriggerEvent, create_triggers
 
@@ -43,9 +43,6 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
      "help": "minimum time between triggers, in seconds"}),
     ("--close-ratio", "eyes.close_ratio", {"type": float, "metavar": "R",
      "help": "closed below baseline * R (lower = needs a firmer closure)"}),
-    ("--metric", "eyes.metric", {"choices": ["ear", "blendshape"], "help": "eye openness measure"}),
-    ("--backend", "backend.name", {"choices": BACKEND_NAMES,
-     "help": "run the face model with OpenCV only, or with the optional mediapipe package"}),
     ("--shake-degrees", "head_shake.amplitude_deg", {"type": float, "metavar": "DEG",
      "help": "how far to turn the head each way for the pause/resume shake"}),
     ("--no-head-shake", "head_shake.enabled", {"action": "store_const", "const": False,
@@ -106,17 +103,7 @@ def build_config(args: argparse.Namespace) -> Config:
     for item in args.set:
         config = apply_overrides(config, parse_override(item))
     _validate_actions(config)
-    _validate_backend(config)
     return config
-
-
-def _validate_backend(config: Config) -> None:
-    if config.backend.name not in BACKEND_NAMES:
-        raise ValueError(
-            f"backend.name must be one of {', '.join(BACKEND_NAMES)}, not {config.backend.name!r}"
-        )
-    if config.backend.name == "opencv" and config.eyes.metric == "blendshape":
-        raise ValueError("eyes.metric 'blendshape' needs backend.name 'mediapipe'; use 'ear' with 'opencv'")
 
 
 class ReconnectingCamera:
@@ -189,7 +176,7 @@ def open_camera(config: Config) -> ReconnectingCamera:
 
 def run(config: Config, args: argparse.Namespace) -> int:
     cap = open_camera(config)
-    backend = create_backend(config.backend.name, config.backend.delegate)
+    backend = OpenCVBackend()
     tracker = EyeStateTracker(config.eyes)
     head = HeadTracker(config.head)
     log_rejected = print if config.feedback.log_rejected else None

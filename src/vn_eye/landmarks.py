@@ -1,8 +1,7 @@
-"""Face landmark backends.
+"""Face landmarks from a camera frame.
 
-A backend turns a camera frame into a ``FaceFrame``. Everything downstream
-(eye metrics, triggers) only sees ``FaceFrame``, so other backends (EyeTrax,
-GazeFollower, a Tobii tracker) can be added without touching the triggers.
+The backend turns a camera frame into a ``FaceFrame``. Everything downstream
+(eye metrics, triggers) only sees ``FaceFrame``.
 """
 
 from __future__ import annotations
@@ -35,8 +34,6 @@ class FaceFrame:
     """Seconds, from a monotonic clock."""
     landmarks: np.ndarray | None
     """(N, 3) landmarks in pixel coordinates (z is relative depth), or None if no face."""
-    blendshapes: dict[str, float] | None = None
-    """Optional named expression scores in [0, 1], e.g. ``eyeBlinkLeft``."""
     head_yaw_deg: float | None = None
     """Absolute head turn left/right in degrees, if the backend estimates head pose."""
     head_pitch_deg: float | None = None
@@ -85,78 +82,8 @@ def ensure_model(path: Path | None = None) -> Path:
     return path
 
 
-class MediaPipeBackend:
-    """MediaPipe Face Landmarker (478 face + iris landmarks, 52 blendshapes)."""
-
-    def __init__(self, delegate: str = "auto", model_path: Path | None = None) -> None:
-        try:
-            import mediapipe as mp
-        except ImportError:
-            raise SystemExit(
-                'backend.name "mediapipe" needs the mediapipe package. '
-                'Install it with: pip install -e ".[mediapipe]"'
-            ) from None
-        from mediapipe.tasks.python import BaseOptions
-        from mediapipe.tasks.python import vision
-
-        if delegate == "auto":
-            # mediapipe 1.0.1's CPU graph aborts on macOS (it still asks for a
-            # Metal service), while the GPU delegate isn't available on Windows.
-            delegate = "gpu" if sys.platform == "darwin" else "cpu"
-        if delegate not in ("cpu", "gpu"):
-            raise ValueError(f"Unknown MediaPipe delegate: {delegate}")
-        self._mp = mp
-        # The GPU path only accepts 4-channel images.
-        self._rgba = delegate == "gpu"
-        options = vision.FaceLandmarkerOptions(
-            base_options=BaseOptions(
-                model_asset_path=str(ensure_model(model_path)),
-                delegate=BaseOptions.Delegate.GPU if delegate == "gpu" else BaseOptions.Delegate.CPU,
-            ),
-            running_mode=vision.RunningMode.VIDEO,
-            num_faces=1,
-            output_face_blendshapes=True,
-            output_facial_transformation_matrixes=True,
-        )
-        self._landmarker = vision.FaceLandmarker.create_from_options(options)
-        self._last_ts_ms = -1
-
-    def process(self, frame_bgr: np.ndarray, timestamp: float) -> FaceFrame:
-        h, w = frame_bgr.shape[:2]
-        if self._rgba:
-            data = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGBA)
-            image = self._mp.Image(image_format=self._mp.ImageFormat.SRGBA, data=data)
-        else:
-            data = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-            image = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=data)
-        # VIDEO mode requires strictly increasing timestamps.
-        ts_ms = max(int(timestamp * 1000), self._last_ts_ms + 1)
-        self._last_ts_ms = ts_ms
-        result = self._landmarker.detect_for_video(image, ts_ms)
-
-        if not result.face_landmarks:
-            return FaceFrame(timestamp, None)
-        points = np.array(
-            [(p.x * w, p.y * h, p.z * w) for p in result.face_landmarks[0]],
-            dtype=np.float32,
-        )
-        blendshapes = None
-        if result.face_blendshapes:
-            blendshapes = {c.category_name: c.score for c in result.face_blendshapes[0]}
-        yaw = None
-        pitch = None
-        if result.facial_transformation_matrixes:
-            r = np.asarray(result.facial_transformation_matrixes[0])[:3, :3]
-            yaw = math.degrees(math.atan2(r[0, 2], r[2, 2]))
-            pitch = math.degrees(math.atan2(-r[1, 2], r[2, 2]))
-        return FaceFrame(timestamp, points, blendshapes, yaw, pitch)
-
-    def close(self) -> None:
-        self._landmarker.close()
-
-
-# MediaPipe's own models, run with OpenCV instead of the mediapipe package.
-# Both are inside the same face_landmarker.task file that MediaPipeBackend uses.
+# MediaPipe's face detector and face mesh models, from face_landmarker.task, run
+# with OpenCV instead of the mediapipe package (which includes telemetry).
 _DETECTOR_SIZE = 128
 _MESH_SIZE = 256
 # A face crop is the face box (or the landmark bounds) enlarged by this factor.
@@ -167,7 +94,8 @@ _RIGHT_EYE_OUTER, _LEFT_EYE_OUTER, _FOREHEAD, _CHIN = 33, 263, 10, 152
 
 def head_pose_from_landmarks(points: np.ndarray) -> tuple[float, float]:
     """(yaw, pitch) in degrees from 3D mesh landmarks in image axes (x right, y down,
-    z away from the camera). Same signs as MediaPipeBackend: positive pitch = head down."""
+    z away from the camera). Positive yaw = face turned toward the image's right;
+    positive pitch = head tilted down."""
     across = points[_LEFT_EYE_OUTER] - points[_RIGHT_EYE_OUTER]
     down = points[_CHIN] - points[_FOREHEAD]
     forward = np.cross(down, across)  # out of the face, toward the camera
@@ -223,7 +151,7 @@ def _sigmoid(x: float) -> float:
 
 class OpenCVBackend:
     """MediaPipe's face detector and face mesh models (478 face + iris landmarks),
-    run with OpenCV's DNN module. No blendshapes; head pose comes from the mesh."""
+    run with OpenCV's DNN module. Head pose comes from the mesh."""
 
     def __init__(self, model_path: Path | None = None, min_confidence: float = 0.5) -> None:
         task = ensure_model(model_path)
@@ -253,7 +181,7 @@ class OpenCVBackend:
             return FaceFrame(timestamp, None)
         self._roi = _roi_from_landmarks(points)
         yaw, pitch = head_pose_from_landmarks(points)
-        return FaceFrame(timestamp, points, None, yaw, pitch)
+        return FaceFrame(timestamp, points, yaw, pitch)
 
     def _detect(self, frame_bgr: np.ndarray) -> tuple[tuple[float, float], float, float] | None:
         h, w = frame_bgr.shape[:2]
@@ -295,14 +223,3 @@ class OpenCVBackend:
 
     def close(self) -> None:
         pass
-
-
-BACKEND_NAMES = ("mediapipe", "opencv")
-
-
-def create_backend(name: str = "mediapipe", delegate: str = "auto") -> LandmarkBackend:
-    if name == "mediapipe":
-        return MediaPipeBackend(delegate)
-    if name == "opencv":
-        return OpenCVBackend()
-    raise ValueError(f"backend.name must be one of {', '.join(BACKEND_NAMES)}, not {name!r}")
