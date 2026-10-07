@@ -23,8 +23,8 @@ Instructions for AI coding agents working in this repo. Read all of it before ch
 There is one pipeline. Each stage only talks to the next one:
 
 ```
-camera frame
-  → landmarks.py  FaceFrame          (MediaPipe's face model run with OpenCV)
+sources/          Source.read()      → Signals (raw eye openness, head pose; frames stay inside the source)
+                  OpenCVSource       (webcam → face_mesh.py: MediaPipe's face model run with OpenCV)
   → eyes.py       EyeStateTracker    (eye openness vs. a rolling open-eye baseline)
     head.py       HeadTracker        (yaw/pitch relative to a rolling median pose)
   → Observation                      (one per frame: timestamp, face_present, ready, closed, head_yaw, head_pitch)
@@ -33,7 +33,9 @@ camera frame
   → outputs.py    ActionDispatcher   → key/mouse output, with a shared cooldown
 ```
 
-Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` (debug window), `hotkeys.py` (pause switch and global hotkey), `feedback.py` (sounds), `app.py` (main loop and CLI).
+The design and the planned plugin loading are in `docs/design/sources.md`.
+
+Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` (debug window over the source's `debug_view()`), `hotkeys.py` (pause switch and global hotkey), `feedback.py` (sounds), `app.py` (main loop and CLI).
 
 ### Rules the design depends on
 
@@ -71,7 +73,7 @@ Camera frames are processed in memory and are **never written to disk or sent an
 Do all of these in the same change:
 
 1. Config dataclass in `config.py` (`enabled`, thresholds with `_s`/`_deg`, `cooldown_s`). There is no fixed rule yet for whether a new trigger starts on or off, so ask the user before choosing `enabled`. Add a field to `Config`.
-2. Trigger class in `triggers.py` that implements `name`, `update`, `reset` and `status`, then register it in `create_triggers`.
+2. Trigger class in `triggers.py` that implements `name`, `needs` (the signals it requires, for example `frozenset({HEAD_POSE})`), `update`, `reset` and `status`, then register it in `create_triggers`. A trigger whose `needs` the source doesn't provide is skipped at startup with a notice.
 3. Default event → output mappings in `OutputConfig.actions`.
 4. A matching section and `[output.actions]` entries in `config.example.toml`. The values there must equal the code defaults, because the file says so.
 5. Tests in `tests/test_triggers.py` that drive the trigger with synthetic `Observation` streams at 30 FPS (see the `run` helper). Cover at least: it fires, it doesn't fire (each rejection reason), cooldown, and face loss.
@@ -81,7 +83,7 @@ Adding a new output name: add it to `OUTPUT_NAMES` and implement it in **both** 
 
 ### Tests
 
-- Tests never use a real camera, face model, OS input or sound. Build `Observation`/`FaceFrame` objects by hand.
+- Tests never use a real camera, face model, OS input or sound. Build `Signals`/`Observation` objects (or landmark arrays) by hand.
 - Use the plain `def test_*` function style with bare `assert`, and name tests after behavior (`test_too_long_closure_is_canceled`). No test classes and no mocking framework.
 
 ### Docs

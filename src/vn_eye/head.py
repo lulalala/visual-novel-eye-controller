@@ -6,7 +6,7 @@ import statistics
 from collections import deque
 
 from vn_eye.config import HeadConfig
-from vn_eye.landmarks import FaceFrame
+from vn_eye.sources import Signals
 
 
 class HeadTracker:
@@ -18,10 +18,10 @@ class HeadTracker:
         self._yaw_history: deque[tuple[float, float]] = deque()
         self._pitch_history: deque[tuple[float, float]] = deque()
 
-    def update(self, face: FaceFrame) -> tuple[float | None, float | None]:
-        t = face.timestamp
-        yaw = self._relative(self._yaw_history, t, face.head_yaw_deg)
-        pitch = self._relative(self._pitch_history, t, face.head_pitch_deg)
+    def update(self, signals: Signals) -> tuple[float | None, float | None]:
+        t = signals.timestamp
+        yaw = self._relative(self._yaw_history, t, signals.head_yaw_deg)
+        pitch = self._relative(self._pitch_history, t, signals.head_pitch_deg)
         return yaw, pitch
 
     def _relative(

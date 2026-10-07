@@ -1,9 +1,16 @@
-from vn_eye.config import BlinkConfig, HeadConfig, HeadShakeConfig, NodConfig
+from vn_eye.config import BlinkConfig, Config, HeadConfig, HeadShakeConfig, NodConfig
 from vn_eye.eyes import Observation
 from vn_eye.head import HeadTracker
-from vn_eye.landmarks import FaceFrame
+from vn_eye.sources import EYE_OPENNESS, HEAD_POSE, Signals
 from vn_eye.outputs import ActionDispatcher
-from vn_eye.triggers import BlinkTrigger, HeadShakeTrigger, NodTrigger, TriggerEvent
+from vn_eye.triggers import (
+    BlinkTrigger,
+    HeadShakeTrigger,
+    NodTrigger,
+    TriggerEvent,
+    create_triggers,
+    supported_triggers,
+)
 
 FPS = 30
 
@@ -209,7 +216,34 @@ def test_nod_cooldown_blocks_rapid_repeat():
 def test_head_tracker_is_relative_to_usual_pose():
     tracker = HeadTracker(HeadConfig())
     for i in range(60):
-        tracker.update(FaceFrame(i / FPS, None, head_yaw_deg=10.0))
-    yaw, pitch = tracker.update(FaceFrame(2.0, None, head_yaw_deg=35.0))
+        tracker.update(Signals(i / FPS, face_present=True, head_yaw_deg=10.0))
+    yaw, pitch = tracker.update(Signals(2.0, face_present=True, head_yaw_deg=35.0))
     assert yaw == 25.0
     assert pitch is None
+
+
+class FakeSource:
+    def __init__(self, provides):
+        self.name = "fake"
+        self.provides = frozenset(provides)
+
+
+def test_triggers_needing_missing_signals_are_skipped_with_a_notice():
+    messages = []
+    triggers = supported_triggers(create_triggers(Config()), FakeSource({EYE_OPENNESS}), messages.append)
+    assert [t.name for t in triggers] == ["blink"]
+    assert "head_shake: disabled (source fake has no head_pose)" in messages
+
+
+def test_all_triggers_kept_when_source_provides_everything():
+    messages = []
+    all_triggers = create_triggers(Config())
+    kept = supported_triggers(all_triggers, FakeSource({EYE_OPENNESS, HEAD_POSE}), messages.append)
+    assert kept == all_triggers
+    assert messages == []
+
+
+def test_blink_works_without_head_pose():
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15))
+    assert trigger.needs == {EYE_OPENNESS}
+    assert len(run(trigger, [(1.0, False), (0.3, True), (0.5, False)])) == 1

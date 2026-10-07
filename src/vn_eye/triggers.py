@@ -11,6 +11,7 @@ from typing import Callable, Protocol
 
 from vn_eye.config import BlinkConfig, Config, HeadNodConfig, HeadShakeConfig, NodConfig
 from vn_eye.eyes import Observation
+from vn_eye.sources import EYE_OPENNESS, HEAD_POSE, Source
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,8 @@ class TriggerEvent:
 
 class Trigger(Protocol):
     name: str
+    needs: frozenset[str]
+    """Signals the source must provide (see vn_eye.sources); otherwise the trigger is skipped."""
 
     def update(self, obs: Observation) -> TriggerEvent | None: ...
 
@@ -37,6 +40,8 @@ class BlinkTrigger:
     """Fires when both eyes stay closed for a deliberate length of time."""
 
     name = "blink"
+    # Head pose is optional: without it, blinks with the head turned are not filtered.
+    needs = frozenset({EYE_OPENNESS})
 
     def __init__(self, config: BlinkConfig, log: Callable[[str], None] | None = None) -> None:
         if config.fire_on not in ("reopen", "hold"):
@@ -127,6 +132,7 @@ class HeadShakeTrigger:
     """Fires when the head turns past the threshold to one side, then the other."""
 
     name = "head_shake"
+    needs = frozenset({HEAD_POSE})
 
     def __init__(self, config: HeadShakeConfig) -> None:
         self.config = config
@@ -176,11 +182,12 @@ class HeadNodTrigger:
     """Fires when the head tilts up or down past the threshold."""
 
     name = "head_nod"
+    needs = frozenset({HEAD_POSE})
 
     def __init__(self, config: HeadNodConfig, log: Callable[[str], None] | None = None) -> None:
         self.config = config
         self._log = log or (lambda _msg: None)
-        self._side = 0  # -1 (down), 0 (center), +1 (up)
+        self._side = 0  # -1 (up), 0 (center), +1 (down)
         self._last_fire: float | None = None
         self._pitch: float | None = None
         self._peak: float = 0.0  # peak absolute pitch since last reset
@@ -238,6 +245,7 @@ class NodTrigger:
     """Fires when the head dips or lifts past the threshold and returns to neutral quickly."""
 
     name = "nod"
+    needs = frozenset({HEAD_POSE})
 
     def __init__(self, config: NodConfig, log: Callable[[str], None] | None = None) -> None:
         self.config = config
@@ -304,3 +312,17 @@ def create_triggers(config: Config, log: Callable[[str], None] | None = None) ->
     if config.nod.enabled:
         triggers.append(NodTrigger(config.nod, log))
     return triggers
+
+
+def supported_triggers(
+    triggers: list[Trigger], source: Source, log: Callable[[str], None]
+) -> list[Trigger]:
+    """Keeps the triggers whose needed signals the source provides, and reports the rest."""
+    kept: list[Trigger] = []
+    for trigger in triggers:
+        missing = trigger.needs - source.provides
+        if missing:
+            log(f"{trigger.name}: disabled (source {source.name} has no {', '.join(sorted(missing))})")
+        else:
+            kept.append(trigger)
+    return kept

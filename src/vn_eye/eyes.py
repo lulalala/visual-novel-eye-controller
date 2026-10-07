@@ -1,4 +1,4 @@
-"""Eye openness from face landmarks, with an adaptive open/closed decision."""
+"""Open/closed eye state from raw eye openness, relative to the user's open-eye level."""
 
 from __future__ import annotations
 
@@ -6,36 +6,8 @@ import statistics
 from collections import deque
 from dataclasses import dataclass
 
-import numpy as np
-
 from vn_eye.config import EyeConfig
-from vn_eye.landmarks import FaceFrame
-
-# MediaPipe Face Mesh indices, ordered p1..p6 for the eye aspect ratio:
-# p1/p4 are the eye corners, (p2, p6) and (p3, p5) are upper/lower lid pairs.
-# "Left"/"right" are from the subject's point of view.
-LEFT_EYE = (362, 385, 387, 263, 373, 380)
-RIGHT_EYE = (33, 160, 158, 133, 153, 144)
-
-
-def eye_aspect_ratio(points: np.ndarray, idx: tuple[int, ...]) -> float:
-    """Soukupová & Čech (2016) EAR: ~0.25-0.35 when open, near 0 when closed."""
-    p = points[list(idx), :2]
-    vertical = np.linalg.norm(p[1] - p[5]) + np.linalg.norm(p[2] - p[4])
-    horizontal = np.linalg.norm(p[0] - p[3])
-    if horizontal < 1e-6:
-        return 0.0
-    return float(vertical / (2.0 * horizontal))
-
-
-def eye_openness(face: FaceFrame) -> tuple[float, float] | None:
-    """(left, right) eye aspect ratios; larger means more open. None if no face."""
-    if face.landmarks is None:
-        return None
-    return (
-        eye_aspect_ratio(face.landmarks, LEFT_EYE),
-        eye_aspect_ratio(face.landmarks, RIGHT_EYE),
-    )
+from vn_eye.sources import Signals
 
 
 @dataclass(frozen=True)
@@ -54,7 +26,7 @@ class Observation:
     head_yaw: float | None = None
     """Head turn in degrees relative to the user's usual pose (sign: left/right)."""
     head_pitch: float | None = None
-    """Head tilt in degrees relative to the user's usual pose (positive = up)."""
+    """Head tilt in degrees relative to the user's usual pose (positive = down)."""
 
 
 class EyeStateTracker:
@@ -69,14 +41,16 @@ class EyeStateTracker:
         self._history.clear()
         self._closed = False
 
-    def update(self, face: FaceFrame) -> Observation:
-        values = eye_openness(face)
-        t = face.timestamp
-        if values is None:
+    def update(self, signals: Signals) -> Observation:
+        t = signals.timestamp
+        if not signals.face_present:
             self._closed = False
             return Observation(t, face_present=False)
+        if signals.eye_openness is None:
+            # A source without eye data: head triggers still see the face.
+            return Observation(t, face_present=True)
 
-        left, right = values
+        left, right = signals.eye_openness
         # With both eyes required, the more open eye decides, so one closed
         # eye is not enough to count as "closed".
         combined = max(left, right) if self.config.require_both_eyes else min(left, right)

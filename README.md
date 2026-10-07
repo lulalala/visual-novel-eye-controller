@@ -55,13 +55,17 @@ Platform notes:
 
 ```
 src/vn_eye/
-  landmarks.py  camera frame -> FaceFrame (MediaPipe's face model, run with OpenCV)
-  eyes.py       FaceFrame -> EyeObservation (eye openness, adaptive open/closed state)
-  triggers.py   EyeObservation -> TriggerEvent (BlinkTrigger; add gaze triggers here)
-  outputs.py    TriggerEvent -> key/mouse input, with cooldown
-  app.py        main loop and CLI
+  sources/        Source interface and Signals (raw eye openness, head pose)
+    opencv.py     the built-in source: webcam -> face mesh -> Signals
+    face_mesh.py  MediaPipe's face model, run with OpenCV
+    camera.py     webcam capture that reconnects
+  eyes.py         Signals -> Observation (open/closed vs. your open-eye level)
+  head.py         Signals -> head yaw/pitch relative to your usual pose
+  triggers.py     Observation -> TriggerEvent (blink, head shake, nods)
+  outputs.py      TriggerEvent -> key/mouse input, with cooldown
+  app.py          main loop and CLI
 ```
 
-To add a gesture (e.g. dwell on a zone), implement the `Trigger` protocol and register it in `create_triggers`. For a gaze source, add a backend in `landmarks.py` and a gaze field to `EyeObservation`.
+To add a gesture (for example, dwell on a zone), implement the `Trigger` protocol and register it in `create_triggers`. To add another input device, implement the `Source` protocol in `vn_eye/sources/` (see [docs/design/sources.md](docs/design/sources.md)).
 
 Run the tests with `pytest`.

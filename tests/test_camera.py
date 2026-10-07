@@ -1,4 +1,4 @@
-from vn_eye.app import ReconnectingCamera
+from vn_eye.sources.camera import ReconnectingCamera
 
 
 class FakeCapture:

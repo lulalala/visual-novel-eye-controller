@@ -1,4 +1,4 @@
-"""Optional debug window showing the camera, eye landmarks and trigger state."""
+"""Optional debug window: the source's view with eye and trigger state drawn on top."""
 
 from __future__ import annotations
 
@@ -6,10 +6,11 @@ import cv2
 import numpy as np
 
 from vn_eye.config import EyeConfig
-from vn_eye.eyes import LEFT_EYE, RIGHT_EYE, Observation
-from vn_eye.landmarks import FaceFrame
+from vn_eye.eyes import Observation
 
 WINDOW = "vn-eye preview"
+# Canvas for sources without an image, so the status overlay still shows.
+_BLANK_SIZE = (480, 640)
 
 _GREEN = (80, 200, 80)
 _RED = (60, 60, 230)
@@ -44,8 +45,7 @@ def _openness_bar(img: np.ndarray, obs: Observation, cfg: EyeConfig) -> None:
 
 
 def show(
-    frame_bgr: np.ndarray,
-    face: FaceFrame,
+    view: np.ndarray | None,
     obs: Observation,
     eye_cfg: EyeConfig,
     trigger_status: list[str],
@@ -54,13 +54,10 @@ def show(
     flash: bool,
 ) -> int:
     """Draw and display one frame; returns the pressed key code (or -1)."""
-    img = frame_bgr.copy()
-    if face.landmarks is not None:
-        color = _RED if obs.closed else _GREEN
-        for idx in (LEFT_EYE, RIGHT_EYE):
-            pts = face.landmarks[list(idx), :2].astype(np.int32)
-            cv2.polylines(img, [pts], isClosed=True, color=color, thickness=1)
-    img = cv2.flip(img, 1)  # mirror, so it behaves like a mirror for the user
+    if view is None:
+        img = np.zeros((*_BLANK_SIZE, 3), dtype=np.uint8)
+    else:
+        img = cv2.flip(view, 1)  # mirror, so it behaves like a mirror for the user
 
     if flash:
         cv2.rectangle(img, (0, 0), (img.shape[1] - 1, img.shape[0] - 1), _YELLOW, 12)

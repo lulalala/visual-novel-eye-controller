@@ -1,8 +1,4 @@
-"""Face landmarks from a camera frame.
-
-The backend turns a camera frame into a ``FaceFrame``. Everything downstream
-(eye metrics, triggers) only sees ``FaceFrame``.
-"""
+"""MediaPipe's face mesh (478 face + iris landmarks) from a camera frame, run with OpenCV."""
 
 from __future__ import annotations
 
@@ -12,38 +8,18 @@ import os
 import sys
 import urllib.request
 import zipfile
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
 
 import cv2
 import numpy as np
 
-# Pinned to version 1: OpenCVBackend relies on this model's input sizes, output
+# Pinned to version 1: FaceMesh relies on this model's input sizes, output
 # names and anchor layout, which a newer "latest" model could change.
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/face_landmarker/"
     "face_landmarker/float16/1/face_landmarker.task"
 )
 MODEL_SHA256 = "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff"
-
-
-@dataclass(frozen=True)
-class FaceFrame:
-    timestamp: float
-    """Seconds, from a monotonic clock."""
-    landmarks: np.ndarray | None
-    """(N, 3) landmarks in pixel coordinates (z is relative depth), or None if no face."""
-    head_yaw_deg: float | None = None
-    """Absolute head turn left/right in degrees, if the backend estimates head pose."""
-    head_pitch_deg: float | None = None
-    """Absolute head tilt up/down in degrees (positive = down), if available."""
-
-
-class LandmarkBackend(Protocol):
-    def process(self, frame_bgr: np.ndarray, timestamp: float) -> FaceFrame: ...
-
-    def close(self) -> None: ...
 
 
 def cache_dir() -> Path:
@@ -149,9 +125,9 @@ def _sigmoid(x: float) -> float:
     return 1.0 / (1.0 + math.exp(-max(min(x, 80.0), -80.0)))
 
 
-class OpenCVBackend:
+class FaceMesh:
     """MediaPipe's face detector and face mesh models (478 face + iris landmarks),
-    run with OpenCV's DNN module. Head pose comes from the mesh."""
+    run with OpenCV's DNN module."""
 
     def __init__(self, model_path: Path | None = None, min_confidence: float = 0.5) -> None:
         task = ensure_model(model_path)
@@ -171,17 +147,14 @@ class OpenCVBackend:
             return cv2.dnn.readNetFromTFLite(str(path))
         return cv2.dnn.readNetFromTFLite(str(path), engine)
 
-    def process(self, frame_bgr: np.ndarray, timestamp: float) -> FaceFrame:
+    def process(self, frame_bgr: np.ndarray) -> np.ndarray | None:
+        """(478, 3) landmarks in frame pixels (z is relative depth), or None if no face."""
         points = self._fit(frame_bgr, *self._roi) if self._roi is not None else None
         if points is None:
             roi = self._detect(frame_bgr)
             points = self._fit(frame_bgr, *roi) if roi is not None else None
-        if points is None:
-            self._roi = None
-            return FaceFrame(timestamp, None)
-        self._roi = _roi_from_landmarks(points)
-        yaw, pitch = head_pose_from_landmarks(points)
-        return FaceFrame(timestamp, points, yaw, pitch)
+        self._roi = _roi_from_landmarks(points) if points is not None else None
+        return points
 
     def _detect(self, frame_bgr: np.ndarray) -> tuple[tuple[float, float], float, float] | None:
         h, w = frame_bgr.shape[:2]
@@ -220,6 +193,3 @@ class OpenCVBackend:
         xy = local[:, :2] @ m[:, :2].T + m[:, 2]
         z = local[:, 2:] * (size / _MESH_SIZE)
         return np.hstack([xy, z]).astype(np.float32)
-
-    def close(self) -> None:
-        pass

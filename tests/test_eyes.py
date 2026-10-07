@@ -1,38 +1,16 @@
-import numpy as np
 import pytest
 
 from vn_eye.config import EyeConfig
-from vn_eye.eyes import LEFT_EYE, RIGHT_EYE, EyeStateTracker, eye_aspect_ratio
-from vn_eye.landmarks import FaceFrame
-
-
-def make_face(t: float, openness: float, right: float | None = None) -> FaceFrame:
-    """A fake 478-point face whose eyes have the given EAR values."""
-    points = np.zeros((478, 3), dtype=np.float32)
-    for idx, ear, x0 in ((LEFT_EYE, openness, 300.0), (RIGHT_EYE, right if right is not None else openness, 100.0)):
-        width = 60.0
-        half = ear * width / 2.0
-        p1, p2, p3, p4, p5, p6 = idx
-        points[p1] = (x0, 200, 0)
-        points[p4] = (x0 + width, 200, 0)
-        points[p2] = (x0 + 20, 200 - half, 0)
-        points[p6] = (x0 + 20, 200 + half, 0)
-        points[p3] = (x0 + 40, 200 - half, 0)
-        points[p5] = (x0 + 40, 200 + half, 0)
-    return FaceFrame(t, points)
-
-
-def test_eye_aspect_ratio_matches_construction():
-    face = make_face(0.0, 0.3, right=0.1)
-    assert eye_aspect_ratio(face.landmarks, LEFT_EYE) == pytest.approx(0.3)
-    assert eye_aspect_ratio(face.landmarks, RIGHT_EYE) == pytest.approx(0.1)
+from vn_eye.eyes import EyeStateTracker
+from vn_eye.sources import Signals
 
 
 def feed(tracker, start, end, openness, fps=30, right=None):
     obs = []
     t = start
     while t < end - 1e-9:
-        obs.append(tracker.update(make_face(t, openness, right)))
+        eyes = (openness, right if right is not None else openness)
+        obs.append(tracker.update(Signals(t, face_present=True, eye_openness=eyes)))
         t += 1 / fps
     return obs
 
@@ -65,5 +43,18 @@ def test_no_face_resets_closed_state():
     tracker = EyeStateTracker(EyeConfig())
     feed(tracker, 0.0, 3.0, 0.30)
     assert feed(tracker, 3.0, 3.1, 0.05)[-1].closed
-    obs = tracker.update(FaceFrame(3.2, None))
+    obs = tracker.update(Signals(3.2, face_present=False))
     assert not obs.face_present and not obs.closed
+
+
+def test_face_without_eye_data_is_present_but_never_ready():
+    tracker = EyeStateTracker(EyeConfig())
+    obs = [tracker.update(Signals(i / 30, face_present=True)) for i in range(90)]
+    assert all(o.face_present and not o.ready and not o.closed for o in obs)
+
+
+def test_any_proportional_scale_works():
+    # A source reporting 0..1 openness instead of EAR values closes the same way.
+    tracker = EyeStateTracker(EyeConfig())
+    feed(tracker, 0.0, 3.0, 1.0)
+    assert feed(tracker, 3.0, 3.1, 0.3)[-1].closed
