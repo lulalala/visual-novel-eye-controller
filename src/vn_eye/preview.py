@@ -20,7 +20,13 @@ _GRAY = (140, 140, 140)
 
 
 def _text(img: np.ndarray, text: str, y: int, color=_WHITE) -> None:
-    cv2.putText(img, text, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 3, cv2.LINE_AA)
+    # Outline from offset thin copies: a thicker stroke also widens the letter
+    # spacing (OpenCV 5), so it would drift away from the text along the line.
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            if dx or dy:
+                cv2.putText(img, text, (10 + dx, y + dy), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
+                            (0, 0, 0), 1, cv2.LINE_AA)
     cv2.putText(img, text, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 1, cv2.LINE_AA)
 
 
