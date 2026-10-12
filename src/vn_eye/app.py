@@ -15,8 +15,8 @@ from vn_eye.config import Config, apply_overrides, load_config, nested, parse_ov
 from vn_eye.eyes import EyeStateTracker
 from vn_eye.feedback import play_sound
 from vn_eye.head import HeadTracker
-from vn_eye.hotkeys import PauseSwitch
 from vn_eye.outputs import OUTPUT_NAMES, ActionDispatcher, create_output
+from vn_eye.pause import PauseSwitch
 from vn_eye.sources.opencv import OpenCVSource
 from vn_eye.triggers import TriggerEvent, create_triggers, supported_triggers
 
@@ -135,7 +135,6 @@ def run(config: Config, args: argparse.Namespace) -> int:
             play_sound("pause" if paused else "resume")
 
     pause = PauseSwitch(on_pause_change)
-    pause.start_global_hotkey(config.hotkeys.pause)
 
     log_file = args.log.open("w", newline="") if args.log else None
     log = csv.writer(log_file) if log_file else None
@@ -199,7 +198,6 @@ def run(config: Config, args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         pass
     finally:
-        pause.stop()
         source.close()
         if args.preview:
             preview.close()

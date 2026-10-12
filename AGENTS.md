@@ -14,7 +14,7 @@ Instructions for AI coding agents working in this repo. Read all of it before ch
 
 - Python ≥ 3.11 (the local `.venv` uses 3.14). `src/` layout, package `vn_eye`, installed with `pip install -e ".[dev]"`.
 - MediaPipe's Face Landmarker models (face detector + face mesh), run by OpenCV's DNN module. The `mediapipe` package is not used, because it includes telemetry. OpenCV also handles the camera and preview window. NumPy.
-- `pynput`: key output on macOS/Linux and the global pause hotkey on every OS. On Windows, key output uses `SendInput` through `ctypes` with hardware scan codes.
+- `pynput`: key output on macOS/Linux. On Windows, key output uses `SendInput` through `ctypes` with hardware scan codes.
 - Tests: `pytest` only. There is no linter, formatter or type checker set up. Don't add one unless asked.
 - Config: TOML (`tomllib`), loaded into frozen dataclasses.
 
@@ -35,7 +35,7 @@ sources/          Source.read()      → Signals (raw eye openness, head pose; f
 
 The design and the planned plugin loading are in `docs/design/sources.md`.
 
-Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` (debug window over the source's `debug_view()`), `hotkeys.py` (pause switch and global hotkey), `feedback.py` (sounds), `app.py` (main loop and CLI).
+Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` (debug window over the source's `debug_view()`), `pause.py` (pause switch), `feedback.py` (sounds), `app.py` (main loop and CLI).
 
 ### Rules the design depends on
 

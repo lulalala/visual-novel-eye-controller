@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     "opencv-python>=4.8",
     "numpy>=1.26",
-    # Used on macOS/Linux for key output and on every OS for the pause hotkey.
+    # Used on macOS/Linux for key output.
     # Windows key output uses SendInput directly via ctypes.
     "pynput>=1.7",
 ]

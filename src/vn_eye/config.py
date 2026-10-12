@@ -113,12 +113,6 @@ class FeedbackConfig:
 
 
 @dataclass(frozen=True)
-class HotkeyConfig:
-    # pynput GlobalHotKeys syntax. Empty string disables the global hotkey.
-    pause: str = "<ctrl>+<alt>+p"
-
-
-@dataclass(frozen=True)
 class Config:
     camera: CameraConfig = field(default_factory=CameraConfig)
     eyes: EyeConfig = field(default_factory=EyeConfig)
@@ -129,7 +123,6 @@ class Config:
     nod: NodConfig = field(default_factory=NodConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
-    hotkeys: HotkeyConfig = field(default_factory=HotkeyConfig)
 
 
 def _merge(obj: Any, data: dict[str, Any], path: str) -> Any:
