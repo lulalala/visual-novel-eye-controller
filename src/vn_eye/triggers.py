@@ -37,32 +37,28 @@ class Trigger(Protocol):
 
 
 class BlinkTrigger:
-    """Fires when both eyes stay closed for a deliberate length of time."""
+    """Fires when both eyes close for long enough and then reopen."""
 
     name = "blink"
     # Head pose is optional: without it, blinks with the head turned are not filtered.
     needs = frozenset({EYE_OPENNESS})
 
     def __init__(self, config: BlinkConfig, log: Callable[[str], None] | None = None) -> None:
-        if config.fire_on not in ("reopen", "hold"):
-            raise ValueError(f"blink.fire_on must be 'reopen' or 'hold', not {config.fire_on!r}")
         self.config = config
         self._log = log or (lambda _msg: None)
         self._closed_since: float | None = None
-        self._fired = False
         self._last_duration = 0.0
         self._max_yaw = 0.0
         self._last_fire: float | None = None
 
     def reset(self) -> None:
         self._closed_since = None
-        self._fired = False
         self._max_yaw = 0.0
 
     def update(self, obs: Observation) -> TriggerEvent | None:
         if not obs.face_present or not obs.ready:
             # Losing the face mid-closure (turning away, leaning out) cancels it.
-            if self._closed_since is not None and not self._fired:
+            if self._closed_since is not None:
                 self._log(f"{self.name}: closure canceled (face lost)")
             self.reset()
             return None
@@ -71,20 +67,10 @@ class BlinkTrigger:
         if obs.closed:
             if self._closed_since is None:
                 self._closed_since = t
-                self._fired = False
                 self._max_yaw = 0.0
             if obs.head_yaw is not None:
                 self._max_yaw = max(self._max_yaw, abs(obs.head_yaw))
-            duration = t - self._closed_since
-            self._last_duration = duration
-            if (
-                self.config.fire_on == "hold"
-                and not self._fired
-                and duration >= self.config.min_duration_s
-                and self._max_yaw <= self.config.max_head_yaw_deg
-            ):
-                self._fired = True  # prevent retry within this closure
-                return self._try_fire(t, duration)
+            self._last_duration = t - self._closed_since
             return None
 
         if self._closed_since is None:
@@ -92,8 +78,6 @@ class BlinkTrigger:
         duration = t - self._closed_since
         self._last_duration = duration
         self._closed_since = None
-        if self._fired:  # "hold" mode already fired during this closure
-            return None
         if duration < self.config.min_duration_s:
             self._log(
                 f"{self.name}: blink {duration:.2f}s (too short, min {self.config.min_duration_s:.2f}s)"
@@ -105,15 +89,13 @@ class BlinkTrigger:
                 f"ignored; max {self.config.max_head_yaw_deg:.0f}°)"
             )
             return None
-        if self.config.fire_on == "reopen" and duration > self.config.max_duration_s:
+        if duration > self.config.max_duration_s:
             self._log(
                 f"{self.name}: closed {duration:.2f}s "
                 f"(too long, canceled; max {self.config.max_duration_s:.2f}s)"
             )
             return None
-        if self.config.fire_on == "reopen":
-            return self._try_fire(t, duration)
-        return None
+        return self._try_fire(t, duration)
 
     def status(self) -> str:
         if self._closed_since is not None:

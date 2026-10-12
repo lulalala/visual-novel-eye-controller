@@ -31,8 +31,6 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
      "help": "shortest closure that triggers, in seconds"}),
     ("--max-duration", "blink.max_duration_s", {"type": float, "metavar": "S",
      "help": "longer closures are canceled, in seconds"}),
-    ("--fire-on", "blink.fire_on", {"choices": ["reopen", "hold"],
-     "help": "fire when the eyes reopen, or as soon as --min-duration is reached"}),
     ("--output", "output.actions.blink", {"choices": OUTPUT_NAMES,
      "help": "what key to send for a blink"}),
     ("--cooldown", "output.cooldown_s", {"type": float, "metavar": "S",

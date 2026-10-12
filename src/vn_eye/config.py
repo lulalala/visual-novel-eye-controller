@@ -42,11 +42,9 @@ class BlinkConfig:
     # Shortest closure that triggers. 0.15 s lets most natural blinks advance
     # the text; raise it (e.g. 0.35-0.45) to require a deliberate closure.
     min_duration_s: float = 0.15
-    # Closures longer than this are ignored (resting your eyes, looking away).
+    # Fires when the eyes reopen. Closures longer than this are ignored
+    # (resting your eyes, looking away), so holding them shut cancels.
     max_duration_s: float = 2.0
-    # "reopen": fire when the eyes reopen (allows canceling by holding past max).
-    # "hold": fire as soon as min_duration_s is reached (lower latency).
-    fire_on: str = "reopen"
     # Ignore closures while the head is turned further than this (you are
     # looking away, or shaking your head, which often comes with a blink).
     max_head_yaw_deg: float = 12.0
@@ -167,7 +165,7 @@ def parse_override(text: str) -> dict[str, Any]:
     """Turn ``section.key=value`` into a nested dict.
 
     The value is read as TOML (``0.5``, ``true``, ``"enter"``); anything that
-    isn't valid TOML is taken as a plain string, so ``fire_on=hold`` works.
+    isn't valid TOML is taken as a plain string, so ``actions.blink=space`` works.
     """
     key, sep, raw = text.partition("=")
     if not sep or not key.strip():

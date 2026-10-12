@@ -20,10 +20,8 @@ require_both_eyes = true
 enabled = true
 # 0.15 lets natural blinks advance; 0.35-0.45 requires a deliberate closure
 min_duration_s = 0.15
+# Fires when you reopen your eyes; hold them shut past this to cancel
 max_duration_s = 2.0
-# "reopen": fire when you open your eyes (hold past max_duration_s to cancel)
-# "hold":   fire as soon as min_duration_s is reached
-fire_on = "reopen"
 # Ignore blinks while the head is turned further than this
 max_head_yaw_deg = 12.0
 # Per-trigger cooldown (0 = disabled). Without this, blink is only rate-limited

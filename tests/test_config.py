@@ -24,11 +24,10 @@ def test_defaults():
 
 def test_shortcut_flags():
     config = config_from(
-        "--min-duration", "0.6", "--fire-on", "hold", "--output", "space",
+        "--min-duration", "0.6", "--output", "space",
         "--dry-run", "--no-sound", "--no-rejected-log", "--camera", "1",
     )
     assert config.blink.min_duration_s == 0.6
-    assert config.blink.fire_on == "hold"
     assert config.output.actions["blink"] == "space"
     assert config.output.dry_run
     assert not config.feedback.sound
@@ -40,12 +39,12 @@ def test_set_parses_values_and_bare_strings():
     config = config_from(
         "--set", "eyes.open_ratio=0.8",
         "--set", "eyes.require_both_eyes=false",
-        "--set", "blink.fire_on=hold",
+        "--set", "output.actions.blink=space",
         "--set", "output.cooldown_s=2",
     )
     assert config.eyes.open_ratio == 0.8
     assert config.eyes.require_both_eyes is False
-    assert config.blink.fire_on == "hold"
+    assert config.output.actions["blink"] == "space"
     assert config.output.cooldown_s == 2.0
 
 

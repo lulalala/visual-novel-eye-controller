@@ -47,14 +47,6 @@ def test_too_long_closure_is_canceled():
     assert run(trigger, [(1.0, False), (3.0, True), (1.0, False)]) == []
 
 
-def test_hold_mode_fires_once_while_closed():
-    config = BlinkConfig(min_duration_s=0.45, fire_on="hold")
-    trigger = BlinkTrigger(config)
-    events = run(trigger, [(1.0, False), (3.0, True), (1.0, False)])
-    assert len(events) == 1
-    assert 1.0 + config.min_duration_s <= events[0].timestamp < 1.0 + config.min_duration_s + 1 / FPS
-
-
 def test_losing_face_cancels_closure():
     trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.45))
     run(trigger, [(1.0, False), (0.3, True)])

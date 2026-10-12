@@ -60,7 +60,7 @@ Camera frames are processed in memory and are **never written to disk or sent an
 - Interfaces are `typing.Protocol` (`Trigger`, `Output`). Concrete classes don't inherit from them.
 - Units go in names: `_s` for seconds, `_deg` for degrees (`min_duration_s`, `amplitude_deg`).
 - Private state uses a leading underscore. Comments explain *why* or describe the gesture, not what the line does. Match the existing comment density, which is sparse.
-- Validate config values that the type can't enforce in the constructor, and raise `ValueError` with a message that names the key and the allowed values. Example: `blink.fire_on must be 'reopen' or 'hold', not 'x'`.
+- Validate config values that the type can't enforce in the constructor, and raise `ValueError` with a message that names the key and the allowed values. Example: `eyes.close_ratio must be above 0 and below eyes.open_ratio (0.75), not 0.9`.
 - No new runtime dependencies without asking. Platform-specific code is imported lazily inside the class or function that needs it (see `Win32Output`, `PynputOutput`).
 
 ### User feedback and logging
