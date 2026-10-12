@@ -69,13 +69,13 @@ class RecordingOutput:
         self.sent.append(name)
 
 
-def test_dispatcher_maps_actions_and_applies_cooldown():
+def test_dispatcher_maps_actions_without_its_own_cooldown():
     out = RecordingOutput()
-    dispatcher = ActionDispatcher(out, {"blink": "enter"}, cooldown_s=1.0)
+    dispatcher = ActionDispatcher(out, {"blink": "enter", "nod_down": "down"})
     assert dispatcher.dispatch(TriggerEvent("blink", "blink", 0.0))
-    assert not dispatcher.dispatch(TriggerEvent("blink", "blink", 0.5))
-    assert dispatcher.dispatch(TriggerEvent("blink", "blink", 1.2))
-    assert out.sent == ["enter", "enter"]
+    assert dispatcher.dispatch(TriggerEvent("nod", "nod_down", 0.1))
+    assert not dispatcher.dispatch(TriggerEvent("nod", "nod_up", 0.2))
+    assert out.sent == ["enter", "down"]
 
 
 def test_short_and_too_long_closures_are_logged():
@@ -94,19 +94,19 @@ def test_successful_blink_is_not_logged_by_trigger():
     assert messages == []
 
 
-def test_dispatcher_logs_cooldown_skips():
-    messages = []
-    dispatcher = ActionDispatcher(RecordingOutput(), {"blink": "enter"}, 1.0, log=messages.append)
-    dispatcher.dispatch(TriggerEvent("blink", "blink", 0.0))
-    dispatcher.dispatch(TriggerEvent("blink", "blink", 0.5))
-    assert len(messages) == 1 and "cooldown" in messages[0]
-
-
 def test_blink_cooldown_blocks_rapid_repeat():
-    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15, cooldown_s=1.0))
+    messages = []
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15, cooldown_s=1.0), log=messages.append)
     # Two deliberate blinks close together — only the first should fire.
     events = run(trigger, [(0.5, False), (0.3, True), (0.5, False), (0.3, True), (0.5, False)])
     assert len(events) == 1
+    assert "cooldown" in messages[0]
+
+
+def test_zero_blink_cooldown_allows_rapid_repeat():
+    trigger = BlinkTrigger(BlinkConfig(min_duration_s=0.15, cooldown_s=0.0))
+    events = run(trigger, [(0.5, False), (0.3, True), (0.2, False), (0.3, True), (0.5, False)])
+    assert len(events) == 2
 
 
 def test_blink_cooldown_allows_after_expiry():

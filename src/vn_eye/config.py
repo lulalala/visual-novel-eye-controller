@@ -48,10 +48,8 @@ class BlinkConfig:
     # Ignore closures while the head is turned further than this (you are
     # looking away, or shaking your head, which often comes with a blink).
     max_head_yaw_deg: float = 12.0
-    # Per-trigger cooldown after firing. 0 disables it; blink then relies only
-    # on output.cooldown_s, which is shared with all other gestures. Set this
-    # to a non-zero value to rate-limit blink independently of head gestures.
-    cooldown_s: float = 0.0
+    # Blinks within this long after the last one that fired are ignored.
+    cooldown_s: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -96,10 +94,6 @@ class OutputConfig:
             "nod_down": "down",
         }
     )
-    # Minimum time between any two triggers firing. This is the only cooldown
-    # for blink (unless blink.cooldown_s is also set). Head gestures have their
-    # own per-trigger cooldown on top of this.
-    cooldown_s: float = 1.0
     dry_run: bool = False
 
 

@@ -24,9 +24,8 @@ min_duration_s = 0.15
 max_duration_s = 2.0
 # Ignore blinks while the head is turned further than this
 max_head_yaw_deg = 12.0
-# Per-trigger cooldown (0 = disabled). Without this, blink is only rate-limited
-# by output.cooldown_s, which is shared with all other gestures.
-cooldown_s = 0.0
+# Blinks within this long after the last one that fired are ignored
+cooldown_s = 1.0
 
 [head]
 # Head turns are measured relative to a rolling median of your usual pose
@@ -53,10 +52,6 @@ max_duration_s = 0.8
 cooldown_s = 1.0
 
 [output]
-# Minimum time between any two triggers firing (shared across all gestures).
-# This is the only rate limit for blink unless blink.cooldown_s is also set.
-# Head gestures add their own per-trigger cooldown on top of this.
-cooldown_s = 1.0
 dry_run = false
 
 [output.actions]

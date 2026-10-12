@@ -40,12 +40,12 @@ def test_set_parses_values_and_bare_strings():
         "--set", "eyes.open_ratio=0.8",
         "--set", "eyes.require_both_eyes=false",
         "--set", "output.actions.blink=space",
-        "--set", "output.cooldown_s=2",
+        "--set", "blink.cooldown_s=2",
     )
     assert config.eyes.open_ratio == 0.8
     assert config.eyes.require_both_eyes is False
     assert config.output.actions["blink"] == "space"
-    assert config.output.cooldown_s == 2.0
+    assert config.blink.cooldown_s == 2.0
 
 
 def test_set_wins_over_shortcut_and_file(tmp_path):

@@ -177,15 +177,13 @@ def create_output(dry_run: bool) -> Output:
 
 
 class ActionDispatcher:
-    """Maps trigger actions to outputs and enforces a global cooldown."""
+    """Maps trigger actions to outputs. Each trigger enforces its own cooldown."""
 
     def __init__(
         self,
         output: Output,
         actions: dict[str, str],
-        cooldown_s: float,
         on_fire: Callable[[TriggerEvent, str], None] | None = None,
-        log: Callable[[str], None] | None = None,
     ) -> None:
         for action, name in actions.items():
             if name not in OUTPUT_NAMES:
@@ -195,20 +193,13 @@ class ActionDispatcher:
                 )
         self._output = output
         self._actions = actions
-        self._cooldown_s = cooldown_s
         self._on_fire = on_fire
-        self._log = log or (lambda _msg: None)
-        self._last_fire: float | None = None
 
     def dispatch(self, event: TriggerEvent) -> bool:
         name = self._actions.get(event.action)
         if name is None:
             print(f"No output configured for action {event.action!r}", file=sys.stderr)
             return False
-        if self._last_fire is not None and event.timestamp - self._last_fire < self._cooldown_s:
-            self._log(f"{event.trigger}: {event.detail} -> ignored (cooldown {self._cooldown_s:.1f}s)")
-            return False
-        self._last_fire = event.timestamp
         self._output.send(name)
         if self._on_fire:
             self._on_fire(event, name)

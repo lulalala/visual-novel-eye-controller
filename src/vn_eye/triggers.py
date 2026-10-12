@@ -95,19 +95,16 @@ class BlinkTrigger:
                 f"(too long, canceled; max {self.config.max_duration_s:.2f}s)"
             )
             return None
-        return self._try_fire(t, duration)
+        if self._last_fire is not None and t - self._last_fire < self.config.cooldown_s:
+            self._log(f"{self.name}: closed {duration:.2f}s (cooldown {self.config.cooldown_s:.2f}s)")
+            return None
+        self._last_fire = t
+        return TriggerEvent(self.name, self.name, t, f"closed {duration:.2f}s")
 
     def status(self) -> str:
         if self._closed_since is not None:
             return f"closed {self._last_duration:.2f}s"
         return f"open (last closure {self._last_duration:.2f}s)"
-
-    def _try_fire(self, t: float, duration: float) -> TriggerEvent | None:
-        if self.config.cooldown_s > 0 and self._last_fire is not None and t - self._last_fire < self.config.cooldown_s:
-            self._log(f"{self.name}: closed {duration:.2f}s (cooldown {self.config.cooldown_s:.2f}s)")
-            return None
-        self._last_fire = t
-        return TriggerEvent(self.name, self.name, t, f"closed {duration:.2f}s")
 
 
 class HeadShakeTrigger:

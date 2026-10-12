@@ -62,7 +62,7 @@ src/vn_eye/
   eyes.py         Signals -> Observation (open/closed vs. your open-eye level)
   head.py         Signals -> head yaw/pitch relative to your usual pose
   triggers.py     Observation -> TriggerEvent (blink, head shake, nods)
-  outputs.py      TriggerEvent -> key/mouse input, with cooldown
+  outputs.py      TriggerEvent -> key/mouse input
   app.py          main loop and CLI
 ```
 

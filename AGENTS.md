@@ -30,7 +30,7 @@ sources/          Source.read()      → Signals (raw eye openness, head pose; f
   → Observation                      (one per frame: timestamp, face_present, ready, closed, head_yaw, head_pitch)
   → triggers.py   Trigger.update()   → TriggerEvent (fixed event name)
   → app.py        app:* events handled here (e.g. app:toggle_pause)
-  → outputs.py    ActionDispatcher   → key/mouse output, with a shared cooldown
+  → outputs.py    ActionDispatcher   → key/mouse output (each trigger has its own cooldown)
 ```
 
 The design and the planned plugin loading are in `docs/design/sources.md`.

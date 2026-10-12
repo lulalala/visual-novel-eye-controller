@@ -33,8 +33,6 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
      "help": "longer closures are canceled, in seconds"}),
     ("--output", "output.actions.blink", {"choices": OUTPUT_NAMES,
      "help": "what key to send for a blink"}),
-    ("--cooldown", "output.cooldown_s", {"type": float, "metavar": "S",
-     "help": "minimum time between triggers, in seconds"}),
     ("--close-ratio", "eyes.close_ratio", {"type": float, "metavar": "R",
      "help": "closed below baseline * R (lower = needs a firmer closure)"}),
     ("--shake-degrees", "head_shake.amplitude_deg", {"type": float, "metavar": "DEG",
@@ -124,9 +122,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
     dispatcher = ActionDispatcher(
         create_output(config.output.dry_run),
         key_actions,
-        config.output.cooldown_s,
         on_fire,
-        log_rejected,
     )
     def on_pause_change(paused: bool) -> None:
         if config.feedback.sound:
