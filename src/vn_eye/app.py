@@ -29,22 +29,14 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
     ("--camera", "camera.index", {"type": int, "metavar": "N", "help": "camera index"}),
     ("--min-duration", "blink.min_duration_s", {"type": float, "metavar": "S",
      "help": "shortest closure that triggers, in seconds"}),
-    ("--max-duration", "blink.max_duration_s", {"type": float, "metavar": "S",
-     "help": "longer closures are canceled, in seconds"}),
-    ("--output", "output.actions.blink", {"choices": OUTPUT_NAMES,
-     "help": "what key to send for a blink"}),
-    ("--close-ratio", "eyes.close_ratio", {"type": float, "metavar": "R",
-     "help": "closed below baseline * R (lower = needs a firmer closure)"}),
-    ("--shake-degrees", "head_shake.amplitude_deg", {"type": float, "metavar": "DEG",
-     "help": "how far to turn the head each way for the pause/resume shake"}),
+    ("--blink-key", "output.actions.blink", {"choices": OUTPUT_NAMES,
+     "help": "what key or mouse input to send for a blink"}),
     ("--no-head-shake", "head_shake.enabled", {"action": "store_const", "const": False,
      "help": "disable the head-shake pause/resume gesture"}),
     ("--dry-run", "output.dry_run", {"action": "store_const", "const": True,
      "help": "print actions instead of sending input"}),
     ("--no-sound", "feedback.sound", {"action": "store_const", "const": False,
      "help": "don't beep when triggering"}),
-    ("--no-rejected-log", "feedback.log_rejected", {"action": "store_const", "const": False,
-     "help": "don't print gestures that didn't trigger"}),
 ]
 
 
@@ -57,7 +49,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("-c", "--config", type=Path, help="TOML config file (see config.example.toml)")
     p.add_argument("--preview", action="store_true", help="show the camera debug window")
     p.add_argument("--log", type=Path, help="write per-frame eye values to a CSV file (no images)")
-    p.add_argument("--duration", type=float, help="stop after this many seconds")
+    # Stops after this many seconds; for scripted --log captures, so not in --help.
+    p.add_argument("--duration", type=float, help=argparse.SUPPRESS)
     settings = p.add_argument_group("settings (override the config file)")
     for flag, path, options in _SHORTCUTS:
         settings.add_argument(flag, dest=path, default=None, **options)

@@ -24,14 +24,14 @@ def test_defaults():
 
 def test_shortcut_flags():
     config = config_from(
-        "--min-duration", "0.6", "--output", "space",
-        "--dry-run", "--no-sound", "--no-rejected-log", "--camera", "1",
+        "--min-duration", "0.6", "--blink-key", "space",
+        "--dry-run", "--no-sound", "--no-head-shake", "--camera", "1",
     )
     assert config.blink.min_duration_s == 0.6
     assert config.output.actions["blink"] == "space"
     assert config.output.dry_run
     assert not config.feedback.sound
-    assert not config.feedback.log_rejected
+    assert not config.head_shake.enabled
     assert config.camera.index == 1
 
 

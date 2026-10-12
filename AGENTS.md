@@ -44,7 +44,7 @@ Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` 
 3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, the face model, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
 4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.
 5. Head pitch sign: **positive pitch = head tilted down** (image y grows downward). `side == 1` maps to the `*_down` event.
-6. Config precedence: defaults < `--config` file < shortcut flags (`--min-duration`, `--output`, …) < `--set SECTION.KEY=VALUE`.
+6. Config precedence: defaults < `--config` file < shortcut flags (`--min-duration`, `--blink-key`, …) < `--set SECTION.KEY=VALUE`.
 
 ## Privacy (hard rule)
 
