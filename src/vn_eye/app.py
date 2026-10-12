@@ -99,6 +99,8 @@ def build_config(args: argparse.Namespace) -> Config:
     for item in args.set:
         config = apply_overrides(config, parse_override(item))
     _validate_actions(config)
+    # Fail on bad eye thresholds before the camera opens.
+    EyeStateTracker(config.eyes)
     return config
 
 

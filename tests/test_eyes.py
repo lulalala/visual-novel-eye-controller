@@ -58,3 +58,9 @@ def test_any_proportional_scale_works():
     tracker = EyeStateTracker(EyeConfig())
     feed(tracker, 0.0, 3.0, 1.0)
     assert feed(tracker, 3.0, 3.1, 0.3)[-1].closed
+
+
+@pytest.mark.parametrize("close_ratio, open_ratio", [(0.75, 0.75), (0.8, 0.75), (0.0, 0.75)])
+def test_inverted_or_empty_hysteresis_is_rejected(close_ratio, open_ratio):
+    with pytest.raises(ValueError, match="eyes.close_ratio"):
+        EyeStateTracker(EyeConfig(close_ratio=close_ratio, open_ratio=open_ratio))

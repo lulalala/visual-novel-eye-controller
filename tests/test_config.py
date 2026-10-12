@@ -71,3 +71,8 @@ def test_invalid_keystroke_action_is_rejected():
 def test_invalid_app_action_is_rejected():
     with pytest.raises(ValueError, match="output.actions"):
         config_from("--set", "output.actions.blink=app:notacommand")
+
+
+def test_inverted_eye_ratios_are_rejected():
+    with pytest.raises(ValueError, match="eyes.close_ratio"):
+        config_from("--set", "eyes.close_ratio=0.9")

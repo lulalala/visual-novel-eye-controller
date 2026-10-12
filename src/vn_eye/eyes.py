@@ -33,6 +33,13 @@ class EyeStateTracker:
     """Decides open/closed relative to a rolling baseline of open-eye values."""
 
     def __init__(self, config: EyeConfig) -> None:
+        # With close_ratio >= open_ratio, the eyes would reopen and re-close on
+        # alternate frames between the two thresholds.
+        if not 0 < config.close_ratio < config.open_ratio:
+            raise ValueError(
+                f"eyes.close_ratio must be above 0 and below eyes.open_ratio "
+                f"({config.open_ratio}), not {config.close_ratio}"
+            )
         self.config = config
         self._history: deque[tuple[float, float]] = deque()
         self._closed = False
