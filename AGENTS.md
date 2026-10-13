@@ -39,7 +39,7 @@ Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` 
 
 ### Rules the design depends on
 
-1. **Triggers emit fixed event names. They never choose the output.** The only place events are mapped to outputs is `output.actions` (`OutputConfig.actions` in code, `[output.actions]` in TOML). Current event names: `blink`, `head_shake`, `head_nod_up`, `head_nod_down`, `nod_up`, `nod_down`.
+1. **Triggers emit fixed event names. They never choose the output.** The only place events are mapped to outputs is `output.actions` (`OutputConfig.actions` in code, `[output.actions]` in TOML). Current event names: `blink`, `head_shake`, `nod_up`, `nod_down`.
 2. Outputs come in two kinds. Keystroke/mouse outputs are listed in `OUTPUT_NAMES` in `outputs.py` (`enter`, `space`, `left_click`, `wheel_down`, `up`, `down`). App-level outputs start with `app:` (currently only `app:toggle_pause`). The event loop in `app.py` handles `app:` outputs before `ActionDispatcher` sees them.
 3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, the face model, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
 4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.

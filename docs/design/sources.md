@@ -97,7 +97,7 @@ Each trigger declares the signals it needs:
 |---|---|---|
 | `blink` | `eye_openness` | `head_pose` (ignores blinks while the head is turned) |
 | `head_shake` | `head_pose` | |
-| `head_nod`, `nod` | `head_pose` | |
+| `nod` | `head_pose` | |
 
 At startup, the core compares each enabled trigger's needs with the source's `provides` and skips a trigger whose needs are missing, with a notice such as `head_shake: disabled (source tobii has no head_pose)`. `OpenCVSource` provides both signals, so the check never fails in step 1. It is part of step 1 anyway, so that a future source without head pose, such as an eye tracker, works without changes to the core.
 

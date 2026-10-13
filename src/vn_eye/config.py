@@ -63,14 +63,6 @@ class HeadShakeConfig:
 
 
 @dataclass(frozen=True)
-class HeadNodConfig:
-    enabled: bool = False
-    # Tilt past amplitude_deg up or down to trigger.
-    amplitude_deg: float = 15.0
-    cooldown_s: float = 1.0
-
-
-@dataclass(frozen=True)
 class NodConfig:
     enabled: bool = False
     # Tilt past amplitude_deg and return to neutral within max_duration_s.
@@ -88,8 +80,6 @@ class OutputConfig:
         default_factory=lambda: {
             "blink": "enter",
             "head_shake": "app:toggle_pause",
-            "head_nod_up": "up",
-            "head_nod_down": "down",
             "nod_up": "up",
             "nod_down": "down",
         }
@@ -111,7 +101,6 @@ class Config:
     head: HeadConfig = field(default_factory=HeadConfig)
     blink: BlinkConfig = field(default_factory=BlinkConfig)
     head_shake: HeadShakeConfig = field(default_factory=HeadShakeConfig)
-    head_nod: HeadNodConfig = field(default_factory=HeadNodConfig)
     nod: NodConfig = field(default_factory=NodConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)

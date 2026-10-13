@@ -38,12 +38,6 @@ amplitude_deg = 15.0
 max_duration_s = 1.0
 cooldown_s = 1.5
 
-[head_nod]
-# Tilt head up or down past amplitude_deg to send the mapped key
-enabled = false
-amplitude_deg = 15.0
-cooldown_s = 1.0
-
 [nod]
 # Tilt past amplitude_deg and return within max_duration_s (like a real nod)
 enabled = false
@@ -59,8 +53,6 @@ dry_run = false
 # App-level outputs: app:toggle_pause
 blink = "enter"
 head_shake = "app:toggle_pause"
-head_nod_up = "up"
-head_nod_down = "down"
 nod_up = "up"
 nod_down = "down"
 
