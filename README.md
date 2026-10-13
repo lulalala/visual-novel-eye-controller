@@ -66,6 +66,6 @@ src/vn_eye/
   app.py          main loop and CLI
 ```
 
-To add a gesture (for example, dwell on a zone), implement the `Trigger` protocol and register it in `create_triggers`. To add another input device, implement the `Source` protocol in `vn_eye/sources/` (see [docs/design/sources.md](docs/design/sources.md)).
+To add a gesture (for example, dwell on a zone), implement the `Trigger` protocol and register it in `create_triggers`. To add another input device, implement the `Source` protocol in `vn_eye/sources/` (see [docs/design/sources.md](docs/design/sources.md)). For how the `[eyes]` and `[head]` settings work, see [docs/design/detection.md](docs/design/detection.md).
 
 Run the tests with `pytest`.

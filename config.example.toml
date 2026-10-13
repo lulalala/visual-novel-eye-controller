@@ -8,12 +8,14 @@ height = 480
 fps = 30
 
 [eyes]
-# Openness is compared with a rolling median of your open-eye value.
+# vn-eye learns how open your eyes usually are over this many seconds
 baseline_window_s = 10.0
+# Seconds to learn before blinks can trigger
 warmup_s = 2.0
-# Closed below baseline * close_ratio, open again above baseline * open_ratio.
+# Lower close_ratio means you must close your eyes more fully to count
 close_ratio = 0.55
 open_ratio = 0.75
+# Both eyes must close, so a wink doesn't count
 require_both_eyes = true
 
 [blink]
@@ -28,7 +30,7 @@ max_head_yaw_deg = 12.0
 cooldown_s = 1.0
 
 [head]
-# Head turns are measured relative to a rolling median of your usual pose
+# vn-eye learns your usual head position over this many seconds
 baseline_window_s = 10.0
 
 [head_shake]
@@ -49,8 +51,7 @@ cooldown_s = 1.0
 dry_run = false
 
 [output.actions]
-# Keystroke/mouse outputs: enter | space | left_click | wheel_down | up | down
-# App-level outputs: app:toggle_pause
+# Choices: enter, space, left_click, wheel_down, up, down, app:toggle_pause
 blink = "enter"
 head_shake = "app:toggle_pause"
 nod_up = "up"
