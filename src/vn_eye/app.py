@@ -27,7 +27,7 @@ _FLASH_S = 0.3
 # set with --set SECTION.KEY=VALUE.
 _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
     ("--camera", "camera.index", {"type": int, "metavar": "N", "help": "camera index"}),
-    ("--min-duration", "gestures.blink.hold_min_s", {"type": float, "metavar": "S",
+    ("--min-duration", "gestures.blink.gap_min_s", {"type": float, "metavar": "S",
      "help": "shortest closure that triggers, in seconds"}),
     ("--blink-key", "gestures.blink.output", {"choices": OUTPUT_NAMES,
      "help": "what key or mouse input to send for a blink"}),

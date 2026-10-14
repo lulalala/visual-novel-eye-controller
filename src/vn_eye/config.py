@@ -39,21 +39,21 @@ class HeadConfig:
 @dataclass(frozen=True)
 class GestureConfig:
     enabled: bool = True
-    # Poses to perform in order. A step counts once you enter the pose and
-    # leave it again. A step can also name another gesture, which counts
-    # when that gesture fires. Poses: see POSES.
+    # States to reach in order. A step counts the moment you reach that
+    # state. A step can also name another gesture, which counts when that
+    # gesture fires. States: see STATES.
     steps: list[str] = field(default_factory=list)
     # Also accept the steps in any order (a shake can start on either side).
     any_order: bool = False
-    # A head pose starts past past_deg and ends once the head is back within
-    # release_deg (the gap stops jitter at the edge from ending it early).
-    # Eye poses use [eyes] close_ratio/open_ratio instead.
+    # The head counts as down/up/left/right past past_deg, and as back at
+    # center once it is within release_deg again (the gap between the two
+    # stops jitter at the edge). Eye states use [eyes] close_ratio/open_ratio.
     past_deg: float = 15.0
     release_deg: float = 10.0
-    # How long you must hold each step's pose. 0 means no limit.
-    hold_min_s: float = 0.0
-    hold_max_s: float = 0.0
-    # All steps must finish within this long of the first one starting. 0 means no limit.
+    # Time allowed between two steps in a row. 0 means no limit.
+    gap_min_s: float = 0.0
+    gap_max_s: float = 0.0
+    # Time allowed from the first step to the last. 0 means no limit.
     within_s: float = 0.0
     # The gesture is ignored this long after it last fired.
     cooldown_s: float = 1.0
@@ -63,30 +63,33 @@ class GestureConfig:
     output: str = ""
 
 
-POSES = ("eyes_closed", "head_down", "head_up", "head_left", "head_right")
+STATES = (
+    "eyes_closed", "eyes_open",
+    "head_down", "head_up", "head_left", "head_right", "head_center",
+)
 
 
 def _default_gestures() -> dict[str, GestureConfig]:
     return {
-        # 0.15 s lets most natural blinks advance the text; raise hold_min_s
+        # 0.15 s lets most natural blinks advance the text; raise gap_min_s
         # (e.g. 0.35-0.45) to require a deliberate closure. Holding the eyes
-        # shut past hold_max_s (resting them, looking away) cancels.
+        # shut past gap_max_s (resting them, looking away) cancels.
         "blink": GestureConfig(
-            steps=["eyes_closed"], hold_min_s=0.15, hold_max_s=2.0, cooldown_s=1.0,
-            output="enter",
+            steps=["eyes_closed", "eyes_open"], gap_min_s=0.15, gap_max_s=2.0,
+            cooldown_s=1.0, output="enter",
         ),
         "head_shake": GestureConfig(
             steps=["head_left", "head_right"], any_order=True,
-            past_deg=15.0, release_deg=10.0, within_s=1.3, cooldown_s=1.5,
+            past_deg=15.0, release_deg=10.0, within_s=1.0, cooldown_s=1.5,
             output="app:toggle_pause",
         ),
         "nod_up": GestureConfig(
-            enabled=False, steps=["head_up"], past_deg=12.0, release_deg=8.0,
-            hold_max_s=0.8, cooldown_s=1.0, output="up",
+            enabled=False, steps=["head_up", "head_center"], past_deg=12.0, release_deg=8.0,
+            gap_max_s=0.8, cooldown_s=1.0, output="up",
         ),
         "nod_down": GestureConfig(
-            enabled=False, steps=["head_down"], past_deg=12.0, release_deg=8.0,
-            hold_max_s=0.8, cooldown_s=1.0, output="down",
+            enabled=False, steps=["head_down", "head_center"], past_deg=12.0, release_deg=8.0,
+            gap_max_s=0.8, cooldown_s=1.0, output="down",
         ),
     }
 

@@ -57,12 +57,12 @@ def sweep(a, b, frames):
 
 
 def test_normal_blink_does_not_fire():
-    trigger = gesture("blink", hold_min_s=0.45)
+    trigger = gesture("blink", gap_min_s=0.45)
     assert drive([trigger], eyes([(30, False), (6, True), (30, False)])) == []
 
 
 def test_blink_fires_on_the_reopen_frame():
-    trigger = gesture("blink", hold_min_s=0.45)
+    trigger = gesture("blink", gap_min_s=0.45)
     events = drive([trigger], eyes([(30, False), (18, True), (15, False)]))
     assert len(events) == 1
     assert events[0].action == "blink"
@@ -70,13 +70,13 @@ def test_blink_fires_on_the_reopen_frame():
 
 
 def test_too_long_closure_is_canceled():
-    trigger = gesture("blink", hold_min_s=0.45, hold_max_s=2.0)
+    trigger = gesture("blink", gap_min_s=0.45, gap_max_s=2.0)
     assert drive([trigger], eyes([(30, False), (90, True), (30, False)])) == []
 
 
 def test_losing_face_cancels_closure():
     messages = []
-    trigger = gesture("blink", messages.append, hold_min_s=0.45)
+    trigger = gesture("blink", messages.append, gap_min_s=0.45)
     stream = eyes([(30, False), (9, True)]) + [obs(39, face=False)] + eyes([(9, True), (15, False)], start=40)
     assert drive([trigger], stream) == []
     assert "face lost" in messages[0]
@@ -90,36 +90,36 @@ def test_not_ready_ignores_closure():
 
 def test_short_and_too_long_closures_are_logged():
     messages = []
-    trigger = gesture("blink", messages.append, hold_min_s=0.45)
+    trigger = gesture("blink", messages.append, gap_min_s=0.45)
     drive([trigger], eyes([(30, False), (6, True), (15, False), (90, True), (15, False)]))
     assert len(messages) == 2
-    assert messages[0] == "blink: eyes_closed 0.20s (too short, min 0.45s)"
+    assert messages[0] == "blink: eyes_closed to eyes_open in 0.20s (too short, min 0.45s)"
     assert "too long" in messages[1]
 
 
 def test_successful_blink_is_not_logged_by_trigger():
     messages = []
-    trigger = gesture("blink", messages.append, hold_min_s=0.45)
+    trigger = gesture("blink", messages.append, gap_min_s=0.45)
     assert len(drive([trigger], eyes([(30, False), (18, True), (15, False)]))) == 1
     assert messages == []
 
 
 def test_blink_cooldown_blocks_rapid_repeat():
     messages = []
-    trigger = gesture("blink", messages.append, hold_min_s=0.15, cooldown_s=1.0)
+    trigger = gesture("blink", messages.append, gap_min_s=0.15, cooldown_s=1.0)
     events = drive([trigger], eyes([(15, False), (9, True), (15, False), (9, True), (15, False)]))
     assert len(events) == 1
     assert "cooldown" in messages[0]
 
 
 def test_zero_blink_cooldown_allows_rapid_repeat():
-    trigger = gesture("blink", hold_min_s=0.15, cooldown_s=0.0)
+    trigger = gesture("blink", gap_min_s=0.15, cooldown_s=0.0)
     events = drive([trigger], eyes([(15, False), (9, True), (6, False), (9, True), (15, False)]))
     assert len(events) == 2
 
 
 def test_blink_cooldown_allows_after_expiry():
-    trigger = gesture("blink", hold_min_s=0.15, cooldown_s=1.0)
+    trigger = gesture("blink", gap_min_s=0.15, cooldown_s=1.0)
     events = drive([trigger], eyes([(15, False), (9, True), (45, False), (9, True), (15, False)]))
     assert len(events) == 2
 
@@ -147,13 +147,12 @@ def test_head_shake_right_left_fires_too():
     assert len(drive([trigger], head(yaws, "yaw"))) == 1
 
 
-def test_head_shake_fires_on_return_from_second_side():
+def test_head_shake_fires_on_reaching_the_second_side():
     trigger = gesture("head_shake")
-    yaws = [0.0] * 10 + sweep(0, -25, 6) + sweep(-25, 25, 10) + [25.0] * 10
-    # Still turned to the second side: the second pose hasn't ended yet.
-    assert drive([trigger], head(yaws, "yaw")) == []
-    events = drive([trigger], head([5.0] * 3, "yaw", start=len(yaws)))
+    yaws = [0.0] * 10 + [-20.0] * 5 + [0.0] * 3 + [20.0] * 10
+    events = drive([trigger], head(yaws, "yaw"))
     assert len(events) == 1
+    assert events[0].timestamp == 18 / FPS
 
 
 def test_head_shake_order_only_without_any_order():
@@ -209,6 +208,26 @@ def test_slow_tilt_does_not_fire():
     pitches = [0.0] * 5 + [20.0] * 45 + [0.0] * 5
     assert drive([trigger], head(pitches, "pitch")) == []
     assert "too long" in messages[0]
+
+
+def test_swinging_from_down_straight_to_up_passes_center():
+    trigger = gesture("nod_down")
+    pitches = [0.0] * 5 + [20.0] * 5 + [-20.0] * 5
+    assert [e.action for e in drive([trigger], head(pitches, "pitch"))] == ["nod_down"]
+
+
+def test_head_turning_back_does_not_complete_a_nod():
+    trigger = gesture("nod_down")
+    stream = [obs(i, yaw=20.0) for i in range(5)]
+    stream += [obs(5 + i, yaw=20.0, pitch=20.0) for i in range(3)]
+    stream += [obs(8 + i, yaw=0.0, pitch=20.0) for i in range(5)]
+    assert drive([trigger], stream) == []
+
+
+def test_head_center_alone_watches_both_axes():
+    trigger = GestureTrigger("back", replace(DEFAULTS["nod_down"], steps=["head_center"]))
+    assert trigger.needs == {HEAD_POSE}
+    assert len(drive([trigger], head([20.0] * 5 + [0.0] * 5, "yaw"))) == 1
 
 
 def test_wobble_at_the_threshold_does_not_fire():
@@ -285,7 +304,7 @@ def test_gestures_are_built_after_their_steps():
     ({"x": {"steps": ["y"]}, "y": {"steps": ["x"]}}, "loop"),
     ({"x": {"steps": ["nod_down"]}}, "nod_down is disabled"),
     ({"x": {"steps": ["head_up"], "past_deg": 10.0, "release_deg": 10.0}}, "gestures.x.release_deg"),
-    ({"x": {"steps": ["eyes_closed"], "hold_min_s": 1.0, "hold_max_s": 0.5}}, "gestures.x.hold_max_s"),
+    ({"x": {"steps": ["eyes_closed"], "gap_min_s": 1.0, "gap_max_s": 0.5}}, "gestures.x.gap_max_s"),
     ({"x": {"steps": ["eyes_closed"], "cooldown_s": -1.0}}, "gestures.x.cooldown_s"),
 ])
 def test_invalid_gestures_are_rejected(gestures, message):

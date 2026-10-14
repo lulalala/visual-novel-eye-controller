@@ -23,51 +23,51 @@ require_both_eyes = true
 # vn-eye learns your usual head position over this many seconds
 baseline_window_s = 10.0
 
-# Each gesture is a list of poses to hold in order:
-#   eyes_closed, head_down, head_up, head_left, head_right
+# Each gesture is a list of states to reach in order:
+#   eyes_closed, eyes_open, head_down, head_up, head_left, head_right, head_center
 # A step can also be another gesture's name. Fields a gesture doesn't set
 # use these defaults: any_order = false, past_deg = 15.0, release_deg = 10.0,
-# hold_min_s = 0.0, hold_max_s = 0.0, within_s = 0.0 (0 = no limit),
+# gap_min_s = 0.0, gap_max_s = 0.0, within_s = 0.0 (0 = no limit),
 # cooldown_s = 1.0, output = "" (send nothing).
 # Outputs: enter, space, left_click, wheel_down, up, down, app:toggle_pause
 
 [gestures.blink]
 enabled = true
-steps = ["eyes_closed"]
+steps = ["eyes_closed", "eyes_open"]
 # 0.15 lets natural blinks advance; 0.35-0.45 requires a deliberate closure
-hold_min_s = 0.15
-# Fires when you reopen your eyes; hold them shut past this to cancel
-hold_max_s = 2.0
+gap_min_s = 0.15
+# Hold your eyes shut longer than this to cancel
+gap_max_s = 2.0
 cooldown_s = 1.0
 output = "enter"
 
 [gestures.head_shake]
-# Turn past past_deg one way, then the other, back within release_deg, within within_s
+# Turn past past_deg one way, then past it the other way, within within_s
 enabled = true
 steps = ["head_left", "head_right"]
 any_order = true
 past_deg = 15.0
 release_deg = 10.0
-within_s = 1.3
+within_s = 1.0
 cooldown_s = 1.5
 output = "app:toggle_pause"
 
 [gestures.nod_up]
-# Tilt past past_deg and back within release_deg, within hold_max_s
+# Tilt past past_deg, then back within release_deg, within gap_max_s
 enabled = false
-steps = ["head_up"]
+steps = ["head_up", "head_center"]
 past_deg = 12.0
 release_deg = 8.0
-hold_max_s = 0.8
+gap_max_s = 0.8
 cooldown_s = 1.0
 output = "up"
 
 [gestures.nod_down]
 enabled = false
-steps = ["head_down"]
+steps = ["head_down", "head_center"]
 past_deg = 12.0
 release_deg = 8.0
-hold_max_s = 0.8
+gap_max_s = 0.8
 cooldown_s = 1.0
 output = "down"
 

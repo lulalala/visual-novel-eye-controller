@@ -28,7 +28,7 @@ sources/          Source.read()      → Signals (raw eye openness, head pose; f
   → eyes.py       EyeStateTracker    (eye openness vs. a rolling open-eye baseline)
     head.py       HeadTracker        (yaw/pitch relative to a rolling median pose)
   → Observation                      (one per frame: timestamp, face_present, ready, closed, head_yaw, head_pitch)
-  → triggers.py   PoseTracker        (spans: entering a pose to leaving it)
+  → triggers.py   StateTracker       (states reached: eyes_closed, head_left, head_center, …)
                   GestureTrigger     → TriggerEvent (named after the gesture: steps matched in order)
   → app.py        app:* events handled here (e.g. app:toggle_pause)
   → outputs.py    ActionDispatcher   → key/mouse output (each trigger has its own cooldown)
@@ -41,13 +41,13 @@ Other modules: `config.py` (dataclasses, TOML loading, overrides), `preview.py` 
 ### Rules the design depends on
 
 1. **Gestures are config, not code.** Each `[gestures.NAME]` section (`Config.gestures`, a dict of `GestureConfig`) lists its steps, thresholds, timing and `output`. A gesture's event is named after the gesture. Trigger code never chooses an output; the only place outputs are chosen is `gestures.*.output`. Built-in gestures: `blink`, `head_shake`, `nod_up`, `nod_down`.
-   - A step is a pose from `POSES` (counts once you enter and leave it) or another gesture's name (counts when that gesture fires). `create_triggers` builds each gesture after the gestures it uses, and the app loop must update triggers in that order.
-   - Each gesture has its own thresholds (`past_deg`/`release_deg`), so gestures never share an angle. Eye poses are the exception: they use `[eyes] close_ratio`/`open_ratio`, which also decide what the open-eye baseline learns from.
+   - A step is a state from `STATES` (counts the moment it is reached) or another gesture's name (counts when that gesture fires). Timing limits apply to the gap between two steps in a row (`gap_min_s`/`gap_max_s`) and to the whole gesture (`within_s`). `create_triggers` builds each gesture after the gestures it uses, and the app loop must update triggers in that order.
+   - Each gesture has its own thresholds (`past_deg`/`release_deg`), so gestures never share an angle. Eye states are the exception: they use `[eyes] close_ratio`/`open_ratio`, which also decide what the open-eye baseline learns from.
    - When the same movement matches several gestures, each one fires. There is no arbitration.
 2. Outputs come in two kinds. Keystroke/mouse outputs are listed in `OUTPUT_NAMES` in `outputs.py` (`enter`, `space`, `left_click`, `wheel_down`, `up`, `down`). App-level outputs start with `app:` (currently only `app:toggle_pause`). The event loop in `app.py` handles `app:` outputs before `ActionDispatcher` sees them.
 3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, the face model, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
 4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.
-5. Head signs: **positive pitch = head tilted down** (image y grows downward), and **positive yaw = your left** (the face turns toward the unmirrored camera image's right). `_HEAD_POSES` in `triggers.py` maps each head pose to its sign.
+5. Head signs: **positive pitch = head tilted down** (image y grows downward), and **positive yaw = your left** (the face turns toward the unmirrored camera image's right). `_AXES` in `triggers.py` lists each axis's positive state first.
 6. Config precedence: defaults < `--config` file < shortcut flags (`--min-duration`, `--blink-key`, …) < `--set SECTION.KEY=VALUE`.
 7. Config files must have `version = 1` (`CONFIG_VERSION`). Files without it are rejected, not migrated. Bump the version when a change would make old files mean something else.
 
@@ -61,28 +61,28 @@ Camera frames are processed in memory and are **never written to disk or sent an
 
 - Every module starts with a one-line docstring saying what it does, then `from __future__ import annotations`.
 - Type hints on every function signature. Use `X | None` and built-in generics (`list[str]`), not `Optional`/`List`.
-- Config sections are `@dataclass(frozen=True)` with defaults in code. Each non-obvious field gets a comment above it that explains the behavior in user terms (for example `# How long you must hold each step's pose. 0 means no limit.`).
+- Config sections are `@dataclass(frozen=True)` with defaults in code. Each non-obvious field gets a comment above it that explains the behavior in user terms (for example `# Time allowed between two steps in a row. 0 means no limit.`).
 - Interfaces are `typing.Protocol` (`Trigger`, `Output`). Concrete classes don't inherit from them.
-- Units go in names: `_s` for seconds, `_deg` for degrees (`hold_min_s`, `past_deg`).
+- Units go in names: `_s` for seconds, `_deg` for degrees (`gap_min_s`, `past_deg`).
 - Private state uses a leading underscore. Comments explain *why* or describe the gesture, not what the line does. Match the existing comment density, which is sparse.
 - Validate config values that the type can't enforce in the constructor, and raise `ValueError` with a message that names the key and the allowed values. Example: `eyes.close_ratio must be above 0 and below eyes.open_ratio (0.75), not 0.9`.
 - No new runtime dependencies without asking. Platform-specific code is imported lazily inside the class or function that needs it (see `Win32Output`, `PynputOutput`).
 
 ### User feedback and logging
 
-- When a gesture is detected but doesn't fire, the user should be told why. Pass the optional `log` callback into the trigger and call it with a message shaped like `"{name}: <what happened> (<reason>, <limit>)"`. Example: `blink: eyes_closed 0.12s (too short, min 0.15s)`. Format durations as `.2f` seconds and angles as whole degrees with `°`.
+- When a gesture is detected but doesn't fire, the user should be told why. Pass the optional `log` callback into the trigger and call it with a message shaped like `"{name}: <what happened> (<reason>, <limit>)"`. Example: `blink: eyes_closed to eyes_open in 0.12s (too short, min 0.15s)`. Format durations as `.2f` seconds and angles as whole degrees with `°`.
 - Use `print` through the `log` callback. Don't add the `logging` module.
 
 ### Adding a built-in gesture (checklist)
 
-A gesture made of existing poses needs no new trigger code. Do all of these in the same change:
+A gesture made of existing states needs no new trigger code. Do all of these in the same change:
 
 1. An entry in `_default_gestures()` in `config.py`. There is no fixed rule yet for whether a new gesture starts on or off, so ask the user before choosing `enabled`.
 2. A matching `[gestures.NAME]` section in `config.example.toml`. The values there must equal the code defaults; `test_example_config_matches_defaults` checks this.
 3. Tests in `tests/test_triggers.py` that drive the gesture with synthetic `Observation` streams at 30 FPS (see the `drive` helper). Cover at least: it fires, it doesn't fire (each rejection reason), cooldown, and face loss.
 4. The README, if users can see the change (a new gesture, flag or default).
 
-Adding a new pose: add it to `POSES` in `config.py` and teach `PoseTracker` in `triggers.py` when it is entered and left. Include its signal in `GestureTrigger.needs`, so that a gesture is skipped at startup with a notice when the source doesn't provide the signal.
+Adding a new state: add it to `STATES` in `config.py` and teach `StateTracker` in `triggers.py` when it is reached. Include its signal in `GestureTrigger.needs`, so that a gesture is skipped at startup with a notice when the source doesn't provide the signal.
 
 Adding a new output name: add it to `OUTPUT_NAMES` and implement it in **both** `Win32Output` (scan code, plus `KEYEVENTF_EXTENDEDKEY` for extended keys) and `PynputOutput`.
 

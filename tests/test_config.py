@@ -10,7 +10,7 @@ def config_from(*argv):
 
 def test_defaults():
     config = config_from()
-    assert config.gestures["blink"].hold_min_s == Config().gestures["blink"].hold_min_s
+    assert config.gestures["blink"].gap_min_s == Config().gestures["blink"].gap_min_s
     assert {name: g.output for name, g in config.gestures.items()} == {
         "blink": "enter",
         "head_shake": "app:toggle_pause",
@@ -25,7 +25,7 @@ def test_shortcut_flags():
         "--min-duration", "0.6", "--blink-key", "space",
         "--dry-run", "--no-sound", "--no-head-shake", "--camera", "1",
     )
-    assert config.gestures["blink"].hold_min_s == 0.6
+    assert config.gestures["blink"].gap_min_s == 0.6
     assert config.gestures["blink"].output == "space"
     assert config.output.dry_run
     assert not config.feedback.sound
@@ -57,12 +57,12 @@ def test_set_adds_a_new_gesture_with_defaults():
 
 def test_set_wins_over_shortcut_and_file(tmp_path):
     path = tmp_path / "c.toml"
-    path.write_text("version = 1\n[gestures.blink]\nhold_min_s = 0.5\nhold_max_s = 3.0\n")
-    config = config_from("-c", str(path), "--min-duration", "0.6", "--set", "gestures.blink.hold_min_s=0.7")
-    assert config.gestures["blink"].hold_min_s == 0.7
-    assert config.gestures["blink"].hold_max_s == 3.0
+    path.write_text("version = 1\n[gestures.blink]\ngap_min_s = 0.5\ngap_max_s = 3.0\n")
+    config = config_from("-c", str(path), "--min-duration", "0.6", "--set", "gestures.blink.gap_min_s=0.7")
+    assert config.gestures["blink"].gap_min_s == 0.7
+    assert config.gestures["blink"].gap_max_s == 3.0
     # Fields the file doesn't set keep the built-in gesture's values.
-    assert config.gestures["blink"].steps == ["eyes_closed"]
+    assert config.gestures["blink"].steps == ["eyes_closed", "eyes_open"]
 
 
 def test_file_without_version_is_rejected(tmp_path):

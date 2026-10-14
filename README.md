@@ -40,7 +40,7 @@ vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
 
 - Keep your eyes open normally for ~2 s at start so it can learn your "eyes open" level. It keeps adapting as your posture changes.
 - Blink (both eyes, at least 0.15 s): you'll hear a beep and `Enter` is sent when you reopen your eyes. Closing them for more than 2 s cancels.
-- **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side and back, within 1.3 s. A different sound plays for pause and resume. Turning to look at something and back does not count. Use `--set gestures.head_shake.past_deg=20` to adjust, or `--no-head-shake` to turn it off. A shake often comes with a blink, so shaking your head can also advance one line.
+- **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. Use `--set gestures.head_shake.past_deg=20` to adjust, or `--no-head-shake` to turn it off. A shake often comes with a blink, so shaking your head can also advance one line.
 - Nodding up or down (sends the `up` or `down` arrow key) is off by default. Turn it on with `--set gestures.nod_down.enabled=true`.
 - In the preview window, `p` also pauses and resumes, and `q`/`Esc` closes it. `Ctrl+C` stops `vn-eye` from the terminal.
 - Every gesture that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. Set `log_rejected = false` under `[feedback]` in your config file to turn this off.
@@ -50,18 +50,26 @@ vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
 
 ## Gestures
 
-Each gesture in your config file is a list of poses to hold in order. A pose is a position you hold for a while: `eyes_closed`, `head_down`, `head_up`, `head_left` or `head_right`. A step counts once you enter the pose and leave it again. For example, the built-in head shake is:
+Each gesture in your config file is a list of states to reach in order: `eyes_closed`, `eyes_open`, `head_down`, `head_up`, `head_left`, `head_right` or `head_center`. A step counts the moment you reach that state. For example, the built-in blink and head shake are:
 
 ```toml
+[gestures.blink]
+steps = ["eyes_closed", "eyes_open"]
+gap_min_s = 0.15      # time between two steps in a row: here, how long
+gap_max_s = 2.0       # your eyes stay closed
+output = "enter"
+
 [gestures.head_shake]
 steps = ["head_left", "head_right"]
 any_order = true      # right, then left also counts
-past_deg = 15.0       # a head pose starts past 15°...
-release_deg = 10.0    # ...and ends once you're back within 10°
-within_s = 1.3        # from starting the first step to ending the last
+past_deg = 15.0       # the head counts as turned past 15°...
+release_deg = 10.0    # ...and as back at center within 10°
+within_s = 1.0        # time from the first step to the last
 cooldown_s = 1.5
 output = "app:toggle_pause"
 ```
+
+Steps that a gesture doesn't list are skipped. In the head shake, your head passes `head_center` between the two sides, which is fine. `head_center` only counts on the axis the gesture turns or tilts on, so in a nod (`["head_down", "head_center"]`), turning your head back from the side doesn't count as the return.
 
 You can add your own gesture under a new name. A step can also be another gesture's name. This gesture sends `space` when you blink and then nod down within 1.5 s:
 
@@ -94,11 +102,11 @@ src/vn_eye/
     camera.py     webcam capture that reconnects
   eyes.py         Signals -> Observation (open/closed vs. your open-eye level)
   head.py         Signals -> head yaw/pitch relative to your usual pose
-  triggers.py     Observation -> poses -> gestures -> TriggerEvent
+  triggers.py     Observation -> states reached -> gestures -> TriggerEvent
   outputs.py      TriggerEvent -> key/mouse input
   app.py          main loop and CLI
 ```
 
-To add a gesture made of existing poses, add a `[gestures.NAME]` section to your config. To add a new pose, add it to `POSES` in `config.py` and to `PoseTracker` in `triggers.py`. To add another input device, implement the `Source` protocol in `vn_eye/sources/` (see [docs/design/sources.md](docs/design/sources.md)). For how the `[eyes]` and `[head]` settings work, see [docs/design/detection.md](docs/design/detection.md).
+To add a gesture made of existing states, add a `[gestures.NAME]` section to your config. To add a new state, add it to `STATES` in `config.py` and to `StateTracker` in `triggers.py`. To add another input device, implement the `Source` protocol in `vn_eye/sources/` (see [docs/design/sources.md](docs/design/sources.md)). For how the `[eyes]` and `[head]` settings work, see [docs/design/detection.md](docs/design/detection.md).
 
 Run the tests with `pytest`.
