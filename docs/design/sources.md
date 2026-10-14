@@ -37,7 +37,7 @@ owns its input      →     Signals  →  EyeStateTracker     →     Observatio
 
 - A **source** owns its input device and its model, and reports raw measurements as `Signals`. Camera frames never leave the source.
 - The **core** turns raw measurements into per-user, relative values: the rolling "eyes open" baseline (`EyeStateTracker`) and the rolling median head pose (`HeadTracker`). Every source gets this adaptation for free, so sources don't reimplement it.
-- **Triggers** and **outputs** don't change. Triggers still receive `Observation`, emit fixed event names, and `output.actions` still maps events to outputs.
+- **Triggers** and **outputs** don't change. Triggers still receive `Observation`, emit events named after their gesture, and each gesture's `output` still chooses what is sent.
 
 ## Source contract
 
@@ -91,13 +91,12 @@ class Source(Protocol):
 
 ## Capabilities
 
-Each trigger declares the signals it needs:
+Each gesture needs the signals of the poses in its steps, plus whatever the gestures it uses as steps need:
 
-| Trigger | Needs | Uses if present |
-|---|---|---|
-| `blink` | `eye_openness` | `head_pose` (ignores blinks while the head is turned) |
-| `head_shake` | `head_pose` | |
-| `nod` | `head_pose` | |
+| Pose | Needs |
+|---|---|
+| `eyes_closed` | `eye_openness` |
+| `head_down`, `head_up`, `head_left`, `head_right` | `head_pose` |
 
 At startup, the core compares each enabled trigger's needs with the source's `provides` and skips a trigger whose needs are missing, with a notice such as `head_shake: disabled (source tobii has no head_pose)`. `OpenCVSource` provides both signals, so the check never fails in step 1. It is part of step 1 anyway, so that a future source without head pose, such as an eye tracker, works without changes to the core.
 

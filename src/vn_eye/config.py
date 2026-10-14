@@ -37,53 +37,62 @@ class HeadConfig:
 
 
 @dataclass(frozen=True)
-class BlinkConfig:
+class GestureConfig:
     enabled: bool = True
-    # Shortest closure that triggers. 0.15 s lets most natural blinks advance
-    # the text; raise it (e.g. 0.35-0.45) to require a deliberate closure.
-    min_duration_s: float = 0.15
-    # Fires when the eyes reopen. Closures longer than this are ignored
-    # (resting your eyes, looking away), so holding them shut cancels.
-    max_duration_s: float = 2.0
-    # Ignore closures while the head is turned further than this (you are
-    # looking away, or shaking your head, which often comes with a blink).
-    max_head_yaw_deg: float = 12.0
-    # Blinks within this long after the last one that fired are ignored.
+    # Poses to perform in order. A step counts once you enter the pose and
+    # leave it again. A step can also name another gesture, which counts
+    # when that gesture fires. Poses: see POSES.
+    steps: list[str] = field(default_factory=list)
+    # Also accept the steps in any order (a shake can start on either side).
+    any_order: bool = False
+    # A head pose starts past past_deg and ends once the head is back within
+    # release_deg (the gap stops jitter at the edge from ending it early).
+    # Eye poses use [eyes] close_ratio/open_ratio instead.
+    past_deg: float = 15.0
+    release_deg: float = 10.0
+    # How long you must hold each step's pose. 0 means no limit.
+    hold_min_s: float = 0.0
+    hold_max_s: float = 0.0
+    # All steps must finish within this long of the first one starting. 0 means no limit.
+    within_s: float = 0.0
+    # The gesture is ignored this long after it last fired.
     cooldown_s: float = 1.0
+    # Keystroke outputs: enter, space, left_click, wheel_down, up, down.
+    # App-level outputs: app:toggle_pause. Empty: send nothing (for a gesture
+    # that is only a step of another gesture).
+    output: str = ""
 
 
-@dataclass(frozen=True)
-class HeadShakeConfig:
-    enabled: bool = True
-    # Turn past amplitude_deg to one side, then past it to the other side,
-    # within max_duration_s.
-    amplitude_deg: float = 15.0
-    max_duration_s: float = 1.0
-    cooldown_s: float = 1.5
+POSES = ("eyes_closed", "head_down", "head_up", "head_left", "head_right")
 
 
-@dataclass(frozen=True)
-class NodConfig:
-    enabled: bool = False
-    # Tilt past amplitude_deg and return to neutral within max_duration_s.
-    amplitude_deg: float = 12.0
-    max_duration_s: float = 0.8
-    cooldown_s: float = 1.0
+def _default_gestures() -> dict[str, GestureConfig]:
+    return {
+        # 0.15 s lets most natural blinks advance the text; raise hold_min_s
+        # (e.g. 0.35-0.45) to require a deliberate closure. Holding the eyes
+        # shut past hold_max_s (resting them, looking away) cancels.
+        "blink": GestureConfig(
+            steps=["eyes_closed"], hold_min_s=0.15, hold_max_s=2.0, cooldown_s=1.0,
+            output="enter",
+        ),
+        "head_shake": GestureConfig(
+            steps=["head_left", "head_right"], any_order=True,
+            past_deg=15.0, release_deg=10.0, within_s=1.3, cooldown_s=1.5,
+            output="app:toggle_pause",
+        ),
+        "nod_up": GestureConfig(
+            enabled=False, steps=["head_up"], past_deg=12.0, release_deg=8.0,
+            hold_max_s=0.8, cooldown_s=1.0, output="up",
+        ),
+        "nod_down": GestureConfig(
+            enabled=False, steps=["head_down"], past_deg=12.0, release_deg=8.0,
+            hold_max_s=0.8, cooldown_s=1.0, output="down",
+        ),
+    }
 
 
 @dataclass(frozen=True)
 class OutputConfig:
-    # Maps trigger event names to outputs.
-    # Keystroke outputs: enter, space, left_click, wheel_down, up, down.
-    # App-level outputs: app:toggle_pause.
-    actions: dict[str, str] = field(
-        default_factory=lambda: {
-            "blink": "enter",
-            "head_shake": "app:toggle_pause",
-            "nod_up": "up",
-            "nod_down": "down",
-        }
-    )
     dry_run: bool = False
 
 
@@ -94,14 +103,20 @@ class FeedbackConfig:
     log_rejected: bool = True
 
 
+CONFIG_VERSION = 1
+
+
 @dataclass(frozen=True)
 class Config:
+    # Files without this version use an older layout and are rejected.
+    version: int = CONFIG_VERSION
     camera: CameraConfig = field(default_factory=CameraConfig)
     eyes: EyeConfig = field(default_factory=EyeConfig)
     head: HeadConfig = field(default_factory=HeadConfig)
-    blink: BlinkConfig = field(default_factory=BlinkConfig)
-    head_shake: HeadShakeConfig = field(default_factory=HeadShakeConfig)
-    nod: NodConfig = field(default_factory=NodConfig)
+    # Built-in gestures can be changed or disabled; new names add gestures.
+    gestures: dict[str, GestureConfig] = field(
+        default_factory=_default_gestures, metadata={"item": GestureConfig}
+    )
     output: OutputConfig = field(default_factory=OutputConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
 
@@ -113,12 +128,19 @@ def _merge(obj: Any, data: dict[str, Any], path: str) -> Any:
         if key not in known:
             raise ValueError(f"Unknown config key: {path}{key}")
         current = getattr(obj, key)
-        if is_dataclass(current):
+        if is_dataclass(current) or isinstance(current, dict):
             if not isinstance(value, dict):
                 raise ValueError(f"Config section {path}{key} must be a table")
+        if is_dataclass(current):
             changes[key] = _merge(current, value, f"{path}{key}.")
         elif isinstance(current, dict):
-            changes[key] = {**current, **value}
+            item = known[key].metadata["item"]
+            merged = dict(current)
+            for name, table in value.items():
+                if not isinstance(table, dict):
+                    raise ValueError(f"Config section {path}{key}.{name} must be a table")
+                merged[name] = _merge(current.get(name, item()), table, f"{path}{key}.{name}.")
+            changes[key] = merged
         else:
             if isinstance(current, float) and isinstance(value, int):
                 value = float(value)
@@ -136,7 +158,15 @@ def load_config(path: Path | None) -> Config:
     if path is None:
         return config
     with path.open("rb") as f:
-        return _merge(config, tomllib.load(f), "")
+        data = tomllib.load(f)
+    version = data.get("version")
+    if version != CONFIG_VERSION:
+        found = "no version key" if version is None else f"version = {version!r}"
+        raise ValueError(
+            f"{path} has {found}, so it uses a layout this vn-eye can't read. "
+            f"Start again from config.example.toml (version = {CONFIG_VERSION})."
+        )
+    return _merge(config, data, "")
 
 
 def apply_overrides(config: Config, overrides: dict[str, Any]) -> Config:

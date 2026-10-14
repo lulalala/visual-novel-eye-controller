@@ -1,5 +1,6 @@
 # Copy to config.toml and pass with `vn-eye --config config.toml`.
-# Every key is optional; the values below are the defaults.
+# Every key except version is optional; the values below are the defaults.
+version = 1
 
 [camera]
 index = 0
@@ -18,44 +19,67 @@ open_ratio = 0.75
 # Both eyes must close, so a wink doesn't count
 require_both_eyes = true
 
-[blink]
-enabled = true
-# 0.15 lets natural blinks advance; 0.35-0.45 requires a deliberate closure
-min_duration_s = 0.15
-# Fires when you reopen your eyes; hold them shut past this to cancel
-max_duration_s = 2.0
-# Ignore blinks while the head is turned further than this
-max_head_yaw_deg = 12.0
-# Blinks within this long after the last one that fired are ignored
-cooldown_s = 1.0
-
 [head]
 # vn-eye learns your usual head position over this many seconds
 baseline_window_s = 10.0
 
-[head_shake]
-# Turn past amplitude_deg one way, then the other, within max_duration_s
-enabled = true
-amplitude_deg = 15.0
-max_duration_s = 1.0
-cooldown_s = 1.5
+# Each gesture is a list of poses to hold in order:
+#   eyes_closed, head_down, head_up, head_left, head_right
+# A step can also be another gesture's name. Fields a gesture doesn't set
+# use these defaults: any_order = false, past_deg = 15.0, release_deg = 10.0,
+# hold_min_s = 0.0, hold_max_s = 0.0, within_s = 0.0 (0 = no limit),
+# cooldown_s = 1.0, output = "" (send nothing).
+# Outputs: enter, space, left_click, wheel_down, up, down, app:toggle_pause
 
-[nod]
-# Tilt past amplitude_deg and return within max_duration_s (like a real nod)
-enabled = false
-amplitude_deg = 12.0
-max_duration_s = 0.8
+[gestures.blink]
+enabled = true
+steps = ["eyes_closed"]
+# 0.15 lets natural blinks advance; 0.35-0.45 requires a deliberate closure
+hold_min_s = 0.15
+# Fires when you reopen your eyes; hold them shut past this to cancel
+hold_max_s = 2.0
 cooldown_s = 1.0
+output = "enter"
+
+[gestures.head_shake]
+# Turn past past_deg one way, then the other, back within release_deg, within within_s
+enabled = true
+steps = ["head_left", "head_right"]
+any_order = true
+past_deg = 15.0
+release_deg = 10.0
+within_s = 1.3
+cooldown_s = 1.5
+output = "app:toggle_pause"
+
+[gestures.nod_up]
+# Tilt past past_deg and back within release_deg, within hold_max_s
+enabled = false
+steps = ["head_up"]
+past_deg = 12.0
+release_deg = 8.0
+hold_max_s = 0.8
+cooldown_s = 1.0
+output = "up"
+
+[gestures.nod_down]
+enabled = false
+steps = ["head_down"]
+past_deg = 12.0
+release_deg = 8.0
+hold_max_s = 0.8
+cooldown_s = 1.0
+output = "down"
+
+# Add your own gesture under a new name. This one needs nod_down enabled;
+# set nod_down's output = "" if it should only count as part of this one.
+# [gestures.blink_then_nod]
+# steps = ["blink", "nod_down"]
+# within_s = 1.5
+# output = "space"
 
 [output]
 dry_run = false
-
-[output.actions]
-# Choices: enter, space, left_click, wheel_down, up, down, app:toggle_pause
-blink = "enter"
-head_shake = "app:toggle_pause"
-nod_up = "up"
-nod_down = "down"
 
 [feedback]
 sound = true

@@ -27,11 +27,11 @@ _FLASH_S = 0.3
 # set with --set SECTION.KEY=VALUE.
 _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
     ("--camera", "camera.index", {"type": int, "metavar": "N", "help": "camera index"}),
-    ("--min-duration", "blink.min_duration_s", {"type": float, "metavar": "S",
+    ("--min-duration", "gestures.blink.hold_min_s", {"type": float, "metavar": "S",
      "help": "shortest closure that triggers, in seconds"}),
-    ("--blink-key", "output.actions.blink", {"choices": OUTPUT_NAMES,
+    ("--blink-key", "gestures.blink.output", {"choices": OUTPUT_NAMES,
      "help": "what key or mouse input to send for a blink"}),
-    ("--no-head-shake", "head_shake.enabled", {"action": "store_const", "const": False,
+    ("--no-head-shake", "gestures.head_shake.enabled", {"action": "store_const", "const": False,
      "help": "disable the head-shake pause/resume gesture"}),
     ("--dry-run", "output.dry_run", {"action": "store_const", "const": True,
      "help": "print actions instead of sending input"}),
@@ -64,18 +64,21 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 _APP_OUTPUTS = frozenset({"app:toggle_pause"})
 
 
-def _validate_actions(config: Config) -> None:
-    for event, output in config.output.actions.items():
+def _validate_outputs(config: Config) -> None:
+    for name, gesture in config.gestures.items():
+        output = gesture.output
+        if output == "":
+            continue
         if output.startswith("app:"):
             if output not in _APP_OUTPUTS:
                 raise ValueError(
-                    f"output.actions.{event}: unknown app output {output!r}; "
+                    f"gestures.{name}.output: unknown app output {output!r}; "
                     f"choose from {', '.join(sorted(_APP_OUTPUTS))}"
                 )
         elif output not in OUTPUT_NAMES:
             raise ValueError(
-                f"output.actions.{event}: unknown output {output!r}; "
-                f"choose from {', '.join(OUTPUT_NAMES)}"
+                f"gestures.{name}.output: unknown output {output!r}; "
+                f"choose from {', '.join(OUTPUT_NAMES)}, or \"\" for none"
             )
 
 
@@ -87,9 +90,10 @@ def build_config(args: argparse.Namespace) -> Config:
             config = apply_overrides(config, nested(path, value))
     for item in args.set:
         config = apply_overrides(config, parse_override(item))
-    _validate_actions(config)
-    # Fail on bad eye thresholds before the camera opens.
+    _validate_outputs(config)
+    # Fail on bad thresholds and gesture steps before the camera opens.
     EyeStateTracker(config.eyes)
+    create_triggers(config)
     return config
 
 
@@ -110,8 +114,8 @@ def run(config: Config, args: argparse.Namespace) -> int:
 
     # App-level outputs (app:*) are handled in the event loop; only keystroke
     # and mouse outputs go to ActionDispatcher.
-    key_actions = {k: v for k, v in config.output.actions.items()
-                   if not v.startswith("app:")}
+    outputs = {name: g.output for name, g in config.gestures.items()}
+    key_actions = {k: v for k, v in outputs.items() if v and not v.startswith("app:")}
     dispatcher = ActionDispatcher(
         create_output(config.output.dry_run),
         key_actions,
@@ -147,8 +151,12 @@ def run(config: Config, args: argparse.Namespace) -> int:
                 event = trigger.update(obs)
                 if event is None:
                     continue
-                mapped = config.output.actions.get(event.action)
-                if mapped is not None and mapped.startswith("app:"):
+                mapped = outputs.get(event.action)
+                if not mapped:
+                    # Only a step of other gestures.
+                    print(f"{event.trigger}: {event.detail}", flush=True)
+                    continue
+                if mapped.startswith("app:"):
                     print(f"{event.trigger}: {event.detail}", flush=True)
                     if mapped == "app:toggle_pause":
                         pause.toggle()
