@@ -6,28 +6,24 @@ import argparse
 import csv
 import sys
 import time
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from vn_eye import preview
 from vn_eye.config import Config, apply_overrides, load_config, nested, parse_override
+from vn_eye.engine import Engine
 from vn_eye.eyes import EyeStateTracker
-from vn_eye.feedback import play_sound
-from vn_eye.head import HeadTracker
-from vn_eye.outputs import OUTPUT_NAMES, ActionDispatcher, create_output
-from vn_eye.pause import PauseSwitch
-from vn_eye.sources.opencv import OpenCVSource
-from vn_eye.triggers import TriggerEvent, create_triggers, supported_triggers
+from vn_eye.outputs import OUTPUT_NAMES
+from vn_eye.triggers import create_triggers
 
-_FLASH_S = 0.3
+FLASH_S = 0.3
 
 
 # Shortcut flags: (flag, config path, argparse options). Anything else can be
 # set with --set SECTION.KEY=VALUE.
 _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
     ("--camera", "camera.index", {"type": int, "metavar": "N", "help": "camera index"}),
-    ("--min-duration", "gestures.blink.gap_min_s", {"type": float, "metavar": "S",
+    ("--min-duration", "gestures.blink.steps.1.after_min_s", {"type": float, "metavar": "S",
      "help": "shortest closure that triggers, in seconds"}),
     ("--blink-key", "gestures.blink.output", {"choices": OUTPUT_NAMES,
      "help": "what key or mouse input to send for a blink"}),
@@ -61,25 +57,32 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-_APP_OUTPUTS = frozenset({"app:toggle_pause"})
+APP_OUTPUTS = frozenset({"app:toggle_pause"})
 
 
-def _validate_outputs(config: Config) -> None:
+def validate_outputs(config: Config) -> None:
     for name, gesture in config.gestures.items():
         output = gesture.output
         if output == "":
             continue
         if output.startswith("app:"):
-            if output not in _APP_OUTPUTS:
+            if output not in APP_OUTPUTS:
                 raise ValueError(
                     f"gestures.{name}.output: unknown app output {output!r}; "
-                    f"choose from {', '.join(sorted(_APP_OUTPUTS))}"
+                    f"choose from {', '.join(sorted(APP_OUTPUTS))}"
                 )
         elif output not in OUTPUT_NAMES:
             raise ValueError(
                 f"gestures.{name}.output: unknown output {output!r}; "
                 f"choose from {', '.join(OUTPUT_NAMES)}, or \"\" for none"
             )
+
+
+def check_config(config: Config) -> None:
+    """Raises ValueError for settings that would fail later, before the camera opens."""
+    validate_outputs(config)
+    EyeStateTracker(config.eyes)
+    create_triggers(config)
 
 
 def build_config(args: argparse.Namespace) -> Config:
@@ -90,42 +93,16 @@ def build_config(args: argparse.Namespace) -> Config:
             config = apply_overrides(config, nested(path, value))
     for item in args.set:
         config = apply_overrides(config, parse_override(item))
-    _validate_outputs(config)
-    # Fail on bad thresholds and gesture steps before the camera opens.
-    EyeStateTracker(config.eyes)
-    create_triggers(config)
+    check_config(config)
     return config
 
 
+def _log(message: str) -> None:
+    print(message, flush=True)
+
+
 def run(config: Config, args: argparse.Namespace) -> int:
-    source = OpenCVSource(config.camera, print)
-    tracker = EyeStateTracker(config.eyes)
-    head = HeadTracker(config.head)
-    log_rejected = print if config.feedback.log_rejected else None
-    triggers = supported_triggers(create_triggers(config, log_rejected), source, print)
-    last_fire_at = -1e9
-
-    def on_fire(event: TriggerEvent, output_name: str) -> None:
-        nonlocal last_fire_at
-        last_fire_at = time.monotonic()
-        print(f"{event.trigger}: {event.detail} -> {output_name}", flush=True)
-        if config.feedback.sound:
-            play_sound("trigger")
-
-    # App-level outputs (app:*) are handled in the event loop; only keystroke
-    # and mouse outputs go to ActionDispatcher.
-    outputs = {name: g.output for name, g in config.gestures.items()}
-    key_actions = {k: v for k, v in outputs.items() if v and not v.startswith("app:")}
-    dispatcher = ActionDispatcher(
-        create_output(config.output.dry_run),
-        key_actions,
-        on_fire,
-    )
-    def on_pause_change(paused: bool) -> None:
-        if config.feedback.sound:
-            play_sound("pause" if paused else "resume")
-
-    pause = PauseSwitch(on_pause_change)
+    engine = Engine(config, _log)
 
     log_file = args.log.open("w", newline="") if args.log else None
     log = csv.writer(log_file) if log_file else None
@@ -134,38 +111,11 @@ def run(config: Config, args: argparse.Namespace) -> int:
 
     print("Running. Keep your eyes open normally for a couple of seconds to calibrate.", flush=True)
     start = time.monotonic()
-    fps = 0.0
-    prev = start
     try:
         while True:
-            signals = source.read()
-            now = signals.timestamp
-            fps = 0.9 * fps + 0.1 * (1.0 / max(now - prev, 1e-6))
-            prev = now
-
-            head_yaw, head_pitch = head.update(signals)
-            obs = replace(tracker.update(signals), head_yaw=head_yaw, head_pitch=head_pitch)
-
-            fired = False
-            for trigger in triggers:
-                event = trigger.update(obs)
-                if event is None:
-                    continue
-                mapped = outputs.get(event.action)
-                if not mapped:
-                    # Only a step of other gestures.
-                    print(f"{event.trigger}: {event.detail}", flush=True)
-                    continue
-                if mapped.startswith("app:"):
-                    print(f"{event.trigger}: {event.detail}", flush=True)
-                    if mapped == "app:toggle_pause":
-                        pause.toggle()
-                    continue
-                if pause.paused:
-                    if log_rejected:
-                        log_rejected(f"{event.trigger}: {event.detail} -> ignored (paused)")
-                    continue
-                fired = dispatcher.dispatch(event) or fired
+            frame = engine.step()
+            obs = frame.obs
+            now = obs.timestamp
 
             if log:
                 log.writerow([
@@ -174,26 +124,25 @@ def run(config: Config, args: argparse.Namespace) -> int:
                       (obs.left, obs.right, obs.combined, obs.baseline)),
                     int(obs.ready), int(obs.closed),
                     f"{obs.head_yaw:.1f}" if obs.head_yaw is not None else "",
-                    f"{obs.head_pitch:.1f}" if obs.head_pitch is not None else "", int(fired),
+                    f"{obs.head_pitch:.1f}" if obs.head_pitch is not None else "", int(frame.fired),
                 ])
 
             if args.preview:
                 key = preview.show(
-                    source.debug_view(), obs, config.eyes,
-                    [f"{t.name}: {t.status()}" for t in triggers],
-                    pause.paused, fps, now - last_fire_at < _FLASH_S,
+                    engine.source.debug_view(), obs, config.eyes, engine.statuses(),
+                    engine.paused, engine.fps, now - engine.last_fire_at < FLASH_S,
                 )
                 if key in (ord("q"), 27):
                     break
                 if key == ord("p"):
-                    pause.toggle()
+                    engine.toggle_pause()
 
             if args.duration is not None and now - start >= args.duration:
                 break
     except KeyboardInterrupt:
         pass
     finally:
-        source.close()
+        engine.close()
         if args.preview:
             preview.close()
         if log_file:

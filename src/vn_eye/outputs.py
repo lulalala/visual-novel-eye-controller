@@ -24,8 +24,11 @@ class Output(Protocol):
 
 
 class DryRunOutput:
+    def __init__(self, log: Callable[[str], None] = print) -> None:
+        self._log = log
+
     def send(self, name: str) -> None:
-        print(f"[dry-run] would send {name}", flush=True)
+        self._log(f"[dry-run] would send {name}")
 
 
 class Win32Output:
@@ -159,9 +162,9 @@ def macos_accessibility_trusted() -> bool:
     return bool(lib.AXIsProcessTrusted())
 
 
-def create_output(dry_run: bool) -> Output:
+def create_output(dry_run: bool, log: Callable[[str], None] = print) -> Output:
     if dry_run:
-        return DryRunOutput()
+        return DryRunOutput(log)
     if sys.platform == "win32":
         return Win32Output()
     if sys.platform == "darwin" and not macos_accessibility_trusted():

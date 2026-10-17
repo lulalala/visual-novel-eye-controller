@@ -60,6 +60,21 @@ def show(
     flash: bool,
 ) -> int:
     """Draw and display one frame; returns the pressed key code (or -1)."""
+    cv2.imshow(WINDOW, render(view, obs, eye_cfg, trigger_status, paused, fps, flash))
+    return cv2.waitKey(1) & 0xFF
+
+
+def render(
+    view: np.ndarray | None,
+    obs: Observation,
+    eye_cfg: EyeConfig,
+    trigger_status: list[str],
+    paused: bool,
+    fps: float,
+    flash: bool,
+    hints: bool = True,
+) -> np.ndarray:
+    """The mirrored view with the state overlay, as a BGR image."""
     if view is None:
         img = np.zeros((*_BLANK_SIZE, 3), dtype=np.uint8)
     else:
@@ -80,11 +95,10 @@ def show(
     for line in trigger_status:
         y += 22
         _text(img, line, y)
-    _text(img, "p: pause   q/Esc: quit", img.shape[0] - 40, _GRAY)
+    if hints:
+        _text(img, "p: pause   q/Esc: quit", img.shape[0] - 40, _GRAY)
     _openness_bar(img, obs, eye_cfg)
-
-    cv2.imshow(WINDOW, img)
-    return cv2.waitKey(1) & 0xFF
+    return img
 
 
 def close() -> None:

@@ -12,7 +12,7 @@ The tracker reports `ready` only after the history spans at least `eyes.warmup_s
 
 ## Closed and open thresholds
 
-The eyes count as closed when openness drops below `baseline * close_ratio`, and as open again when it rises above `baseline * open_ratio`. The defaults are `0.55` and `0.75`.
+The eyes count as closed when openness drops below `baseline * close_ratio`, and as open again when it rises above `baseline * open_ratio`. The defaults are `0.55` and `0.75`. This closed state decides which frames the baseline learns from and what the preview shows. Gestures don't use it: their `eyes` steps compare `openness / baseline` with their own `above_ratio`/`below_ratio`.
 
 The two thresholds form a hysteresis band. With a single threshold, noise around it would flip the state on alternate frames. For this reason `close_ratio` must be above 0 and below `open_ratio`; the constructor raises `ValueError` otherwise.
 

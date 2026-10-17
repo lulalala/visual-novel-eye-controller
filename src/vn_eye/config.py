@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 import tomllib
 from dataclasses import dataclass, field, fields, is_dataclass, replace
 from pathlib import Path
@@ -36,23 +38,37 @@ class HeadConfig:
     baseline_window_s: float = 10.0
 
 
+SIGNALS = ("eyes", "pitch", "yaw")
+
+
+@dataclass(frozen=True)
+class StepConfig:
+    # What to watch: eyes (openness, 1.0 = your usual open level), pitch
+    # (degrees, positive = head tilted down) or yaw (degrees, positive = your left).
+    signal: str = ""
+    # Instead of a signal: another gesture's name. The step counts when it fires.
+    gesture: str = ""
+    # The step's box: the step counts the moment the signal enters it. Eyes
+    # use the _ratio bounds, the head the _deg bounds. Leave one out for a box
+    # that is open on that side.
+    above_ratio: float | None = None
+    below_ratio: float | None = None
+    above_deg: float | None = None
+    below_deg: float | None = None
+    # Time allowed since the previous step. 0 means no limit.
+    after_min_s: float = 0.0
+    after_max_s: float = 0.0
+    # Stay inside the box this long before the step counts.
+    hold_s: float = 0.0
+
+
 @dataclass(frozen=True)
 class GestureConfig:
     enabled: bool = True
-    # States to reach in order. A step counts the moment you reach that
-    # state. A step can also name another gesture, which counts when that
-    # gesture fires. States: see STATES.
-    steps: list[str] = field(default_factory=list)
+    # Boxes to reach in order (see StepConfig).
+    steps: list[StepConfig] = field(default_factory=list, metadata={"item": StepConfig})
     # Also accept the steps in any order (a shake can start on either side).
     any_order: bool = False
-    # The head counts as down/up/left/right past past_deg, and as back at
-    # center once it is within release_deg again (the gap between the two
-    # stops jitter at the edge). Eye states use [eyes] close_ratio/open_ratio.
-    past_deg: float = 15.0
-    release_deg: float = 10.0
-    # Time allowed between two steps in a row. 0 means no limit.
-    gap_min_s: float = 0.0
-    gap_max_s: float = 0.0
     # Time allowed from the first step to the last. 0 means no limit.
     within_s: float = 0.0
     # The gesture is ignored this long after it last fired.
@@ -63,33 +79,34 @@ class GestureConfig:
     output: str = ""
 
 
-STATES = (
-    "eyes_closed", "eyes_open",
-    "head_down", "head_up", "head_left", "head_right", "head_center",
-)
-
-
 def _default_gestures() -> dict[str, GestureConfig]:
+    # A head returns "to center" by entering a box around 0. Its edge (8°) is
+    # inside the first step's edge (12°), so jitter at 12° can't complete a nod.
+    center = {"above_deg": -8.0, "below_deg": 8.0, "after_max_s": 0.8}
     return {
-        # 0.15 s lets most natural blinks advance the text; raise gap_min_s
+        # 0.15 s lets most natural blinks advance the text; raise after_min_s
         # (e.g. 0.35-0.45) to require a deliberate closure. Holding the eyes
-        # shut past gap_max_s (resting them, looking away) cancels.
+        # shut past after_max_s (resting them, looking away) cancels.
         "blink": GestureConfig(
-            steps=["eyes_closed", "eyes_open"], gap_min_s=0.15, gap_max_s=2.0,
+            steps=[
+                StepConfig(signal="eyes", below_ratio=0.55),
+                StepConfig(signal="eyes", above_ratio=0.75, after_min_s=0.15, after_max_s=2.0),
+            ],
             cooldown_s=1.0, output="enter",
         ),
         "head_shake": GestureConfig(
-            steps=["head_left", "head_right"], any_order=True,
-            past_deg=15.0, release_deg=10.0, within_s=1.0, cooldown_s=1.5,
-            output="app:toggle_pause",
+            steps=[StepConfig(signal="yaw", above_deg=15.0), StepConfig(signal="yaw", below_deg=-15.0)],
+            any_order=True, within_s=1.0, cooldown_s=1.5, output="app:toggle_pause",
         ),
         "nod_up": GestureConfig(
-            enabled=False, steps=["head_up", "head_center"], past_deg=12.0, release_deg=8.0,
-            gap_max_s=0.8, cooldown_s=1.0, output="up",
+            enabled=False,
+            steps=[StepConfig(signal="pitch", below_deg=-12.0), StepConfig(signal="pitch", **center)],
+            cooldown_s=1.0, output="up",
         ),
         "nod_down": GestureConfig(
-            enabled=False, steps=["head_down", "head_center"], past_deg=12.0, release_deg=8.0,
-            gap_max_s=0.8, cooldown_s=1.0, output="down",
+            enabled=False,
+            steps=[StepConfig(signal="pitch", above_deg=12.0), StepConfig(signal="pitch", **center)],
+            cooldown_s=1.0, output="down",
         ),
     }
 
@@ -144,16 +161,93 @@ def _merge(obj: Any, data: dict[str, Any], path: str) -> Any:
                     raise ValueError(f"Config section {path}{key}.{name} must be a table")
                 merged[name] = _merge(current.get(name, item()), table, f"{path}{key}.{name}.")
             changes[key] = merged
+        elif isinstance(current, list) and "item" in known[key].metadata:
+            changes[key] = _merge_list(current, value, known[key].metadata["item"], f"{path}{key}")
         else:
-            if isinstance(current, float) and isinstance(value, int):
+            # Fields that default to None are optional numbers.
+            expected = float if current is None else type(current)
+            if expected is float and isinstance(value, int) and not isinstance(value, bool):
                 value = float(value)
-            if type(value) is not type(current):
+            if type(value) is not expected:
                 raise ValueError(
-                    f"Config key {path}{key} should be {type(current).__name__}, "
+                    f"Config key {path}{key} should be {expected.__name__}, "
                     f"got {type(value).__name__}"
                 )
             changes[key] = value
     return replace(obj, **changes)
+
+
+def _merge_list(current: list[Any], value: Any, item: Any, path: str) -> list[Any]:
+    """A list of tables replaces the list. A table keyed by index changes items
+    in place, which is what ``--set gestures.blink.steps.1.after_min_s=0.4`` gives."""
+    if isinstance(value, list):
+        merged = []
+        for i, entry in enumerate(value):
+            if not isinstance(entry, dict):
+                raise ValueError(f"Config key {path}[{i}] must be a table")
+            merged.append(_merge(item(), entry, f"{path}[{i}]."))
+        return merged
+    if isinstance(value, dict):
+        merged = list(current)
+        for index, entry in value.items():
+            if not index.isdigit() or int(index) >= len(merged):
+                raise ValueError(
+                    f"Config key {path}.{index}: use an index from 0 to {len(merged) - 1}"
+                )
+            if not isinstance(entry, dict):
+                raise ValueError(f"Config key {path}[{index}] must be a table")
+            merged[int(index)] = _merge(merged[int(index)], entry, f"{path}[{index}].")
+        return merged
+    raise ValueError(f"Config key {path} must be a list of tables")
+
+
+def _toml_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    if isinstance(value, str):
+        # JSON string escapes are valid TOML basic-string escapes.
+        return json.dumps(value)
+    if isinstance(value, list):
+        rows = []
+        for item in value:
+            base = type(item)()
+            parts = [f"{f.name} = {_toml_value(getattr(item, f.name))}" for f in fields(item)
+                     if getattr(item, f.name) != getattr(base, f.name)]
+            rows.append(f"  {{ {', '.join(parts)} }},")
+        return "[\n" + "\n".join(rows) + "\n]"
+    raise TypeError(f"Can't write {value!r} as TOML")
+
+
+def _toml_key(key: str) -> str:
+    return key if re.fullmatch(r"[A-Za-z0-9_-]+", key) else json.dumps(key)
+
+
+def dump_config(config: Config) -> str:
+    """TOML with the values that differ from the defaults; load_config reads it back."""
+    default = Config()
+    lines = [f"version = {CONFIG_VERSION}"]
+    for f in fields(Config):
+        value, base = getattr(config, f.name), getattr(default, f.name)
+        if f.name == "version" or value == base:
+            continue
+        if f.name == "gestures":
+            for name, gesture in value.items():
+                builtin = base.get(name)
+                if gesture == builtin:
+                    continue
+                ref = builtin or GestureConfig()
+                lines += ["", f"[gestures.{_toml_key(name)}]"]
+                for gf in fields(GestureConfig):
+                    v = getattr(gesture, gf.name)
+                    if v != getattr(ref, gf.name) or (builtin is None and gf.name == "steps"):
+                        lines.append(f"{gf.name} = {_toml_value(v)}")
+        else:
+            lines += ["", f"[{f.name}]"]
+            lines += [f"{sf.name} = {_toml_value(getattr(value, sf.name))}" for sf in fields(value)
+                      if getattr(value, sf.name) != getattr(base, sf.name)]
+    return "\n".join(lines) + "\n"
 
 
 def load_config(path: Path | None) -> Config:

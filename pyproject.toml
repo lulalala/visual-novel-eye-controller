@@ -21,6 +21,7 @@ dev = ["pytest>=8"]
 
 [project.scripts]
 vn-eye = "vn_eye.app:main"
+vn-eye-gui = "vn_eye.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

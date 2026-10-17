@@ -1,16 +1,17 @@
-"""Gestures. Each gesture matches a sequence of states (or other gestures) in the observations.
+"""Gestures. Each gesture matches a sequence of steps in the observations.
 
-A state is where the eyes or head are: eyes closed, head turned left, head
-back at center. A gesture's steps count the moment you reach each state, so
-a blink is "eyes_closed, then eyes_open".
+A step is a box on a plot of one signal over time: a range of values (eyes
+below 0.55 of their usual openness, head pitch above 12°) and how soon after
+the previous step the signal must enter it. A step can also be another
+gesture firing.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Protocol
 
-from vn_eye.config import STATES, Config, GestureConfig
+from vn_eye.config import SIGNALS, Config, GestureConfig, StepConfig
 from vn_eye.eyes import Observation
 from vn_eye.sources import EYE_OPENNESS, HEAD_POSE, Source
 
@@ -37,86 +38,70 @@ class Trigger(Protocol):
         ...
 
 
-# Head axes: the states on each side. Positive pitch = head tilted down;
-# positive yaw = face turned toward the camera image's right, which is your left.
-_AXES = {
-    "pitch": ("head_down", "head_up"),
-    "yaw": ("head_left", "head_right"),
-}
+def signal_value(signal: str, obs: Observation) -> float | None:
+    """The signal's value this frame, or None if it isn't available."""
+    if not obs.face_present:
+        return None
+    if signal == "eyes":
+        if not obs.ready or obs.combined is None or not obs.baseline:
+            return None
+        return obs.combined / obs.baseline
+    # Positive pitch = head tilted down; positive yaw = face turned toward
+    # the camera image's right, which is your left.
+    return obs.head_pitch if signal == "pitch" else obs.head_yaw
 
 
-class StateTracker:
-    """Reports the states that the eyes, or the head on one axis, arrive at."""
+def _bounds(step: StepConfig) -> tuple[float | None, float | None]:
+    if step.signal == "eyes":
+        return step.above_ratio, step.below_ratio
+    return step.above_deg, step.below_deg
 
-    def __init__(self, signal: str, config: GestureConfig) -> None:
-        self.signal = signal
-        self._config = config
-        self._state: str | None = None
-        self._since = 0.0
-        self._value: float | None = None
+
+class StepWatcher:
+    """Reports the frame the signal enters one step's box, or has stayed in it for hold_s."""
+
+    def __init__(self, step: StepConfig) -> None:
+        self.step = step
+        self._above, self._below = _bounds(step)
+        self._was_inside: bool | None = None
+        self._entered_at: float | None = None
 
     def reset(self) -> None:
-        # The next frame sets the state again without counting as an arrival.
-        self._state = None
+        # The next frame only sets where the signal is; already inside doesn't count.
+        self._was_inside = None
+        self._entered_at = None
 
-    def update(self, obs: Observation) -> tuple[bool, list[str]]:
-        """Returns (signal available, states reached this frame)."""
-        state = self._read(obs)
-        if state is None:
-            self.reset()
-            return False, []
-        previous = self._state
-        if state == previous:
-            return True, []
-        self._state = state
-        self._since = obs.timestamp
-        if previous is None:
-            return True, []
-        if previous not in ("head_center", "eyes_open", "eyes_closed") and state != "head_center":
-            # Swinging straight from one side to the other passes through center.
-            return True, ["head_center", state]
-        return True, [state]
-
-    def _read(self, obs: Observation) -> str | None:
-        if self.signal == "eyes":
-            # Eye states share [eyes] close_ratio/open_ratio, which also decide
-            # which samples the open-eye baseline learns from.
-            if not obs.face_present or not obs.ready:
-                return None
-            return "eyes_closed" if obs.closed else "eyes_open"
-        value = obs.head_pitch if self.signal == "pitch" else obs.head_yaw
-        self._value = value
-        if not obs.face_present or value is None:
-            return None
-        positive, negative = _AXES[self.signal]
-        cfg = self._config
-        # Staying on a side only needs release_deg; reaching one needs past_deg.
-        if value > (cfg.release_deg if self._state == positive else cfg.past_deg):
-            return positive
-        if -value > (cfg.release_deg if self._state == negative else cfg.past_deg):
-            return negative
-        return "head_center"
-
-    def status(self, now: float) -> str:
-        if self.signal == "eyes":
-            if self._state == "eyes_closed":
-                return f"closed {now - self._since:.2f}s"
-            return "open" if self._state else "no eyes"
-        return f"no {self.signal}" if self._value is None else f"{self.signal} {self._value:+.0f}°"
+    def update(self, value: float, t: float) -> bool:
+        inside = (self._above is None or value > self._above) and (
+            self._below is None or value < self._below
+        )
+        was_inside = self._was_inside
+        self._was_inside = inside
+        if not inside:
+            self._entered_at = None
+            return False
+        if was_inside is False:
+            self._entered_at = t
+        if self._entered_at is None or t - self._entered_at < self.step.hold_s - 1e-9:
+            return False
+        self._entered_at = None
+        return True
 
 
 @dataclass(frozen=True)
 class _Partial:
-    """Steps matched so far: what is left, the first step's time, and the last step."""
+    """Steps matched so far: which are left, the first step's time, and the last step."""
 
-    remaining: tuple[str, ...]
+    remaining: tuple[int, ...]
     start: float
-    last_step: str
+    last: int
     last_time: float
+    times: tuple[tuple[int, float], ...]
+    """(step, time) for each step matched so far."""
 
 
 class GestureTrigger:
-    """Fires when its steps happen in order, each within the allowed gap of the one before."""
+    """Fires when its steps' boxes are entered in order, each within its time limits."""
 
     def __init__(
         self,
@@ -130,76 +115,74 @@ class GestureTrigger:
         self.name = name
         self.config = config
         self._log = log or (lambda _msg: None)
-        self._steps = tuple(config.steps)
-        self._trackers = [StateTracker(s, config) for s in _signals(self._steps)]
-        self._gestures = [gestures[s] for s in dict.fromkeys(self._steps) if s not in STATES]
-        needs = {EYE_OPENNESS if t.signal == "eyes" else HEAD_POSE for t in self._trackers}
-        for gesture in self._gestures:
+        self._steps = config.steps
+        self._all = tuple(range(len(config.steps)))
+        self._watchers = {i: StepWatcher(s) for i, s in enumerate(config.steps) if s.signal}
+        self._gestures = {i: gestures[s.gesture] for i, s in enumerate(config.steps) if s.gesture}
+        needs = {EYE_OPENNESS if s.signal == "eyes" else HEAD_POSE for s in config.steps if s.signal}
+        for gesture in self._gestures.values():
             needs |= gesture.needs
         self.needs = frozenset(needs)
         self._partials: list[_Partial] = []
         self._last_fire: float | None = None
-        self._now = 0.0
+        self._values: dict[str, float | None] = {}
+        self.last_attempt: tuple[tuple[int, float], ...] = ()
+        """(step, time) of the steps in the last attempt that fired or was rejected."""
         self.fired = False
         """True on the frame this gesture fires, for gestures that use it as a step."""
 
     def reset(self) -> None:
-        for tracker in self._trackers:
-            tracker.reset()
+        for watcher in self._watchers.values():
+            watcher.reset()
         self._partials = []
 
     def update(self, obs: Observation) -> TriggerEvent | None:
         self.fired = False
-        t = self._now = obs.timestamp
-        arrived: list[str] = []
-        lost = not obs.face_present
-        for tracker in self._trackers:
-            available, states = tracker.update(obs)
-            lost = lost or not available
-            arrived += states
-        cfg = self.config
-        if cfg.within_s:
-            # Much older starts aren't attempts at this gesture, so they expire quietly.
-            self._partials = [p for p in self._partials if t - p.start <= 2 * cfg.within_s]
-        if lost:
-            # Losing the face (or the signal) mid-gesture cancels it.
+        t = obs.timestamp
+        self._values = {s.signal: signal_value(s.signal, obs) for s in self._steps if s.signal}
+        if not obs.face_present or None in self._values.values():
+            # Losing the face (or a signal) mid-gesture cancels it.
             if self._partials:
                 self._log(f"{self.name}: canceled (face lost)")
             self.reset()
             return None
-        arrived += [g.name for g in self._gestures if g.fired]
-        for step in arrived:
-            event = self._step(step, t)
+        arrived = [i for i, w in self._watchers.items() if w.update(self._values[w.step.signal], t)]
+        arrived += [i for i, g in self._gestures.items() if g.fired]
+        for i in sorted(arrived):
+            event = self._arrive(i, t)
             if event is not None:
                 return event
+        self._expire(t)
         return None
 
-    def _step(self, step: str, t: float) -> TriggerEvent | None:
-        cfg = self.config
+    def _next(self, remaining: tuple[int, ...]) -> tuple[int, ...]:
+        return remaining if self.config.any_order else remaining[:1]
+
+    def _arrive(self, i: int, t: float) -> TriggerEvent | None:
+        step = self._steps[i]
         advanced: list[_Partial] = []
         kept: list[_Partial] = []
         for p in self._partials:
-            i = _next_index(p.remaining, step, cfg.any_order)
-            if i is None:
+            if i not in self._next(p.remaining):
                 kept.append(p)
                 continue
             gap = t - p.last_time
-            reason = None
-            if cfg.gap_min_s and gap < cfg.gap_min_s:
-                reason = f"too short, min {cfg.gap_min_s:.2f}s"
-            elif cfg.gap_max_s and gap > cfg.gap_max_s:
-                reason = f"too long, max {cfg.gap_max_s:.2f}s"
-            if reason:
+            if step.after_min_s and gap < step.after_min_s:
                 # A failed step ends this attempt; the next first step starts a new one.
-                self._log(f"{self.name}: {p.last_step} to {step} in {gap:.2f}s ({reason})")
+                self.last_attempt = (*p.times, (i, t))
+                self._log(
+                    f"{self.name}: step {i + 1} came {gap:.2f}s after step {p.last + 1} "
+                    f"(too short, min {step.after_min_s:.2f}s)"
+                )
                 continue
-            advanced.append(_Partial(p.remaining[:i] + p.remaining[i + 1 :], p.start, step, t))
-        i = _next_index(self._steps, step, cfg.any_order)
-        if i is not None:
-            advanced.append(_Partial(self._steps[:i] + self._steps[i + 1 :], t, step, t))
+            advanced.append(
+                _Partial(tuple(j for j in p.remaining if j != i), p.start, i, t, (*p.times, (i, t)))
+            )
+        if i in self._next(self._all):
+            advanced.append(_Partial(tuple(j for j in self._all if j != i), t, i, t, ((i, t),)))
 
-        # Keep one partial per remaining state: when a step repeats, the newer one wins.
-        latest: dict[tuple[str, ...], _Partial] = {}
+        # Keep one partial per remaining set: when a step repeats, the newer one wins.
+        latest: dict[tuple[int, ...], _Partial] = {}
         for p in [*kept, *advanced]:
             if p.remaining and (p.remaining not in latest or p.start > latest[p.remaining].start):
                 latest[p.remaining] = p
@@ -208,12 +191,11 @@ class GestureTrigger:
         if not done:
             return None
 
+        cfg = self.config
         match = max(done, key=lambda p: p.start)
         took = t - match.start
-        if len(self._steps) == 1:
-            detail = step
-        else:
-            detail = f"{self._steps[0]} to {step} in {took:.2f}s"
+        self.last_attempt = match.times
+        detail = f"{len(self._steps)} steps in {took:.2f}s" if len(self._steps) > 1 else "step 1 reached"
         if cfg.within_s and took > cfg.within_s:
             self._log(f"{self.name}: {detail} (too slow, max {cfg.within_s:.2f}s)")
             return None
@@ -226,55 +208,127 @@ class GestureTrigger:
         self.fired = True
         return TriggerEvent(self.name, self.name, t, detail)
 
+    def _expire(self, t: float) -> None:
+        within = self.config.within_s
+        kept: list[_Partial] = []
+        for p in self._partials:
+            nxt = self._next(p.remaining)
+            limits = [self._steps[j].after_max_s for j in nxt]
+            if all(limits) and t - p.last_time > max(limits):
+                self.last_attempt = p.times
+                steps = " or ".join(str(j + 1) for j in nxt)
+                self._log(
+                    f"{self.name}: step {steps} not reached in time (too long, max {max(limits):.2f}s)"
+                )
+                continue
+            if within and t - p.start > 2 * within:
+                # Much older starts aren't attempts at this gesture, so they expire quietly.
+                self.last_attempt = p.times
+                continue
+            kept.append(p)
+        self._partials = kept
+
+    def progress(self) -> tuple[tuple[int, float], ...]:
+        """(step, time) of the furthest attempt still waiting for its next step."""
+        if not self._partials:
+            return ()
+        return max((p.times for p in self._partials), key=lambda times: (len(times), times[-1][1]))
+
     def status(self) -> str:
-        parts = [tracker.status(self._now) for tracker in self._trackers]
+        parts = []
+        for signal, value in self._values.items():
+            if value is None:
+                parts.append(f"no {signal}")
+            elif signal == "eyes":
+                parts.append(f"eyes {value:.2f}")
+            else:
+                parts.append(f"{signal} {value:+.0f}°")
         if len(self._steps) > 1 and self._partials:
             matched = len(self._steps) - min(len(p.remaining) for p in self._partials)
             parts.append(f"{matched}/{len(self._steps)} steps")
         return ", ".join(parts) or "waiting"
 
 
-def _signals(steps: tuple[str, ...]) -> list[str]:
-    """The signals to track. head_center counts on the axes the gesture turns
-    or tilts on, so a nod isn't completed by the head turning back to center."""
-    signals: list[str] = []
-    if any(s in ("eyes_closed", "eyes_open") for s in steps):
-        signals.append("eyes")
-    for axis, sides in _AXES.items():
-        if any(s in sides for s in steps):
-            signals.append(axis)
-    if "head_center" in steps and not any(s in _AXES for s in signals):
-        signals += list(_AXES)
-    return signals
+@dataclass(frozen=True)
+class Replay:
+    fired_at: float | None
+    reason: str
+    """Why it didn't fire, as the log would say it; or when it fired."""
+    steps: tuple[tuple[int, float], ...]
+    """(step, time) for each step reached in the attempt shown."""
 
 
-def _next_index(remaining: tuple[str, ...], step: str, any_order: bool) -> int | None:
-    if any_order:
-        return remaining.index(step) if step in remaining else None
-    return 0 if remaining[0] == step else None
+def replay(config: Config, name: str, observations: list[Observation]) -> Replay:
+    """Runs gesture ``name`` (enabled or not) over recorded observations, for
+    testing settings against your own movement. Stops at the first fire."""
+    messages: list[str] = []
+    gestures = dict(config.gestures)
+    gestures[name] = replace(gestures[name], enabled=True, cooldown_s=0.0)
+    triggers = create_triggers(replace(config, gestures=gestures), messages.append)
+    target = next(t for t in triggers if t.name == name)
+    assert isinstance(target, GestureTrigger)
+    for obs in observations:
+        for trigger in triggers:
+            event = trigger.update(obs)
+            if event is not None and trigger is target:
+                return Replay(event.timestamp, f"fires at {event.timestamp:.2f}s", target.last_attempt)
+    prefix = f"{name}: "
+    own = [m[len(prefix):] for m in messages if m.startswith(prefix)]
+    pending = target.progress()
+    if pending and len(pending) >= len(target.last_attempt):
+        reason = f"waiting for the next step when the recording ended (after step {pending[-1][0] + 1})"
+        return Replay(None, reason, pending)
+    if own:
+        return Replay(None, own[-1], target.last_attempt)
+    if target.last_attempt:
+        within = gestures[name].within_s
+        return Replay(None, f"didn't finish in time (too slow, max {within:.2f}s)", target.last_attempt)
+    return Replay(None, "step 1 never reached", ())
 
 
 def _validate(name: str, config: GestureConfig) -> None:
     key = f"gestures.{name}"
-    if not config.steps or not all(isinstance(s, str) for s in config.steps):
-        raise ValueError(f"{key}.steps must list at least one state or gesture name")
-    for field_name in ("gap_min_s", "gap_max_s", "within_s", "cooldown_s"):
+    if not config.steps:
+        raise ValueError(f"{key}.steps must list at least one step")
+    for i, step in enumerate(config.steps):
+        sk = f"{key}.steps[{i}]"
+        if bool(step.signal) == bool(step.gesture):
+            raise ValueError(
+                f"{sk} must set either signal ({', '.join(SIGNALS)}) or gesture, "
+                f"not {'both' if step.signal else 'neither'}"
+            )
+        bounds = {f: getattr(step, f) for f in ("above_ratio", "below_ratio", "above_deg", "below_deg")}
+        if step.gesture:
+            if any(v is not None for v in bounds.values()):
+                raise ValueError(f"{sk}: a gesture step has no box, so remove its above_/below_ keys")
+        elif step.signal not in SIGNALS:
+            raise ValueError(f"{sk}.signal must be one of {', '.join(SIGNALS)}, not {step.signal!r}")
+        else:
+            unit, other = ("ratio", "deg") if step.signal == "eyes" else ("deg", "ratio")
+            if bounds[f"above_{other}"] is not None or bounds[f"below_{other}"] is not None:
+                raise ValueError(
+                    f"{sk}: {step.signal} uses above_{unit}/below_{unit}, not above_{other}/below_{other}"
+                )
+            above, below = _bounds(step)
+            if above is None and below is None:
+                raise ValueError(f"{sk} needs above_{unit}, below_{unit} or both")
+            if above is not None and below is not None and above >= below:
+                raise ValueError(
+                    f"{sk}.above_{unit} must be below {sk}.below_{unit} ({below}), not {above}"
+                )
+        for field_name in ("after_min_s", "after_max_s", "hold_s"):
+            value = getattr(step, field_name)
+            if value < 0:
+                raise ValueError(f"{sk}.{field_name} must be 0 or more, not {value}")
+        if step.after_max_s and step.after_max_s < step.after_min_s:
+            raise ValueError(
+                f"{sk}.after_max_s must be 0 (no limit) or at least {sk}.after_min_s "
+                f"({step.after_min_s}), not {step.after_max_s}"
+            )
+    for field_name in ("within_s", "cooldown_s"):
         value = getattr(config, field_name)
         if value < 0:
             raise ValueError(f"{key}.{field_name} must be 0 or more, not {value}")
-    if config.gap_max_s and config.gap_max_s < config.gap_min_s:
-        raise ValueError(
-            f"{key}.gap_max_s must be 0 (no limit) or at least {key}.gap_min_s "
-            f"({config.gap_min_s}), not {config.gap_max_s}"
-        )
-    if any(s.startswith("head_") for s in config.steps) and not (
-        0 <= config.release_deg < config.past_deg
-    ):
-        # With release_deg >= past_deg, the head would leave a side on the frame it got there.
-        raise ValueError(
-            f"{key}.release_deg must be at least 0 and below {key}.past_deg "
-            f"({config.past_deg}), not {config.release_deg}"
-        )
 
 
 def create_triggers(config: Config, log: Callable[[str], None] | None = None) -> list[Trigger]:
@@ -289,19 +343,20 @@ def create_triggers(config: Config, log: Callable[[str], None] | None = None) ->
             loop = " -> ".join((*chain[chain.index(name) :], name))
             raise ValueError(f"gestures.{name}.steps: gestures refer to each other in a loop ({loop})")
         cfg = gestures[name]
-        for step in cfg.steps:
-            if step in STATES:
+        for i, step in enumerate(cfg.steps):
+            if not step.gesture:
                 continue
-            if step not in gestures:
+            if step.gesture not in gestures:
                 raise ValueError(
-                    f"gestures.{name}.steps: unknown step {step!r}; use a state "
-                    f"({', '.join(STATES)}) or another gesture's name"
+                    f"gestures.{name}.steps[{i}].gesture: unknown gesture {step.gesture!r}; "
+                    f"choose from {', '.join(gestures)}"
                 )
-            if not gestures[step].enabled:
+            if not gestures[step.gesture].enabled:
                 raise ValueError(
-                    f"gestures.{name}.steps: {step} is disabled (gestures.{step}.enabled = false)"
+                    f"gestures.{name}.steps[{i}].gesture: {step.gesture} is disabled "
+                    f"(gestures.{step.gesture}.enabled = false)"
                 )
-            build(step, (*chain, name))
+            build(step.gesture, (*chain, name))
         built[name] = GestureTrigger(name, cfg, log, built)
 
     for name, cfg in gestures.items():

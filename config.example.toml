@@ -13,7 +13,9 @@ fps = 30
 baseline_window_s = 10.0
 # Seconds to learn before blinks can trigger
 warmup_s = 2.0
-# Lower close_ratio means you must close your eyes more fully to count
+# Frames count as closed below close_ratio (and open again above
+# open_ratio) for learning your open-eye level and for the preview.
+# Gestures use their own steps' values.
 close_ratio = 0.55
 open_ratio = 0.75
 # Both eyes must close, so a wink doesn't count
@@ -23,59 +25,66 @@ require_both_eyes = true
 # vn-eye learns your usual head position over this many seconds
 baseline_window_s = 10.0
 
-# Each gesture is a list of states to reach in order:
-#   eyes_closed, eyes_open, head_down, head_up, head_left, head_right, head_center
-# A step can also be another gesture's name. Fields a gesture doesn't set
-# use these defaults: any_order = false, past_deg = 15.0, release_deg = 10.0,
-# gap_min_s = 0.0, gap_max_s = 0.0, within_s = 0.0 (0 = no limit),
-# cooldown_s = 1.0, output = "" (send nothing).
-# Outputs: enter, space, left_click, wheel_down, up, down, app:toggle_pause
+# Each gesture is a list of steps. A step is a box on a plot of one signal
+# over time, and it counts the moment the signal enters the box:
+#   signal       eyes (1.0 = your usual open level), pitch (degrees,
+#                + = head down) or yaw (degrees, + = your left)
+#   above_ratio, below_ratio   the box for eyes (leave one out: open-ended)
+#   above_deg, below_deg       the box for pitch and yaw
+#   after_min_s, after_max_s   time allowed since the previous step (0 = no limit)
+#   hold_s       stay in the box this long before the step counts
+#   gesture      instead of signal: another gesture's name; counts when it fires
+# A gesture also has: any_order, within_s (first step to last, 0 = no
+# limit), cooldown_s and output.
+# Outputs: enter, space, left_click, wheel_down, up, down, app:toggle_pause,
+# or "" to send nothing.
 
 [gestures.blink]
+# Close your eyes, then open them again. 0.15 lets natural blinks advance;
+# 0.35-0.45 requires a deliberate closure. Holding them shut past 2 s cancels.
 enabled = true
-steps = ["eyes_closed", "eyes_open"]
-# 0.15 lets natural blinks advance; 0.35-0.45 requires a deliberate closure
-gap_min_s = 0.15
-# Hold your eyes shut longer than this to cancel
-gap_max_s = 2.0
+steps = [
+  { signal = "eyes", below_ratio = 0.55 },
+  { signal = "eyes", above_ratio = 0.75, after_min_s = 0.15, after_max_s = 2.0 },
+]
 cooldown_s = 1.0
 output = "enter"
 
 [gestures.head_shake]
-# Turn past past_deg one way, then past it the other way, within within_s
+# Turn past 15° one way, then past 15° the other way, within 1 s
 enabled = true
-steps = ["head_left", "head_right"]
+steps = [
+  { signal = "yaw", above_deg = 15.0 },
+  { signal = "yaw", below_deg = -15.0 },
+]
 any_order = true
-past_deg = 15.0
-release_deg = 10.0
 within_s = 1.0
 cooldown_s = 1.5
 output = "app:toggle_pause"
 
 [gestures.nod_up]
-# Tilt past past_deg, then back within release_deg, within gap_max_s
+# Tilt past 12°, then come back within 8° of center within 0.8 s
 enabled = false
-steps = ["head_up", "head_center"]
-past_deg = 12.0
-release_deg = 8.0
-gap_max_s = 0.8
+steps = [
+  { signal = "pitch", below_deg = -12.0 },
+  { signal = "pitch", above_deg = -8.0, below_deg = 8.0, after_max_s = 0.8 },
+]
 cooldown_s = 1.0
 output = "up"
 
 [gestures.nod_down]
 enabled = false
-steps = ["head_down", "head_center"]
-past_deg = 12.0
-release_deg = 8.0
-gap_max_s = 0.8
+steps = [
+  { signal = "pitch", above_deg = 12.0 },
+  { signal = "pitch", above_deg = -8.0, below_deg = 8.0, after_max_s = 0.8 },
+]
 cooldown_s = 1.0
 output = "down"
 
 # Add your own gesture under a new name. This one needs nod_down enabled;
 # set nod_down's output = "" if it should only count as part of this one.
 # [gestures.blink_then_nod]
-# steps = ["blink", "nod_down"]
-# within_s = 1.5
+# steps = [{ gesture = "blink" }, { gesture = "nod_down", after_max_s = 1.5 }]
 # output = "space"
 
 [output]

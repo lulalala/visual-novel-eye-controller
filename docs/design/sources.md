@@ -91,12 +91,12 @@ class Source(Protocol):
 
 ## Capabilities
 
-Each gesture needs the signals of the states in its steps, plus whatever the gestures it uses as steps need:
+Each gesture needs the signals its steps watch, plus whatever the gestures it uses as steps need:
 
-| State | Needs |
+| Step signal | Needs |
 |---|---|
-| `eyes_closed`, `eyes_open` | `eye_openness` |
-| `head_down`, `head_up`, `head_left`, `head_right`, `head_center` | `head_pose` |
+| `eyes` | `eye_openness` |
+| `pitch`, `yaw` | `head_pose` |
 
 At startup, the core compares each enabled trigger's needs with the source's `provides` and skips a trigger whose needs are missing, with a notice such as `head_shake: disabled (source tobii has no head_pose)`. `OpenCVSource` provides both signals, so the check never fails in step 1. It is part of step 1 anyway, so that a future source without head pose, such as an eye tracker, works without changes to the core.
 

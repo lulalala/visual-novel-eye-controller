@@ -12,6 +12,5 @@ class PauseSwitch:
 
     def toggle(self) -> None:
         self.paused = not self.paused
-        print("Paused" if self.paused else "Resumed", flush=True)
         if self._on_change:
             self._on_change(self.paused)
