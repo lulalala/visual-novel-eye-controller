@@ -49,6 +49,15 @@ vn-eye-gui --config my.toml      # load and save another file
 
 The main window shows the live camera view, with the log on the side: gestures that fired, gestures that didn't and why, and pauses. **Pause** (or the `p` key) pauses and resumes. **Practice mode** logs the keys instead of sending them.
 
+**Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
+
+1. Choose a gesture. The wizard lists the takes it will ask for. For a blink, that's 5 deliberate blinks, 3 quick natural blinks, and 2 long eye closures.
+2. Do each take after the 3-second countdown. A beep marks the start and the end of each take, so you can do the eyes-closed takes without looking. Gestures are off while the wizard is open, so nothing is sent to other windows.
+3. Review the result. The wizard moves each step's edge to 60% of the way to your weakest take, and fits the time limits the gesture already has between your takes and the near misses. Limits that are off stay off. The list shows whether each take fires with the new settings. Select a take and choose **Redo selected take** if you missed its cue.
+4. Choose **Use these settings**. The settings window opens with the new values applied and your takes in its test list, where you can fine-tune them. Select **Save** to keep them.
+
+Gestures whose steps are other gestures can't use the wizard. Set up the gestures they're made of instead.
+
 **Settings…** opens the settings window. On the **Gestures** tab, each step of the selected gesture is a box on a plot of your eye and head signals. Drag a box's top or bottom edge to change its threshold, or its left or right edge to change the time allowed after the previous step. You can also type the numbers in the table below the plot.
 
 To check your settings against your own movement, do the gesture and then select **Save last 4 s as a test**. The list shows, for every test, whether the gesture fires and, if not, why. It updates as you change the settings. Tests keep only the eye and head numbers, in memory, never images.
@@ -139,7 +148,8 @@ src/vn_eye/
   outputs.py      TriggerEvent -> key/mouse input
   engine.py       runs the pipeline one frame at a time (used by both front ends)
   app.py          command line: main loop and flags
-  gui.py          window: live view, log, and settings with the gesture plot
+  gui.py          window: live view, log, settings with the gesture plot, and the gesture wizard
+  tuning.py       fits a gesture's limits to takes recorded in the wizard
 ```
 
 To add a gesture, add a `[gestures.NAME]` section to your config. To add a new signal, add it to `SIGNALS` in `config.py` and to `signal_value` in `triggers.py`. To add another input device, implement the `Source` protocol in `vn_eye/sources/` (see [docs/design/sources.md](docs/design/sources.md)). For how the `[eyes]` and `[head]` settings work, see [docs/design/detection.md](docs/design/detection.md).

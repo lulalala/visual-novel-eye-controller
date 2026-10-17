@@ -38,13 +38,14 @@ The design and the planned plugin loading are in `docs/design/sources.md`.
 
 `Engine` (`engine.py`) owns the whole pipeline and advances it with `step()`, once per frame. Both front ends drive it: `app.py` (command line, OpenCV preview window, CSV log) and `gui.py` (Tkinter window). Put new pipeline behavior in `Engine`, not in a front end.
 
-Other modules: `config.py` (dataclasses, TOML loading and `dump_config` for saving, overrides), `preview.py` (draws the state overlay on the source's `debug_view()`), `pause.py` (pause switch), `feedback.py` (sounds).
+Other modules: `config.py` (dataclasses, TOML loading and `dump_config` for saving, overrides), `preview.py` (draws the state overlay on the source's `debug_view()`), `pause.py` (pause switch), `feedback.py` (sounds), `tuning.py` (fits a gesture's limits to labeled takes for the GUI wizard).
 
 ### GUI
 
 - `gui.py` uses Tkinter only (no extra dependency). It runs `Engine` on a worker thread. Only the main thread touches Tk widgets: it polls the worker for the latest frame (as PPM bytes) and for log lines. `Engine.set_config()` and `toggle_pause()` are safe to call from the main thread; they apply at the next `step()`.
 - The settings window edits a working copy, then calls `Engine.set_config()` on Apply and writes `dump_config()` on Save. It tests gestures with `triggers.replay()`, which runs the real matcher over recorded observations. Keep the editor's results coming from `replay()` instead of reimplementing the matching.
 - Recorded tests hold `Observation`s (numbers) in memory only.
+- The gesture wizard (`WizardWindow`) records labeled takes (`tuning.DO`, `TOO_QUICK`, `TOO_SLOW`, `OTHER`), fits them with `tuning.fit()`, and hands the result and the takes to the settings window. It disables all gestures while open. `fit()` only moves limits a gesture already has (edges that leave rest, and nonzero time limits) and reports each take's result through `replay()`. Keep the fitting in `tuning.py`, which has no Tk code, so it stays unit-tested.
 - The `gui-wip` branch (PySide6) is replaced by this; don't build on it.
 
 ### Rules the design depends on
