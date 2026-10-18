@@ -96,12 +96,18 @@ class Worker:
 
     def _run(self) -> None:
         self.log("Starting the camera…")
+        config = self._config
         try:
-            engine = Engine(self._config, self.log)
+            engine = Engine(config, self.log)
         except Exception as e:  # noqa: BLE001 - shown to the user instead of a traceback
             self.log(f"Couldn't start: {e}")
             return
-        self.engine = engine
+        with self._lock:
+            self.engine = engine
+            # The camera takes a few seconds to start; a config set meanwhile
+            # (such as the wizard turning gestures off) must not be lost.
+            if self._config is not config:
+                engine.set_config(self._config)
         self.log("Running. Keep your eyes open normally for a couple of seconds to calibrate.")
         try:
             while not self._stop.is_set():
@@ -130,9 +136,10 @@ class Worker:
             engine.close()
 
     def set_config(self, config: Config) -> None:
-        self._config = config
-        if self.engine is not None:
-            self.engine.set_config(config)
+        with self._lock:
+            self._config = config
+            if self.engine is not None:
+                self.engine.set_config(config)
 
     def toggle_pause(self) -> None:
         if self.engine is not None:
