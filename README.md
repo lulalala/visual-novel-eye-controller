@@ -51,10 +51,10 @@ The main window shows the log: gestures that fired, gestures that didn't and why
 
 **Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
 
-1. Choose a gesture. The wizard suggests takes worth recording. For a blink, that's a few deliberate blinks, a few quick natural blinks, and a long eye closure.
-2. Select **Record**, do the movement once, and select **Stop**. Then say what the take was: **Should fire**, **Too quick**, **Too slow**, or **Shouldn't fire**. You can record as many takes as you like, in any order. Gestures are off while the wizard is open, so nothing is sent to other windows.
-3. After each take, the wizard fits the gesture to all your takes so far. It moves each step's edge to 60% of the way to your weakest take, and fits the time limits the gesture already has between your takes and the near misses. Limits that are off stay off. The list shows whether each take fires with the new settings, and the plot shows the selected take. Delete a take you got wrong.
-4. Choose **Use these settings**. The gesture uses the new values right away, and the wizard asks whether to save them to the config file. Your takes appear in the settings window's test list, where you can fine-tune the result.
+1. Choose a gesture and select **Start**. The first page lists the takes the wizard asks for: the gesture itself 3 times, done the way you want it to count, then each near miss once. For a blink, the near misses are a quick natural blink and a long eye closure.
+2. Each take has its own page that says what to do. Select **Start recording** (or press Space), do it, and select **Stop**. For a too-quick or too-slow take, you also choose whether it should fire. For example, choose **Yes, it should fire** on the quick blink if you want everyday blinks to advance the text. The page shows whether the take fires with the settings fitted so far. Select **Redo** to record it again, or **Next** to go on. You can skip a near miss. Gestures are off while the wizard is open, so nothing is sent to other windows.
+3. The wizard fits the gesture to all your takes. It moves each step's edge to 60% of the way to your weakest take, and fits the time limits the gesture already has between your takes and the near misses. Limits that are off stay off. The review page lists whether each take fires with the new settings and what changed. Select a take to see it on the plot, and select **Redo take** to record one again.
+4. Select **Use these settings**. The gesture uses the new values right away, and the wizard asks whether to save them to the config file. You can fine-tune the result in the settings window.
 
 **Set up with wizard…** on the settings window's **Gestures** tab opens the same wizard. It starts from your unapplied edits there, and **Use these settings** puts the result back in the settings window and applies it. Select **Save** there to keep it.
 

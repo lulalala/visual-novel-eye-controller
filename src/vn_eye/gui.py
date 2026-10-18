@@ -13,6 +13,7 @@ import tkinter as tk
 from collections import deque
 from dataclasses import fields, replace
 from pathlib import Path
+from tkinter import font as tkfont
 from tkinter import messagebox, simpledialog, ttk
 from typing import Any, Callable
 
@@ -25,7 +26,7 @@ from vn_eye.engine import Engine
 from vn_eye.eyes import Observation
 from vn_eye.outputs import OUTPUT_NAMES
 from vn_eye.triggers import Replay, replay, signal_value
-from vn_eye.tuning import DO, KIND_LABELS, Fit, Take, can_tune, fit, suggestions, trim
+from vn_eye.tuning import DO, KIND_LABELS, OTHER, TOO_QUICK, TOO_SLOW, Fit, Take, can_tune, fit, script, trim
 
 # Seconds of signal kept for "Live" and for saving a test recording.
 RECORD_S = 4.0
@@ -1055,9 +1056,21 @@ class SettingsWindow:
         self.win.destroy()
 
 
+# What each kind of take is for, shown under its instruction.
+_KIND_HINTS = {
+    DO: "This take should fire.",
+    TOO_QUICK: "This take shouldn't fire: it's too quick.",
+    TOO_SLOW: "This take shouldn't fire: it's too slow.",
+    OTHER: "This take shouldn't fire.",
+}
+# Near misses you might still want to count, so the wizard asks instead of assuming.
+_ASK_KINDS = (TOO_QUICK, TOO_SLOW)
+_WIZARD_WRAP = 680
+
+
 class WizardWindow:
-    """Record takes of one gesture whenever you like, say what each one was
-    meant to be, and see the gesture fitted to all of them so far."""
+    """Sets up one gesture step by step: one page per take, each with one
+    thing to do, then a review of the gesture fitted to all the takes."""
 
     def __init__(self, app: MainWindow, settings: SettingsWindow | None, name: str) -> None:
         self.app = app
@@ -1071,11 +1084,18 @@ class WizardWindow:
                 pass
         self.names = [n for n, g in self.base.gestures.items() if can_tune(g)]
         self.name = name if name in self.names else self.names[0]
-        self.takes: list[Take] = []
-        self.pending: list[Observation] | None = None
+        self.script = script(self.name)
+        self.takes: list[Take | None] = [None] * len(self.script)
+        self.answers: dict[int, str] = {}
+        """Your answer to "should this fire?" (DO or the near miss), by page."""
         self.fitted: Fit | None = None
+        self.results: dict[int, Replay] = {}
+        """The fitted gesture replayed over each recorded take, by page."""
+        self.page = -1
+        """-1 is the first page, then one page per take, then the review."""
+        self.enable = tk.BooleanVar(value=True)
         self._started: float | None = None
-        self._timer: str | None = None
+        self._poll_id: str | None = None
 
         parent = settings.win if settings is not None else app.root
         self.win = tk.Toplevel(parent)
@@ -1088,113 +1108,276 @@ class WizardWindow:
         self.worker.set_config(replace(config, gestures=quiet))
         self._build()
         self.win.grab_set()
-        self._refit()
+        self._show(-1)
+        self._poll()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win, padding=14)
-        body.pack(fill="both", expand=True)
-        body.columnconfigure(1, weight=1)
-
-        top = ttk.Frame(body)
-        top.grid(row=0, column=0, columnspan=2, sticky="ew")
-        ttk.Label(top, text="Gesture").pack(side="left")
-        self.gesture = ttk.Combobox(top, state="readonly", width=18, values=self.names)
-        self.gesture.set(self.name)
-        self.gesture.bind("<<ComboboxSelected>>", lambda _e: self._on_gesture())
-        self.gesture.pack(side="left", padx=(6, 0))
-        self.hint = ttk.Label(body, foreground=_MUTED, wraplength=900, justify="left")
-        self.hint.grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
-
-        rec = ttk.Frame(body)
-        rec.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(12, 0))
-        self.record_button = ttk.Button(rec, text="● Record", width=14, command=self._toggle_record)
-        self.record_button.pack(side="left")
-        self.status = ttk.Label(rec, font="TkHeadingFont")
-        self.status.pack(side="left", padx=(12, 0))
-
-        labels = ttk.Frame(body)
-        labels.grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
-        ttk.Label(labels, text="That take was:").pack(side="left")
-        self.label_buttons = []
-        for kind, label in KIND_LABELS.items():
-            button = ttk.Button(labels, text=label.capitalize(), command=lambda k=kind: self._label(k))
-            button.pack(side="left", padx=(6, 0))
-            self.label_buttons.append(button)
-        button = ttk.Button(labels, text="Discard", command=self._discard)
-        button.pack(side="left", padx=(12, 0))
-        self.label_buttons.append(button)
-
-        left = ttk.Frame(body)
-        left.grid(row=4, column=0, sticky="ns", pady=(12, 0))
-        self.take_list = ttk.Treeview(left, columns=("take", "result"), show="headings",
-                                      height=10, selectmode="browse")
-        self.take_list.heading("take", text="Take")
-        self.take_list.heading("result", text="With the fitted settings")
-        self.take_list.column("take", width=150)
-        self.take_list.column("result", width=260)
-        self.take_list.tag_configure("ok", foreground=_OK)
-        self.take_list.tag_configure("bad", foreground=_BAD)
-        self.take_list.bind("<<TreeviewSelect>>", lambda _e: self._draw())
-        self.take_list.pack(fill="y", expand=True)
-        ttk.Button(left, text="Delete take", command=self._delete).pack(anchor="w", pady=(4, 0))
-        self.plot = PlotEditor(body, lambda _i, _k, _v: None)
-        self.plot.canvas.grid(row=4, column=1, sticky="nsew", padx=(10, 0), pady=(12, 0))
-
-        self.notes = ttk.Label(body, wraplength=900, justify="left")
-        self.notes.grid(row=5, column=0, columnspan=2, sticky="w", pady=(10, 0))
-        bottom = ttk.Frame(body)
-        bottom.grid(row=6, column=0, columnspan=2, sticky="ew", pady=(12, 0))
-        self.enable = tk.BooleanVar(value=True)
-        self.enable_check = ttk.Checkbutton(bottom, variable=self.enable)
-        self.use_button = ttk.Button(bottom, text="Use these settings", command=self._use)
-        self.use_button.pack(side="right")
-        ttk.Button(bottom, text="Cancel", command=self.close).pack(side="right", padx=6)
+        self._big = tkfont.nametofont("TkHeadingFont").copy()
+        self._big.configure(size=round(self._big.cget("size") * 1.5))
+        self.body = ttk.Frame(self.win, padding=16)
+        self.body.pack(fill="both", expand=True)
+        self.body.columnconfigure(0, weight=1)
+        self.body.rowconfigure(3, weight=1)
+        self.counter = ttk.Label(self.body, foreground=_MUTED)
+        self.counter.grid(row=0, column=0, sticky="w")
+        self.heading = ttk.Label(self.body, font=self._big, wraplength=_WIZARD_WRAP, justify="left")
+        self.heading.grid(row=1, column=0, sticky="w", pady=(2, 0))
+        self.subheading = ttk.Label(self.body, wraplength=_WIZARD_WRAP, justify="left")
+        self.subheading.grid(row=2, column=0, sticky="w", pady=(6, 0))
+        self.content = ttk.Frame(self.body)
+        nav = ttk.Frame(self.body)
+        nav.grid(row=4, column=0, sticky="ew", pady=(16, 0))
+        ttk.Button(nav, text="Cancel", command=self.close).pack(side="left")
+        self.next_button = ttk.Button(nav, command=self._next)
+        self.next_button.pack(side="right")
+        self.back_button = ttk.Button(nav, text="Back", command=lambda: self._show(self.page - 1))
+        self.back_button.pack(side="right", padx=6)
 
     def _gesture(self) -> GestureConfig:
         return self.fitted.gesture if self.fitted else self.base.gestures[self.name]
 
-    def _on_gesture(self) -> None:
-        name = self.gesture.get()
+    def _kind(self, page: int) -> str:
+        return self.answers.get(page, self.script[page][0])
+
+    def _on_review(self) -> bool:
+        return self.page == len(self.script)
+
+    def _on_take(self) -> bool:
+        return 0 <= self.page < len(self.script)
+
+    # Pages
+
+    def _show(self, page: int) -> None:
+        # A take you leave while recording is dropped; the one before it stays.
+        self._started = None
+        self.content.destroy()
+        self.content = ttk.Frame(self.body)
+        self.content.grid(row=3, column=0, sticky="nsew", pady=(14, 0))
+        self.page = page
+        if page < 0:
+            self._first_page()
+        elif self._on_take():
+            self._take_page()
+        else:
+            self._review_page()
+
+    def _next(self) -> None:
+        if self._on_review():
+            self._use()
+        else:
+            self._show(self.page + 1)
+
+    def _first_page(self) -> None:
+        self.counter.configure(text="")
+        self.heading.configure(text="Set up a gesture")
+        self.subheading.configure(text=(
+            "The wizard asks you to do the gesture a few times, and a few near misses that shouldn't fire, "
+            "one take at a time. Then it fits the gesture to your takes and shows you the result. "
+            "Nothing changes until you choose Use these settings."))
+        row = ttk.Frame(self.content)
+        row.pack(anchor="w")
+        ttk.Label(row, text="Gesture").pack(side="left")
+        box = ttk.Combobox(row, state="readonly", width=18, values=self.names)
+        box.set(self.name)
+        box.bind("<<ComboboxSelected>>", lambda _e: self._on_gesture(box))
+        box.pack(side="left", padx=(6, 0))
+        self.plan = ttk.Label(self.content, wraplength=_WIZARD_WRAP, justify="left")
+        self.plan.pack(anchor="w", pady=(12, 0))
+        ttk.Label(self.content, foreground=_MUTED, wraplength=_WIZARD_WRAP, justify="left", text=(
+            "Gestures are off while the wizard is open, so nothing is sent to other windows. "
+            "Takes keep only the eye and head numbers, in memory, never images.")).pack(anchor="w", pady=(12, 0))
+        self._describe_plan()
+        self.back_button.configure(state="disabled")
+        self.next_button.configure(text="Start", state="normal")
+        self.next_button.focus_set()
+
+    def _describe_plan(self) -> None:
+        lines = [f"You'll record {len(self.script)} takes:"]
+        lines += [f"  {i}. {what[0].upper()}{what[1:]} "
+                  f"({'you choose whether it fires' if kind in _ASK_KINDS else KIND_LABELS[kind]})"
+                  for i, (kind, what) in enumerate(self.script, 1)]
+        self.plan.configure(text="\n".join(lines))
+
+    def _on_gesture(self, box: ttk.Combobox) -> None:
+        name = box.get()
         if name == self.name:
             return
-        if self.takes and not messagebox.askyesno(
-                "Gesture wizard", f"Discard your {len(self.takes)} takes of {self.name}?", parent=self.win):
-            self.gesture.set(self.name)
+        recorded = sum(t is not None for t in self.takes)
+        if recorded and not messagebox.askyesno(
+                "Gesture wizard", f"Discard your {recorded} takes of {self.name}?", parent=self.win):
+            box.set(self.name)
             return
         self.name = name
-        self.takes = []
-        self.pending = None
+        self.script = script(name)
+        self.takes = [None] * len(self.script)
+        self.answers = {}
         self._refit()
+        self._describe_plan()
+
+    def _take_page(self) -> None:
+        kind, what = self.script[self.page]
+        self.counter.configure(text=f"Take {self.page + 1} of {len(self.script)}")
+        self.heading.configure(text=f"{what[0].upper()}{what[1:]}.")
+        hint = "Choose whether it should fire." if kind in _ASK_KINDS else _KIND_HINTS[kind]
+        self.subheading.configure(text=f"{hint} Select Start recording (or press Space), "
+                                       "do this, then select Stop.")
+        row = ttk.Frame(self.content)
+        row.pack(fill="x")
+        self.record_button = ttk.Button(row, width=18, command=self._toggle_record)
+        self.record_button.pack(side="left")
+        self.status = ttk.Label(row, font="TkHeadingFont")
+        self.status.pack(side="left", padx=(12, 0))
+        if kind in _ASK_KINDS:
+            ask = ttk.Frame(self.content)
+            ask.pack(fill="x", pady=(10, 0))
+            ttk.Label(ask, text="Should this fire?").pack(side="left")
+            self.answer = tk.StringVar(value=self.answers.get(self.page, ""))
+            for value, text in ((DO, "Yes, it should fire"), (kind, f"No, it's {KIND_LABELS[kind]}")):
+                ttk.Radiobutton(ask, text=text, value=value, variable=self.answer,
+                                command=self._on_answer).pack(side="left", padx=(10, 0))
+        self.plot = PlotEditor(self.content, lambda _i, _k, _v: None)
+        self.plot.canvas.pack(fill="both", expand=True, pady=(12, 0))
+        self.result = ttk.Label(self.content, wraplength=_WIZARD_WRAP, justify="left")
+        self.result.pack(anchor="w", pady=(8, 0))
+        self.back_button.configure(state="normal")
+        # The focused button takes Space, so you can record without the mouse.
+        self.record_button.focus_set()
+        self._refresh_take()
+
+    def _on_answer(self) -> None:
+        self.answers[self.page] = self.answer.get()
+        take = self.takes[self.page]
+        if take is not None:
+            self.takes[self.page] = replace(take, kind=self.answers[self.page])
+            self._refit()
+        self._refresh_take()
+
+    def _refresh_take(self) -> None:
+        planned = self.script[self.page][0]
+        kind = self._kind(self.page)
+        take = self.takes[self.page]
+        recording = self._started is not None
+        self.record_button.configure(text="■ Stop" if recording else "● Redo" if take else "● Start recording")
+        state = "disabled" if recording else "normal"
+        self.back_button.configure(state=state)
+        answered = planned not in _ASK_KINDS or self.page in self.answers
+        if take is None and planned != DO:
+            self.next_button.configure(text="Skip", state=state)
+        else:
+            ready = take is not None and answered and not recording
+            self.next_button.configure(text="Next", state="normal" if ready else "disabled")
+        if recording or take is None:
+            self.result.configure(text="")
+        elif not answered:
+            self.result.configure(text="Choose whether a take like this should fire.", foreground=_TRACE)
+        else:
+            result = self.results[self.page]
+            fired = result.fired_at is not None
+            ok = fired == (kind == DO)
+            text = f"fires at {result.fired_at:.2f}s" if fired else f"doesn't fire: {result.reason}"
+            message = f"{'✓' if ok else '✕'} With the settings fitted so far, this take {text}."
+            if kind == DO and not self._moved(take):
+                message += " Hardly any movement was recorded. Select Redo and move further."
+            elif not ok:
+                message += " Select Redo if you didn't do what was asked."
+            self.result.configure(text=message, foreground=_OK if ok else _BAD)
+        self._draw(self.page)
+
+    def _review_page(self) -> None:
+        self.counter.configure(text="Review")
+        self.heading.configure(text=f"Check the new settings for {self.name}")
+        self.subheading.configure(text=("The list shows whether each take fires with the fitted settings. "
+                                        "Select a take to see it on the plot, or redo it."))
+        self.content.columnconfigure(1, weight=1)
+        self.content.rowconfigure(0, weight=1)
+        left = ttk.Frame(self.content)
+        left.grid(row=0, column=0, sticky="ns")
+        view = self.take_list = ttk.Treeview(left, columns=("take", "result"), show="headings",
+                                             height=8, selectmode="browse")
+        view.heading("take", text="Take")
+        view.heading("result", text="With the fitted settings")
+        view.column("take", width=130)
+        view.column("result", width=260)
+        view.tag_configure("ok", foreground=_OK)
+        view.tag_configure("bad", foreground=_BAD)
+        view.bind("<<TreeviewSelect>>", lambda _e: self._draw(self._picked()))
+        view.pack(fill="y", expand=True)
+        ttk.Button(left, text="Redo take", command=self._redo).pack(anchor="w", pady=(4, 0))
+        self.plot = PlotEditor(self.content, lambda _i, _k, _v: None)
+        self.plot.canvas.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+
+        recorded = [j for j, t in enumerate(self.takes) if t is not None]
+        wrong = 0
+        for n, j in enumerate(recorded, 1):
+            take, result = self.takes[j], self.results[j]
+            assert take is not None
+            fired = result.fired_at is not None
+            ok = fired == (take.kind == DO)
+            wrong += not ok
+            text = f"fires at {result.fired_at:.2f}s" if fired else f"doesn't fire: {result.reason}"
+            view.insert("", "end", iid=str(j), values=(f"{n}. {KIND_LABELS[take.kind].capitalize()}",
+                        f"{'✓' if ok else '✕'} {text}"), tags=("ok" if ok else "bad",))
+        if self.fitted is not None:
+            notes = self.fitted.notes or ["Your takes fit the current settings. Nothing changed."]
+            summary = ("Every take does what it should." if not wrong else
+                       f"{wrong} take(s) don't do what they should: redo a take you got wrong, or "
+                       "fine-tune the boxes in the settings window afterward.")
+            ttk.Label(self.content, wraplength=_WIZARD_WRAP, justify="left",
+                      text="\n".join(f"• {n}" for n in notes) + "\n" + summary,
+                      foreground=_OK if not wrong else _BAD,
+                      ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(10, 0))
+        if not self.base.gestures[self.name].enabled:
+            ttk.Checkbutton(self.content, text=f"Turn {self.name} on", variable=self.enable,
+                            ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(10, 0))
+        self.back_button.configure(state="normal")
+        has_do = any(t is not None and t.kind == DO for t in self.takes)
+        self.next_button.configure(text="Use these settings", state="normal" if has_do else "disabled")
+        self.next_button.focus_set()
+        if recorded:
+            view.selection_set(str(recorded[0]))
+        self._draw(self._picked())
+
+    def _picked(self) -> int | None:
+        sel = self.take_list.selection()
+        return int(sel[0]) if sel else None
+
+    def _redo(self) -> None:
+        picked = self._picked()
+        if picked is not None:
+            self._show(picked)
 
     # Recording
 
     def _toggle_record(self) -> None:
         if self._started is None:
-            self.pending = None
             self._started = time.monotonic()
-            self.record_button.configure(text="■ Stop")
-            self._tick()
-            return
-        if self._timer is not None:
-            self.win.after_cancel(self._timer)
-            self._timer = None
-        elapsed = time.monotonic() - self._started
-        self._started = None
-        self.record_button.configure(text="● Record")
-        self.pending = self.worker.recent(elapsed)
-        self._refresh_controls()
-        self._draw()
+        else:
+            elapsed = time.monotonic() - self._started
+            self._started = None
+            observations = self.worker.recent(elapsed)
+            if observations:
+                self.takes[self.page] = Take(self._kind(self.page), observations)
+                self._refit()
+        self._refresh_take()
 
-    def _tick(self) -> None:
-        assert self._started is not None
-        elapsed = time.monotonic() - self._started
-        if elapsed >= MAX_TAKE_S:
-            self._toggle_record()
-            return
-        problem = self._face_problem()
-        self.status.configure(text=f"Recording… {elapsed:.1f} s" + (f"   ({problem})" if problem else ""),
-                              foreground=_BAD if problem else _OK)
-        self._timer = self.win.after(100, self._tick)
+    def _poll(self) -> None:
+        if self._on_take():
+            problem = self._face_problem()
+            take = self.takes[self.page]
+            if self._started is not None:
+                elapsed = time.monotonic() - self._started
+                if elapsed >= MAX_TAKE_S:
+                    self._toggle_record()
+                else:
+                    text = f"Recording… {elapsed:.1f} s" + (f"   ({problem})" if problem else "")
+                    self.status.configure(text=text, foreground=_BAD if problem else _OK)
+            elif problem:
+                self.status.configure(text=problem[0].upper() + problem[1:], foreground=_BAD)
+            elif take is not None:
+                self.status.configure(text=f"Recorded {take.observations[-1].timestamp:.1f} s", foreground=_MUTED)
+            else:
+                self.status.configure(text="Ready", foreground=_MUTED)
+        self._poll_id = self.win.after(100, self._poll)
 
     def _face_problem(self) -> str | None:
         if self.worker.engine is None:
@@ -1202,111 +1385,43 @@ class WizardWindow:
         recent = self.worker.recent(0.3)
         signals = {s.signal for s in self.base.gestures[self.name].steps}
         if not recent or any(signal_value(s, recent[-1]) is None for s in signals):
-            return "no face"
+            return "no face in view"
         return None
 
-    def _label(self, kind: str) -> None:
-        if self.pending:
-            self.takes.append(Take(kind, self.pending))
-            self.pending = None
-            self._refit()
-            self.take_list.selection_set(str(len(self.takes) - 1))
-
-    def _discard(self) -> None:
-        self.pending = None
-        self._refresh_controls()
-        self._draw()
-
-    def _delete(self) -> None:
-        sel = self.take_list.selection()
-        if sel:
-            del self.takes[int(sel[0])]
-            self._refit()
+    def _moved(self, take: Take) -> bool:
+        signals = {s.signal for s in self.base.gestures[self.name].steps}
+        return trim(take.observations, signals)[1] is not take.observations
 
     # Fitting
 
     def _refit(self) -> None:
-        self.fitted = fit(self.base, self.name, self.takes) if self.takes else None
-        view = self.take_list
-        view.delete(*view.get_children())
-        for i, take in enumerate(self.takes):
-            assert self.fitted is not None
-            result = self.fitted.results[i]
-            fired = result.fired_at is not None
-            ok = fired == (take.kind == DO)
-            text = f"fires at {result.fired_at:.2f}s" if fired else f"doesn't fire: {result.reason}"
-            view.insert("", "end", iid=str(i), values=(f"{i + 1}. {KIND_LABELS[take.kind]}",
-                        f"{'✓' if ok else '✕'} {text}"), tags=("ok" if ok else "bad",))
+        recorded = [(j, t) for j, t in enumerate(self.takes) if t is not None]
+        self.fitted = fit(self.base, self.name, [t for _, t in recorded]) if recorded else None
+        self.results = {} if self.fitted is None else {
+            j: r for (j, _), r in zip(recorded, self.fitted.results)}
 
-        lines = [f"Record takes in any order. Worth recording for {self.name}:"]
-        lines += [f"  • {KIND_LABELS[kind]}: {what}" for kind, what in suggestions(self.name)]
-        lines.append("Gestures are off while the wizard is open, so nothing is sent to other windows. "
-                     "Takes keep only the eye and head numbers, in memory, never images.")
-        self.hint.configure(text="\n".join(lines))
-        if self.fitted is None:
-            self.notes.configure(text="")
-        else:
-            wrong = sum((r.fired_at is not None) != (t.kind == DO) for t, r in zip(self.takes, self.fitted.results))
-            notes = self.fitted.notes or ["Your takes fit the current settings. Nothing changed."]
-            summary = ("Every take does what it should." if not wrong else
-                       f"{wrong} take(s) don't do what they should: delete a take you got wrong, or "
-                       "fine-tune the boxes in the settings window afterward.")
-            self.notes.configure(text="\n".join(f"• {n}" for n in notes) + "\n" + summary,
-                                 foreground=_OK if not wrong else _BAD)
-        if not self.base.gestures[self.name].enabled:
-            self.enable_check.configure(text=f"Turn {self.name} on")
-            self.enable_check.pack(side="left")
-        else:
-            self.enable_check.pack_forget()
-        self._refresh_controls()
-        self._draw()
-
-    def _refresh_controls(self) -> None:
-        state = "normal" if self.pending else "disabled"
-        for button in self.label_buttons:
-            button.configure(state=state)
-        has_do = any(t.kind == DO for t in self.takes)
-        self.use_button.configure(state="normal" if has_do else "disabled")
-        if self.pending is not None:
-            length = self.pending[-1].timestamp if self.pending else 0.0
-            result = self._result(self.pending)
-            then = "" if result is None else (
-                f" With the fitted settings it fires at {result.fired_at:.2f}s." if result.fired_at is not None
-                else f" With the fitted settings it doesn't fire: {result.reason}.")
-            self.status.configure(text=f"Recorded {length:.1f} s. What was it?{then}", foreground=_TRACE)
-        elif self._started is None:
-            hint = "Do one more take." if has_do else "Select Record, do the gesture once, then select Stop."
-            self.status.configure(text=hint, foreground=_MUTED)
-
-    def _result(self, observations: list[Observation]) -> Replay | None:
-        if not observations:
-            return None
-        config = replace(self.base, gestures={**self.base.gestures, self.name: self._gesture()})
-        return replay(config, self.name, observations)
-
-    def _draw(self) -> None:
-        # Every take is drawn on one plot, each cut to where it moves (plus 1 s
-        # either side) and counted from that cut. The picked take is drawn bold.
-        sel = self.take_list.selection()
-        picked = int(sel[0]) if sel else None
+    def _draw(self, picked: int | None) -> None:
+        # Every take is drawn on one plot, each cut to where it moves and
+        # counted from that cut. The picked take is drawn bold; on the review
+        # page the others are tinted by whether they do what they should.
         signals = {s.signal for s in self._gesture().steps if s.signal}
         main: list[Observation] = []
         result: Replay | None = None
         others: list[tuple[list[Observation], str]] = []
-        shown = [(None, self.pending)] if self.pending is not None else list(enumerate(t.observations for t in self.takes))
-        for i, observations in shown:
-            start, cut = trim(observations, signals)
-            if self.pending is not None or i == picked:
+        for j, take in enumerate(self.takes):
+            if take is None:
+                continue
+            start, cut = trim(take.observations, signals)
+            found = self.results[j]
+            if j == picked:
                 main = cut
-                found = self._result(observations)
-                if found is not None:
-                    result = Replay(None if found.fired_at is None else found.fired_at - start, found.reason,
-                                    tuple((s, t - start) for s, t in found.steps))
-            else:
-                ok = self.fitted is not None and (self.fitted.results[i].fired_at is not None) == (self.takes[i].kind == DO)
+                result = Replay(None if found.fired_at is None else found.fired_at - start, found.reason,
+                                tuple((s, t - start) for s, t in found.steps))
+            elif self._on_review():
+                ok = (found.fired_at is not None) == (take.kind == DO)
                 others.append((cut, _tint(_OK if ok else _BAD, 0.45)))
-        if self.pending is not None:
-            others = [(trim(t.observations, signals)[1], _GRID_TRACE) for t in self.takes]
+            else:
+                others.append((cut, _GRID_TRACE))
         length = max((c[-1].timestamp for c in [main, *(o for o, _ in others)] if c), default=0.0)
         duration = max(1.0, math.ceil(length)) if length else RECORD_S
         self.plot.draw(_gesture_model(self._gesture()), main, result, duration, others)
@@ -1314,7 +1429,8 @@ class WizardWindow:
     def _use(self) -> None:
         assert self.fitted is not None
         gesture = replace(self.fitted.gesture, enabled=self.fitted.gesture.enabled or self.enable.get())
-        app, settings, name, takes = self.app, self.settings, self.name, self.takes
+        app, settings, name = self.app, self.settings, self.name
+        takes = [t for t in self.takes if t is not None]
         self.close()
         if settings is not None:
             settings.use_fit(name, gesture, takes)
@@ -1322,8 +1438,8 @@ class WizardWindow:
             app.use_fit(name, gesture, takes)
 
     def close(self) -> None:
-        if self._timer is not None:
-            self.win.after_cancel(self._timer)
+        if self._poll_id is not None:
+            self.win.after_cancel(self._poll_id)
         self.worker.set_config(self.app.config)
         self.app.wizard = None
         self.win.grab_release()

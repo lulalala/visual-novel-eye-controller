@@ -16,6 +16,8 @@ TOO_QUICK = "too_quick"
 TOO_SLOW = "too_slow"
 OTHER = "other"
 KIND_LABELS = {DO: "should fire", TOO_QUICK: "too quick", TOO_SLOW: "too slow", OTHER: "shouldn't fire"}
+# How many times the wizard asks you to do the gesture itself.
+DO_TAKES = 3
 
 # Where each signal sits while you just read.
 _REST = {"eyes": 1.0, "pitch": 0.0, "yaw": 0.0}
@@ -49,12 +51,19 @@ class Fit:
     """The fitted gesture replayed over each take, in take order."""
 
 
+def script(name: str, do_takes: int = DO_TAKES) -> list[tuple[str, str]]:
+    """(kind, what to do) for each take the wizard asks for, in order: the
+    gesture ``do_takes`` times, then one of each near miss."""
+    steps = suggestions(name)
+    return [s for s in steps if s[0] == DO] * do_takes + [s for s in steps if s[0] != DO]
+
+
 def suggestions(name: str) -> list[tuple[str, str]]:
     """(kind, what to do) for takes worth recording for this gesture."""
     read = (OTHER, "read the screen normally for a few seconds")
     known = {
         "blink": [
-            (DO, "blink once, slowly and on purpose"),
+            (DO, "blink once, the way you want to advance the text"),
             (TOO_QUICK, "blink once quickly, the way you blink without thinking"),
             (TOO_SLOW, "close your eyes for a few seconds, as if resting them"),
         ],
