@@ -130,6 +130,10 @@ class FaceMesh:
     run with OpenCV's DNN module."""
 
     def __init__(self, model_path: Path | None = None, min_confidence: float = 0.5) -> None:
+        # These models are too small to split across threads: OpenCV's thread
+        # pool cuts a frame from ~13 ms to ~12 ms but uses about 6x the CPU
+        # while its workers spin-wait.
+        cv2.setNumThreads(1)
         task = ensure_model(model_path)
         self._detector = self._read_net(_extract(task, "face_detector.tflite"))
         self._mesh = self._read_net(_extract(task, "face_landmarks_detector.tflite"))
