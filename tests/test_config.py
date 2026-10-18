@@ -139,3 +139,11 @@ def test_dump_reads_back_as_the_same_config(tmp_path):
 def test_dump_writes_only_what_changed_in_a_built_in_gesture():
     text = dump_config(config_from("--set", "gestures.blink.output=space"))
     assert text == 'version = 1\n\n[gestures.blink]\noutput = "space"\n'
+
+
+def test_guards_can_be_changed_with_set_and_survive_a_dump(tmp_path):
+    config = config_from("--set", "gestures.blink.guards.0.below_deg=30")
+    assert config.gestures["blink"].guards[0].below_deg == 30.0
+    path = tmp_path / "saved.toml"
+    path.write_text(dump_config(config))
+    assert load_config(path) == config

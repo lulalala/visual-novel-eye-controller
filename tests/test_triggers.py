@@ -132,11 +132,56 @@ def test_blink_cooldown_allows_after_expiry():
     assert len(events) == 2
 
 
-def test_blink_fires_with_head_turned():
-    # The head-turn filter was removed; blinks count whatever the head does.
+def blink_with_head(**head_values):
+    return [obs(i, eyes=0.3 if 8 <= i < 16 else 1.0, **head_values) for i in range(30)]
+
+
+def test_blink_fires_with_head_near_center():
     trigger = gesture("blink")
-    stream = [obs(i, eyes=0.3 if 8 <= i < 16 else 1.0, yaw=20.0) for i in range(30)]
+    assert len(drive([trigger], blink_with_head(yaw=15.0, pitch=-10.0))) == 1
+
+
+@pytest.mark.parametrize("head_values", [{"yaw": 25.0}, {"yaw": -25.0}, {"pitch": 20.0}, {"pitch": -20.0}])
+def test_blink_is_ignored_with_head_turned_away(head_values):
+    trigger = gesture("blink")
+    assert drive([trigger], blink_with_head(**head_values)) == []
+
+
+def test_turning_away_mid_closure_cancels_and_logs():
+    messages = []
+    trigger = gesture("blink", messages.append)
+    stream = [obs(i, eyes=0.3 if 8 <= i < 16 else 1.0, yaw=25.0 if i >= 12 else 0.0) for i in range(30)]
+    assert drive([trigger], stream) == []
+    assert messages == ["blink: canceled (head yaw +25° outside its limit)"]
+
+
+def test_closure_that_began_while_turned_does_not_count_after_returning():
+    trigger = gesture("blink")
+    stream = [obs(i, eyes=0.3 if 8 <= i < 20 else 1.0, yaw=25.0 if i < 12 else 0.0) for i in range(40)]
+    assert drive([trigger], stream) == []
+
+
+def test_guards_can_be_removed():
+    trigger = gesture("blink", guards=[])
+    assert len(drive([trigger], blink_with_head(yaw=40.0))) == 1
+
+
+def test_guard_without_head_pose_does_not_block():
+    trigger = gesture("blink")
+    stream = [Observation(i / FPS, face_present=True, ready=True, baseline=1.0,
+                          combined=0.3 if 8 <= i < 16 else 1.0) for i in range(30)]
     assert len(drive([trigger], stream)) == 1
+
+
+@pytest.mark.parametrize("guard, message", [
+    (StepConfig(signal="eyes", below_ratio=0.5), "guards[0].signal"),
+    (StepConfig(signal="yaw"), "guards[0] needs"),
+    (StepConfig(signal="yaw", above_deg=5.0, below_deg=-5.0), "guards[0].above_deg"),
+    (StepConfig(signal="yaw", below_deg=5.0, hold_s=1.0), "guards[0]: a guard has no timing"),
+])
+def test_invalid_guard_is_rejected(guard, message):
+    with pytest.raises(ValueError, match=message.replace("[", r"\[").replace("]", r"\]")):
+        gesture("blink", guards=[guard])
 
 
 def test_eyes_already_closed_at_start_do_not_count():

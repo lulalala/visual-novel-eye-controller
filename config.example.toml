@@ -34,7 +34,8 @@ baseline_window_s = 10.0
 #   after_min_s, after_max_s   time allowed since the previous step (0 = no limit)
 #   hold_s       stay in the box this long before the step counts
 #   gesture      instead of signal: another gesture's name; counts when it fires
-# A gesture also has: any_order, within_s (first step to last, 0 = no
+# A gesture also has: guards (boxes on pitch or yaw that the head must stay
+# inside; leaving one cancels the gesture), any_order, within_s (first step to last, 0 = no
 # limit), cooldown_s and output.
 # Outputs: enter, space, left_click, wheel_down, up, down, app:toggle_pause,
 # or "" to send nothing.
@@ -46,6 +47,11 @@ enabled = true
 steps = [
   { signal = "eyes", below_ratio = 0.55 },
   { signal = "eyes", above_ratio = 0.75, after_min_s = 0.15, after_max_s = 2.0 },
+]
+# Blinks while your head is turned past 20° or tilted past 15° don't count.
+guards = [
+  { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
+  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
 ]
 cooldown_s = 1.0
 output = "enter"

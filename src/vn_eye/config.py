@@ -67,6 +67,10 @@ class GestureConfig:
     enabled: bool = True
     # Boxes to reach in order (see StepConfig).
     steps: list[StepConfig] = field(default_factory=list, metadata={"item": StepConfig})
+    # Boxes the head must stay inside for the gesture to count (a signal,
+    # above_/below_ bounds). Outside one, the gesture is canceled and can't
+    # start. Only signal and the bounds are used.
+    guards: list[StepConfig] = field(default_factory=list, metadata={"item": StepConfig})
     # Also accept the steps in any order (a shake can start on either side).
     any_order: bool = False
     # Time allowed from the first step to the last. 0 means no limit.
@@ -82,6 +86,12 @@ class GestureConfig:
 def _default_gestures() -> dict[str, GestureConfig]:
     # A head returns "to center" by entering a box around 0. Its edge (8°) is
     # inside the first step's edge (12°), so jitter at 12° can't complete a nod.
+    # Looking away from the screen (head turned or tilted) makes blinks and
+    # eye readings unreliable, so blink only counts with the head near center.
+    straight = [
+        StepConfig(signal="yaw", above_deg=-20.0, below_deg=20.0),
+        StepConfig(signal="pitch", above_deg=-15.0, below_deg=15.0),
+    ]
     center = {"above_deg": -8.0, "below_deg": 8.0, "after_max_s": 0.8}
     return {
         # 0.15 s lets most natural blinks advance the text; raise after_min_s
@@ -92,7 +102,7 @@ def _default_gestures() -> dict[str, GestureConfig]:
                 StepConfig(signal="eyes", below_ratio=0.55),
                 StepConfig(signal="eyes", above_ratio=0.75, after_min_s=0.15, after_max_s=2.0),
             ],
-            cooldown_s=1.0, output="enter",
+            guards=straight, cooldown_s=1.0, output="enter",
         ),
         "head_shake": GestureConfig(
             steps=[StepConfig(signal="yaw", above_deg=15.0), StepConfig(signal="yaw", below_deg=-15.0)],

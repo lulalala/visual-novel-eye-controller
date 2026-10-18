@@ -346,7 +346,9 @@ def _gesture_model(gesture: GestureConfig) -> dict[str, Any]:
             "above": above, "below": below,
             "after_min_s": s.after_min_s, "after_max_s": s.after_max_s, "hold_s": s.hold_s,
         })
+    guards = [{"kind": g.signal, "above": g.above_deg, "below": g.below_deg} for g in gesture.guards]
     return {
+        "guards": guards,
         "enabled": gesture.enabled, "output": gesture.output, "any_order": gesture.any_order,
         "within_s": gesture.within_s, "cooldown_s": gesture.cooldown_s, "steps": steps,
     }
@@ -364,8 +366,10 @@ def _gesture_config(model: dict[str, Any]) -> GestureConfig:
                 signal=s["kind"], hold_s=s["hold_s"],
                 **{f"above_{unit}": s["above"], f"below_{unit}": s["below"]}, **timing,
             ))
+    guards = [StepConfig(signal=g["kind"], above_deg=g["above"], below_deg=g["below"])
+              for g in model["guards"]]
     return GestureConfig(
-        enabled=model["enabled"], steps=steps, any_order=model["any_order"],
+        enabled=model["enabled"], steps=steps, guards=guards, any_order=model["any_order"],
         within_s=model["within_s"], cooldown_s=model["cooldown_s"], output=model["output"],
     )
 
@@ -696,13 +700,16 @@ class SettingsWindow:
 
         self.steps_frame = ttk.Frame(tab)
         self.steps_frame.grid(row=2, column=1, sticky="ew", pady=(8, 0))
+        self.guards_frame = ttk.Frame(tab)
+        self.guards_frame.grid(row=3, column=1, sticky="ew", pady=(8, 0))
         buttons = ttk.Frame(tab)
-        buttons.grid(row=3, column=1, sticky="w", pady=(6, 0))
+        buttons.grid(row=4, column=1, sticky="w", pady=(6, 0))
         ttk.Button(buttons, text="+ Add step", command=self._add_step).pack(side="left")
+        ttk.Button(buttons, text="+ Add head limit", command=self._add_guard).pack(side="left", padx=(8, 0))
         ttk.Label(buttons, foreground=_MUTED, text="Leave a number empty for no limit.").pack(side="left", padx=10)
 
         right = ttk.Frame(tab)
-        right.grid(row=0, column=2, rowspan=4, sticky="ns", padx=(10, 0))
+        right.grid(row=0, column=2, rowspan=5, sticky="ns", padx=(10, 0))
         ttk.Label(right, text="Test against recordings").pack(anchor="w")
         self.tests_view = ttk.Treeview(right, columns=("result",), show="tree headings", height=10,
                                        selectmode="browse")
@@ -745,6 +752,7 @@ class SettingsWindow:
         self._field_errors = {}
         self._refresh_list()
         self._build_steps()
+        self._build_guards()
         self._refresh()
 
     def _on_list_select(self, _event: tk.Event) -> None:
@@ -789,7 +797,7 @@ class SettingsWindow:
                                  "letters, digits, _ and -.", parent=self.win)
             return
         self.gestures[name] = {"enabled": True, "output": "", "any_order": False, "within_s": 0.0,
-                               "cooldown_s": 1.0, "steps": [{**_new_step("eyes"), "after_max_s": 0.0}]}
+                               "cooldown_s": 1.0, "guards": [], "steps": [{**_new_step("eyes"), "after_max_s": 0.0}]}
         self._select(name)
 
     def _delete_gesture(self) -> None:
@@ -841,6 +849,56 @@ class SettingsWindow:
             ttk.Label(frame, text=unit).grid(row=r, column=5, sticky="w")
             ttk.Button(frame, text="✕", width=3, command=lambda i=i: self._delete_step(i),
                        state="normal" if len(m["steps"]) > 1 else "disabled").grid(row=r, column=9, padx=3)
+
+    def _build_guards(self) -> None:
+        frame = self.guards_frame
+        for child in frame.winfo_children():
+            child.destroy()
+        self.guard_vars: dict[tuple[int, str], tk.StringVar] = {}
+        guards = self.gestures[self.current]["guards"]
+        if not guards:
+            return
+        ttk.Label(frame, text="Only while the head stays within", foreground=_MUTED).grid(
+            row=0, column=0, columnspan=6, sticky="w", padx=3)
+        for i, guard in enumerate(guards):
+            r = i + 1
+            kind = ttk.Combobox(frame, state="readonly", width=8, values=("pitch", "yaw"))
+            kind.set(guard["kind"])
+            kind.bind("<<ComboboxSelected>>", lambda _e, i=i, w=kind: self._on_guard_kind(i, w.get()))
+            kind.grid(row=r, column=0, padx=3, pady=2)
+            for key, col in (("above", 1), ("below", 3)):
+                ttk.Label(frame, text=key.capitalize()).grid(row=r, column=col, sticky="e")
+                var = tk.StringVar(value=_fmt(guard[key]))
+                var.trace_add("write", lambda *_a, i=i, k=key: self._on_guard_number(i, k))
+                ttk.Entry(frame, textvariable=var, width=7).grid(row=r, column=col + 1, padx=3)
+                self.guard_vars[(i, key)] = var
+            ttk.Label(frame, text="°").grid(row=r, column=5, sticky="w")
+            ttk.Button(frame, text="✕", width=3, command=lambda i=i: self._delete_guard(i)).grid(
+                row=r, column=6, padx=3)
+
+    def _on_guard_kind(self, i: int, value: str) -> None:
+        self.gestures[self.current]["guards"][i]["kind"] = value
+        self._refresh()
+
+    def _on_guard_number(self, i: int, key: str) -> None:
+        if self._suppress:
+            return
+        guard = self.gestures[self.current]["guards"][i]
+        self._set_number(guard, key, self.guard_vars[(i, key)].get(), f"Head limit {i + 1} {key}", True)
+        self._refresh()
+
+    def _add_guard(self) -> None:
+        guards = self.gestures[self.current]["guards"]
+        used = {g["kind"] for g in guards}
+        kind = next((k for k in ("yaw", "pitch") if k not in used), "yaw")
+        guards.append({"kind": kind, "above": -20.0, "below": 20.0})
+        self._build_guards()
+        self._refresh()
+
+    def _delete_guard(self, i: int) -> None:
+        del self.gestures[self.current]["guards"][i]
+        self._build_guards()
+        self._refresh()
 
     def _on_kind(self, i: int, value: str) -> None:
         steps = self.gestures[self.current]["steps"]

@@ -119,6 +119,7 @@ class GestureTrigger:
         self._all = tuple(range(len(config.steps)))
         self._watchers = {i: StepWatcher(s) for i, s in enumerate(config.steps) if s.signal}
         self._gestures = {i: gestures[s.gesture] for i, s in enumerate(config.steps) if s.gesture}
+        self._guards = config.guards
         needs = {EYE_OPENNESS if s.signal == "eyes" else HEAD_POSE for s in config.steps if s.signal}
         for gesture in self._gestures.values():
             needs |= gesture.needs
@@ -146,6 +147,14 @@ class GestureTrigger:
                 self._log(f"{self.name}: canceled (face lost)")
             self.reset()
             return None
+        outside = self._outside_guard(obs)
+        if outside:
+            # Like a lost face: a half-done gesture is dropped, and the signal
+            # must enter its box again after the head is back.
+            if self._partials:
+                self._log(f"{self.name}: canceled ({outside})")
+            self.reset()
+            return None
         arrived = [i for i, w in self._watchers.items() if w.update(self._values[w.step.signal], t)]
         arrived += [i for i, g in self._gestures.items() if g.fired]
         for i in sorted(arrived):
@@ -154,6 +163,18 @@ class GestureTrigger:
                 return event
         self._expire(t)
         return None
+
+    def _outside_guard(self, obs: Observation) -> str:
+        """Why a guard blocks this frame, or an empty string."""
+        for guard in self._guards:
+            value = signal_value(guard.signal, obs)
+            if value is None:
+                # A source without head pose still blinks; it just can't tell where you look.
+                continue
+            above, below = _bounds(guard)
+            if (above is not None and value <= above) or (below is not None and value >= below):
+                return f"head {guard.signal} {value:+.0f}° outside its limit"
+        return ""
 
     def _next(self, remaining: tuple[int, ...]) -> tuple[int, ...]:
         return remaining if self.config.any_order else remaining[:1]
@@ -325,6 +346,19 @@ def _validate(name: str, config: GestureConfig) -> None:
                 f"{sk}.after_max_s must be 0 (no limit) or at least {sk}.after_min_s "
                 f"({step.after_min_s}), not {step.after_max_s}"
             )
+    for i, guard in enumerate(config.guards):
+        gk = f"{key}.guards[{i}]"
+        if guard.signal not in ("pitch", "yaw"):
+            raise ValueError(f"{gk}.signal must be pitch or yaw, not {guard.signal!r}")
+        if guard.gesture or guard.above_ratio is not None or guard.below_ratio is not None:
+            raise ValueError(f"{gk}: a guard uses only signal, above_deg and below_deg")
+        if guard.after_min_s or guard.after_max_s or guard.hold_s:
+            raise ValueError(f"{gk}: a guard has no timing, so remove after_min_s, after_max_s and hold_s")
+        above, below = _bounds(guard)
+        if above is None and below is None:
+            raise ValueError(f"{gk} needs above_deg, below_deg or both")
+        if above is not None and below is not None and above >= below:
+            raise ValueError(f"{gk}.above_deg must be below {gk}.below_deg ({below}), not {above}")
     for field_name in ("within_s", "cooldown_s"):
         value = getattr(config, field_name)
         if value < 0:

@@ -92,9 +92,15 @@ steps = [
   { signal = "eyes", below_ratio = 0.55 },
   { signal = "eyes", above_ratio = 0.75, after_min_s = 0.15, after_max_s = 2.0 },
 ]
+guards = [
+  { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
+  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
+]
 cooldown_s = 1.0
 output = "enter"
 ```
+
+The `guards` keep a blink from counting while you look away. Moving your head often makes you blink, and a turned or tilted head also changes how open your eyes look. A guard is a box on `pitch` or `yaw`. While your head is outside any guard, the gesture can't start, and one in progress is canceled (the log says `blink: canceled (head yaw +25° outside its limit)`). A closure that began while your head was turned doesn't count after you turn back. By default, a blink counts only when your head is within 20° of your usual pose sideways and 15° up or down. Set `guards = []` to count blinks at any head angle. A source that doesn't report head pose ignores guards. In the settings window, the **Only while the head stays within** rows edit them.
 
 Each step sets its own box and timing, so you can change one step without changing the others:
 
@@ -102,7 +108,7 @@ Each step sets its own box and timing, so you can change one step without changi
 - `after_min_s`/`after_max_s` set the time allowed since the previous step. 0 means no limit.
 - `hold_s` makes you stay inside the box that long before the step counts, for example to fire on looking left for 1 s.
 
-A gesture also has `any_order` (the head shake uses it, so you can start on either side), `within_s` (time allowed from the first step to the last), `cooldown_s` and `output`.
+A gesture also has `guards` (see above), `any_order` (the head shake uses it, so you can start on either side), `within_s` (time allowed from the first step to the last), `cooldown_s` and `output`.
 
 You can add your own gesture under a new name. A step can also be another gesture, which counts when that gesture fires. This gesture sends `space` when you blink and then nod down within 1.5 s:
 
