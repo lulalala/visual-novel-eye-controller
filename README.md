@@ -51,10 +51,12 @@ The main window shows the live camera view, with the log on the side: gestures t
 
 **Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
 
-1. Choose a gesture. The wizard lists the takes it will ask for. For a blink, that's 5 deliberate blinks, 3 quick natural blinks, and 2 long eye closures.
-2. Do each take after the 3-second countdown. A beep marks the start and the end of each take, so you can do the eyes-closed takes without looking. Gestures are off while the wizard is open, so nothing is sent to other windows.
-3. Review the result. The wizard moves each step's edge to 60% of the way to your weakest take, and fits the time limits the gesture already has between your takes and the near misses. Limits that are off stay off. The list shows whether each take fires with the new settings. Select a take and choose **Redo selected take** if you missed its cue.
-4. Choose **Use these settings**. The settings window opens with the new values applied and your takes in its test list, where you can fine-tune them. Select **Save** to keep them.
+1. Choose a gesture. The wizard suggests takes worth recording. For a blink, that's a few deliberate blinks, a few quick natural blinks, and a long eye closure.
+2. Select **Record**, do the movement once, and select **Stop**. Then say what the take was: **Should fire**, **Too quick**, **Too slow**, or **Shouldn't fire**. You can record as many takes as you like, in any order. Gestures are off while the wizard is open, so nothing is sent to other windows.
+3. After each take, the wizard fits the gesture to all your takes so far. It moves each step's edge to 60% of the way to your weakest take, and fits the time limits the gesture already has between your takes and the near misses. Limits that are off stay off. The list shows whether each take fires with the new settings, and the plot shows the selected take. Delete a take you got wrong.
+4. Choose **Use these settings**. The gesture uses the new values right away, and the wizard asks whether to save them to the config file. Your takes appear in the settings window's test list, where you can fine-tune the result.
+
+**Set up with wizard…** on the settings window's **Gestures** tab opens the same wizard. It starts from your unapplied edits there, and **Use these settings** puts the result back in the settings window and applies it. Select **Save** there to keep it.
 
 Gestures whose steps are other gestures can't use the wizard. Set up the gestures they're made of instead.
 

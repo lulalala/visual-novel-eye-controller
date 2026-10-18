@@ -4,7 +4,7 @@ import pytest
 
 from vn_eye.config import Config, GestureConfig, StepConfig
 from vn_eye.eyes import Observation
-from vn_eye.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit, plan
+from vn_eye.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit, suggestions
 
 FPS = 30
 
@@ -128,7 +128,7 @@ def test_gestures_made_of_other_gestures_cannot_be_tuned():
         fit(config, "double", [])
 
 
-def test_every_gesture_has_a_plan_with_takes_that_fire():
+def test_every_gesture_suggests_takes_that_fire_and_near_misses():
     for name in [*Config().gestures, "custom"]:
-        takes = plan(name)
-        assert takes[0].kind == DO and all(p.count > 0 and p.duration_s > 0 for p in takes)
+        kinds = [kind for kind, _ in suggestions(name)]
+        assert kinds[0] == DO and len(kinds) > 1

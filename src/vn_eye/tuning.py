@@ -35,14 +35,6 @@ _SLACK_S = 0.3
 
 
 @dataclass(frozen=True)
-class TakePlan:
-    kind: str
-    count: int
-    duration_s: float
-    instruction: str
-
-
-@dataclass(frozen=True)
 class Take:
     kind: str
     observations: list[Observation]
@@ -57,37 +49,24 @@ class Fit:
     """The fitted gesture replayed over each take, in take order."""
 
 
-def plan(name: str) -> list[TakePlan]:
-    """The takes the wizard asks for, in order."""
-    look = "Read the screen normally for a few seconds, without doing the gesture."
-    plans = {
+def suggestions(name: str) -> list[tuple[str, str]]:
+    """(kind, what to do) for takes worth recording for this gesture."""
+    read = (OTHER, "read the screen normally for a few seconds")
+    known = {
         "blink": [
-            TakePlan(DO, 5, 3.0, "Blink once, slowly and on purpose: the blink you want to advance the text."),
-            TakePlan(TOO_QUICK, 3, 3.0, "Blink once quickly, the way you blink without thinking."),
-            TakePlan(TOO_SLOW, 2, 5.0, "Close your eyes and keep them closed until you hear the beep."),
+            (DO, "blink once, slowly and on purpose"),
+            (TOO_QUICK, "blink once quickly, the way you blink without thinking"),
+            (TOO_SLOW, "close your eyes for a few seconds, as if resting them"),
         ],
         "head_shake": [
-            TakePlan(DO, 5, 3.0, "Shake your head once: turn to one side, then the other, then face the screen."),
-            TakePlan(TOO_SLOW, 2, 5.0,
-                     "Turn your head slowly to one side, wait a moment, then slowly to the other side."),
-            TakePlan(OTHER, 2, 5.0, "Look around the screen naturally, the way you do while reading."),
+            (DO, "shake your head once"),
+            (TOO_SLOW, "turn slowly to one side, wait, then slowly to the other"),
+            (OTHER, "look around the screen naturally"),
         ],
-        "nod_down": [
-            TakePlan(DO, 5, 3.0, "Nod down once and come back up."),
-            TakePlan(TOO_SLOW, 2, 5.0, "Look down and stay there until you hear the beep."),
-            TakePlan(OTHER, 2, 5.0, look),
-        ],
-        "nod_up": [
-            TakePlan(DO, 5, 3.0, "Nod up once and come back down."),
-            TakePlan(TOO_SLOW, 2, 5.0, "Look up and stay there until you hear the beep."),
-            TakePlan(OTHER, 2, 5.0, look),
-        ],
+        "nod_down": [(DO, "nod down once"), (TOO_SLOW, "look down for a few seconds"), read],
+        "nod_up": [(DO, "nod up once"), (TOO_SLOW, "look up for a few seconds"), read],
     }
-    return plans.get(name, [
-        TakePlan(DO, 5, 3.0, f"Do the {name} gesture once."),
-        TakePlan(TOO_SLOW, 2, 5.0, f"Do the {name} gesture slowly, taking about twice as long as usual."),
-        TakePlan(OTHER, 2, 5.0, look),
-    ])
+    return known.get(name, [(DO, f"do {name} once"), (TOO_SLOW, f"do {name} slowly"), read])
 
 
 def can_tune(gesture: GestureConfig) -> bool:
