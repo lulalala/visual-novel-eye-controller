@@ -186,8 +186,6 @@ class MainWindow:
         self.settings: SettingsWindow | None = None
         self.wizard: WizardWindow | None = None
         self.camera: CameraWindow | None = None
-        self.tests: list[tuple[str, list[Observation]]] = []
-        """Test recordings for the settings window, kept while vn-eye runs."""
         self.worker = Worker(config)
         self._shown_status: tuple[str, bool] | None = None
 
@@ -295,10 +293,9 @@ class MainWindow:
         self.wizard = WizardWindow(self, settings, name)
 
     def use_fit(self, name: str, gesture: GestureConfig, takes: list[Take]) -> None:
-        """Applies the wizard's result, keeps its takes as tests, and offers to save."""
+        """Applies the wizard's result and offers to save."""
         config = replace(self.config, gestures={**self.config.gestures, name: gesture})
         check_config(config)
-        self.add_tests(name, takes)
         self.apply_config(config)
         self.worker.log(f"{name}: wizard settings applied")
         if self.settings is not None:
@@ -312,10 +309,6 @@ class MainWindow:
                 self.worker.log(f"Saved to {self.path}")
             except OSError as e:
                 messagebox.showerror("Gesture wizard", f"Couldn't save {self.path}:\n\n{e}", parent=self.root)
-
-    def add_tests(self, name: str, takes: list[Take]) -> None:
-        for n, take in enumerate(takes, 1):
-            self.tests.append((f"{name} {n}: {KIND_LABELS[take.kind]}", take.observations))
 
     def close(self) -> None:
         self.worker.stop()
@@ -419,7 +412,7 @@ class PlotEditor:
         if not lanes:
             c.create_text(width / 2, height / 2, fill=_MUTED, text=(
                 "This gesture's steps are other gestures, so there is nothing to plot.\n"
-                "Test it with the recordings on the right."), justify="center")
+                "Test it with the gesture wizard."), justify="center")
             return
         self._geo = (width, duration, lanes)
 
@@ -578,17 +571,8 @@ class PlotEditor:
         self._drag = None
 
 
-def _result_text(result: Replay | None) -> tuple[str, str]:
-    """(text, tag) for a recording's row in the test list."""
-    if result is None:
-        return "–", ""
-    if result.fired_at is not None:
-        return f"✓ {result.reason}", "ok"
-    return f"✕ {result.reason}", "bad"
-
-
 class SettingsWindow:
-    """Gestures (plot, steps, test recordings) and general settings, in their own window."""
+    """Gestures (plot, steps) and general settings, in their own window."""
 
     def __init__(self, app: MainWindow) -> None:
         self.app = app
@@ -596,8 +580,6 @@ class SettingsWindow:
         self.win.title("vn-eye settings")
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         self.builtin = set(Config().gestures)
-        self.tests = app.tests
-        self.recording = "live"
         self._suppress = False
         self._field_errors: dict[str, str] = {}
         self._load(app.config)
@@ -708,24 +690,6 @@ class SettingsWindow:
         ttk.Button(buttons, text="+ Add head limit", command=self._add_guard).pack(side="left", padx=(8, 0))
         ttk.Label(buttons, foreground=_MUTED, text="Leave a number empty for no limit.").pack(side="left", padx=10)
 
-        right = ttk.Frame(tab)
-        right.grid(row=0, column=2, rowspan=5, sticky="ns", padx=(10, 0))
-        ttk.Label(right, text="Test against recordings").pack(anchor="w")
-        self.tests_view = ttk.Treeview(right, columns=("result",), show="tree headings", height=10,
-                                       selectmode="browse")
-        self.tests_view.heading("#0", text="Recording")
-        self.tests_view.heading("result", text="Result")
-        self.tests_view.column("#0", width=150)
-        self.tests_view.column("result", width=260)
-        self.tests_view.tag_configure("ok", foreground=_OK)
-        self.tests_view.tag_configure("bad", foreground=_BAD)
-        self.tests_view.pack(fill="y", expand=True, pady=(4, 6))
-        self.tests_view.bind("<<TreeviewSelect>>", self._on_test_select)
-        ttk.Button(right, text=f"Save last {RECORD_S:g} s as a test", command=self._save_test).pack(fill="x")
-        ttk.Button(right, text="Remove test", command=self._remove_test).pack(fill="x", pady=(4, 0))
-        ttk.Label(right, foreground=_MUTED, wraplength=410, justify="left", text=(
-            "Do the gesture, then save the last few seconds. Tests keep only the eye and head "
-            "numbers, in memory, never images.")).pack(anchor="w", pady=(6, 0))
 
     def _refresh_list(self) -> None:
         self.gesture_list.delete(0, "end")
@@ -954,12 +918,7 @@ class SettingsWindow:
         self._suppress = False
         self._refresh()
 
-    # Recordings
-
-    def _observations(self) -> list[Observation]:
-        if self.recording == "live":
-            return self.app.worker.recent(RECORD_S)
-        return self.tests[int(self.recording)][1]
+    # Live plot
 
     def _replay(self, config: Config | None, observations: list[Observation]) -> Replay | None:
         if config is None or not observations:
@@ -970,7 +929,7 @@ class SettingsWindow:
             return None
 
     def _refresh(self) -> None:
-        """Validates the edits, then re-runs the gesture on every recording and redraws."""
+        """Validates the edits, then re-runs the gesture on the live signal and redraws."""
         try:
             config: Config | None = self.build_config()
             self.message.configure(text="")
@@ -982,22 +941,10 @@ class SettingsWindow:
         self.apply_button.configure(state=state)
         self.save_button.configure(state=state)
 
-        view = self.tests_view
-        selected = self.recording
-        view.delete(*view.get_children())
-        rows = [("live", f"Live (last {RECORD_S:g} s)", self.app.worker.recent(RECORD_S))]
-        rows += [(str(k), name, obs) for k, (name, obs) in enumerate(self.tests)]
-        for iid, name, obs in rows:
-            text, tag = _result_text(self._replay(config, obs))
-            view.insert("", "end", iid=iid, text=name, values=(text,), tags=(tag,))
-        if selected not in view.get_children():
-            selected = "live"
-        self.recording = selected
-        view.selection_set(selected)
         self._draw_plot(config)
 
     def _draw_plot(self, config: Config | None) -> None:
-        observations = self._observations()
+        observations = self.app.worker.recent(RECORD_S)
         result = self._replay(config, observations)
         if result is None:
             self.result.configure(text="", foreground=_MUTED)
@@ -1007,26 +954,6 @@ class SettingsWindow:
             self.result.configure(text=f"✕ {result.reason[:1].upper()}{result.reason[1:]}", foreground=_BAD)
         self.plot.draw(self.gestures[self.current], observations, result, RECORD_S)
 
-    def _on_test_select(self, _event: tk.Event) -> None:
-        sel = self.tests_view.selection()
-        if sel and sel[0] != self.recording:
-            self.recording = sel[0]
-            self._refresh()
-
-    def _save_test(self) -> None:
-        observations = self.app.worker.recent(RECORD_S)
-        if not observations:
-            return
-        self.tests.append((f"Test {len(self.tests) + 1} ({time.strftime('%H:%M:%S')})", observations))
-        self.recording = str(len(self.tests) - 1)
-        self._refresh()
-
-    def _remove_test(self) -> None:
-        if self.recording != "live":
-            del self.tests[int(self.recording)]
-            self.recording = "live"
-            self._refresh()
-
     def _live_loop(self) -> None:
         if not self.win.winfo_exists():
             return
@@ -1034,11 +961,7 @@ class SettingsWindow:
             config: Config | None = self.build_config()
         except ValueError:
             config = None
-        text, tag = _result_text(self._replay(config, self.app.worker.recent(RECORD_S)))
-        if self.tests_view.exists("live"):
-            self.tests_view.item("live", values=(text,), tags=(tag,))
-        if self.recording == "live":
-            self._draw_plot(config)
+        self._draw_plot(config)
         self.win.after(_LIVE_REFRESH_MS, self._live_loop)
 
     # General tab
@@ -1116,9 +1039,8 @@ class SettingsWindow:
         self.message.configure(text="Reverted to the settings in use.", foreground=_MUTED)
 
     def use_fit(self, name: str, gesture: GestureConfig, takes: list[Take]) -> None:
-        """Puts the wizard's result in the editor, keeps its takes as tests, and applies it."""
+        """Puts the wizard's result in the editor and applies it."""
         self.gestures[name] = _gesture_model(gesture)
-        self.app.add_tests(name, takes)
         self._select(name)
         self.apply()
 
