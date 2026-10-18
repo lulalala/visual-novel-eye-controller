@@ -25,7 +25,7 @@ from vn_eye.engine import Engine
 from vn_eye.eyes import Observation
 from vn_eye.outputs import OUTPUT_NAMES
 from vn_eye.triggers import Replay, replay, signal_value
-from vn_eye.tuning import DO, KIND_LABELS, Fit, Take, can_tune, fit, suggestions
+from vn_eye.tuning import DO, KIND_LABELS, Fit, Take, can_tune, fit, suggestions, trim
 
 # Seconds of signal kept for "Live" and for saving a test recording.
 RECORD_S = 4.0
@@ -43,6 +43,7 @@ _MUTED = "#5b6477"
 _GRID = "#eceef3"
 _ZERO = "#c9ced8"
 _TRACE = "#1a2130"
+_GRID_TRACE = "#b4bac7"
 
 # Plot ranges per signal: (min, max, grid lines, unit, value snap when dragging).
 _RANGES: dict[str, tuple[float, float, tuple[float, ...], str, float]] = {
@@ -393,14 +394,16 @@ class PlotEditor:
         self.canvas.bind("<ButtonRelease-1>", lambda _e: self._release())
 
     def draw(self, gesture: dict[str, Any], observations: list[Observation],
-             result: Replay | None, duration: float) -> None:
-        self._last = (gesture, observations, result, duration)
+             result: Replay | None, duration: float,
+             others: list[tuple[list[Observation], str]] | None = None) -> None:
+        """``others`` are more traces (observations, color) drawn thin behind the main one."""
+        self._last = (gesture, observations, result, duration, others or [])
         self._redraw()
 
     def _redraw(self) -> None:
         if self._last is None:
             return
-        gesture, observations, result, duration = self._last
+        gesture, observations, result, duration, others = self._last
         c = self.canvas
         c.delete("all")
         self._handles = []
@@ -493,18 +496,19 @@ class PlotEditor:
                     c.create_text(x(t1) + 4, y_bot - 10, anchor="w", fill=color, font="TkSmallCaptionFont",
                                   text=f"≤{step['after_max_s']:.2f}s")
 
-        for li, sig in enumerate(lanes):
-            points: list[float] = []
-            for o in observations:
-                v = signal_value(sig, o)
-                if v is None:
-                    if len(points) >= 4:
-                        c.create_line(*points, fill=_TRACE, width=2)
-                    points = []
-                    continue
-                points += [x(o.timestamp), y(v, li)]
-            if len(points) >= 4:
-                c.create_line(*points, fill=_TRACE, width=2)
+        for trace, color, line_w in [*((o, col, 1) for o, col in others), (observations, _TRACE, 2)]:
+            for li, sig in enumerate(lanes):
+                points: list[float] = []
+                for o in trace:
+                    v = signal_value(sig, o)
+                    if v is None:
+                        if len(points) >= 4:
+                            c.create_line(*points, fill=color, width=line_w)
+                        points = []
+                        continue
+                    points += [x(o.timestamp), y(v, li)]
+                if len(points) >= 4:
+                    c.create_line(*points, fill=color, width=line_w)
 
         for i, t in reached.items():
             step = steps[i]
@@ -1281,15 +1285,31 @@ class WizardWindow:
         return replay(config, self.name, observations)
 
     def _draw(self) -> None:
+        # Every take is drawn on one plot, each cut to where it moves (plus 1 s
+        # either side) and counted from that cut. The picked take is drawn bold.
         sel = self.take_list.selection()
+        picked = int(sel[0]) if sel else None
+        signals = {s.signal for s in self._gesture().steps if s.signal}
+        main: list[Observation] = []
+        result: Replay | None = None
+        others: list[tuple[list[Observation], str]] = []
+        shown = [(None, self.pending)] if self.pending is not None else list(enumerate(t.observations for t in self.takes))
+        for i, observations in shown:
+            start, cut = trim(observations, signals)
+            if self.pending is not None or i == picked:
+                main = cut
+                found = self._result(observations)
+                if found is not None:
+                    result = Replay(None if found.fired_at is None else found.fired_at - start, found.reason,
+                                    tuple((s, t - start) for s, t in found.steps))
+            else:
+                ok = self.fitted is not None and (self.fitted.results[i].fired_at is not None) == (self.takes[i].kind == DO)
+                others.append((cut, _tint(_OK if ok else _BAD, 0.45)))
         if self.pending is not None:
-            observations = self.pending
-        elif sel:
-            observations = self.takes[int(sel[0])].observations
-        else:
-            observations = []
-        duration = max(1.0, math.ceil(observations[-1].timestamp)) if observations else RECORD_S
-        self.plot.draw(_gesture_model(self._gesture()), observations, self._result(observations), duration)
+            others = [(trim(t.observations, signals)[1], _GRID_TRACE) for t in self.takes]
+        length = max((c[-1].timestamp for c in [main, *(o for o, _ in others)] if c), default=0.0)
+        duration = max(1.0, math.ceil(length)) if length else RECORD_S
+        self.plot.draw(_gesture_model(self._gesture()), main, result, duration, others)
 
     def _use(self) -> None:
         assert self.fitted is not None

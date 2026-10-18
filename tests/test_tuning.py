@@ -4,7 +4,7 @@ import pytest
 
 from vn_eye.config import Config, GestureConfig, StepConfig
 from vn_eye.eyes import Observation
-from vn_eye.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit, suggestions
+from vn_eye.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit, suggestions, trim
 
 FPS = 30
 
@@ -132,3 +132,17 @@ def test_every_gesture_suggests_takes_that_fire_and_near_misses():
     for name in [*Config().gestures, "custom"]:
         kinds = [kind for kind, _ in suggestions(name)]
         assert kinds[0] == DO and len(kinds) > 1
+
+
+def test_trim_keeps_a_fifth_of_a_second_around_the_movement_and_restarts_the_clock():
+    values = [1.0] * 60 + [0.2] * 12 + [1.0] * 78  # closed from frame 60 to 71
+    observations = [obs(i, eyes=v) for i, v in enumerate(values)]
+    start, cut = trim(observations, {"eyes"})
+    assert start == pytest.approx(60 / FPS - 0.2)
+    assert cut[0].timestamp == pytest.approx(0.0)
+    assert cut[-1].timestamp == pytest.approx(71 / FPS + 0.2 - start)
+
+
+def test_trim_keeps_a_take_without_movement_whole():
+    take = blink_take(OTHER, 0)
+    assert trim(take.observations, {"eyes"}) == (0.0, take.observations)

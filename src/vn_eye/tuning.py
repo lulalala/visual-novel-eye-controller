@@ -74,6 +74,19 @@ def can_tune(gesture: GestureConfig) -> bool:
     return all(s.signal for s in gesture.steps)
 
 
+def trim(observations: list[Observation], signals: set[str], pad_s: float = 0.2) -> tuple[float, list[Observation]]:
+    """(start, observations) cut to the part where a signal leaves rest, plus
+    ``pad_s`` on each side, with times counted from the cut. A take with no
+    movement is kept whole."""
+    moved = [o.timestamp for o in observations for s in signals
+             if s in _REST and (v := signal_value(s, o)) is not None and abs(v - _REST[s]) >= _MIN_REACH[s]]
+    if not moved:
+        return 0.0, observations
+    start = max(0.0, min(moved) - pad_s)
+    end = max(moved) + pad_s
+    return start, [replace(o, timestamp=o.timestamp - start) for o in observations if start <= o.timestamp <= end]
+
+
 def _unit(step: StepConfig) -> str:
     return "ratio" if step.signal == "eyes" else "deg"
 
