@@ -47,7 +47,7 @@ vn-eye-gui                       # loads config.toml if it exists
 vn-eye-gui --config my.toml      # load and save another file
 ```
 
-The main window shows the live camera view, with the log on the side: gestures that fired, gestures that didn't and why, and pauses. **Pause** (or the `p` key) pauses and resumes. **Practice mode** logs the keys instead of sending them.
+The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether vn-eye sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. vn-eye draws it only while that window is open, so close it when you don't need it to save CPU. **Pause** (or the `p` key) pauses and resumes. **Practice mode** logs the keys instead of sending them.
 
 **Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
 
@@ -150,7 +150,7 @@ src/vn_eye/
   outputs.py      TriggerEvent -> key/mouse input
   engine.py       runs the pipeline one frame at a time (used by both front ends)
   app.py          command line: main loop and flags
-  gui.py          window: live view, log, settings with the gesture plot, and the gesture wizard
+  gui.py          window: log, optional camera view, settings with the gesture plot, and the gesture wizard
   tuning.py       fits a gesture's limits to takes recorded in the wizard
 ```
 

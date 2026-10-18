@@ -1,4 +1,4 @@
-"""Desktop window: the live camera view with a log, and a settings window with a plot-based gesture editor."""
+"""Desktop window: the log, an optional camera view, and a settings window with a plot-based gesture editor."""
 
 from __future__ import annotations
 
@@ -76,8 +76,11 @@ class Worker:
 
     def __init__(self, config: Config) -> None:
         self.logs: queue.Queue[str] = queue.Queue()
-        self.frame: tuple[bytes, str, bool] | None = None
-        """The latest (PPM image, status text, paused). Replaced each frame, never queued."""
+        self.status: tuple[str, bool] | None = None
+        """The latest (status text, paused). Replaced each frame, never queued."""
+        self.frame: bytes | None = None
+        """The latest camera view as a PPM image, while show_view is set."""
+        self.show_view = threading.Event()
         self.engine: Engine | None = None
         self._config = config
         self._history: deque[Observation] = deque(maxlen=_HISTORY_FRAMES)
@@ -104,6 +107,10 @@ class Worker:
                 obs = frame.obs
                 with self._lock:
                     self._history.append(obs)
+                self.status = (_state_text(obs, engine.paused, engine.fps), engine.paused)
+                if not self.show_view.is_set():
+                    # Drawing and converting the view costs CPU on every frame.
+                    continue
                 assert engine.config is not None
                 img = preview.render(
                     engine.source.debug_view(), obs, engine.config.eyes, engine.statuses(),
@@ -114,8 +121,7 @@ class Worker:
                     scale = _VIDEO_MAX_WIDTH / img.shape[1]
                     img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
                 rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                ppm = b"P6 %d %d 255\n" % (rgb.shape[1], rgb.shape[0]) + rgb.tobytes()
-                self.frame = (ppm, _state_text(obs, engine.paused, engine.fps), engine.paused)
+                self.frame = b"P6 %d %d 255\n" % (rgb.shape[1], rgb.shape[0]) + rgb.tobytes()
         except Exception as e:  # noqa: BLE001
             self.log(f"Stopped: {e}")
         finally:
@@ -144,8 +150,34 @@ class Worker:
         self._thread.join(timeout=2.0)
 
 
+class CameraWindow:
+    """The live camera view. The worker only draws it while this window is open."""
+
+    def __init__(self, app: MainWindow) -> None:
+        self.app = app
+        self.win = tk.Toplevel(app.root)
+        self.win.title("vn-eye camera view")
+        self.photo = tk.PhotoImage(width=640, height=480)
+        ttk.Label(self.win, image=self.photo, anchor="center").pack(fill="both", expand=True)
+        self.win.bind("p", lambda _e: app.worker.toggle_pause())
+        self.win.protocol("WM_DELETE_WINDOW", self.close)
+        self._shown: bytes | None = None
+        app.worker.show_view.set()
+
+    def show(self, frame: bytes | None) -> None:
+        if frame is not None and frame is not self._shown:
+            self._shown = frame
+            self.photo.configure(data=frame, format="ppm")
+
+    def close(self) -> None:
+        self.app.worker.show_view.clear()
+        self.app.worker.frame = None
+        self.app.camera = None
+        self.win.destroy()
+
+
 class MainWindow:
-    """The live camera view, with the log on the side."""
+    """The log, with buttons for pause, the camera view, settings and the wizard."""
 
     def __init__(self, root: tk.Tk, config: Config, path: Path) -> None:
         self.root = root
@@ -153,10 +185,11 @@ class MainWindow:
         self.path = path
         self.settings: SettingsWindow | None = None
         self.wizard: WizardWindow | None = None
+        self.camera: CameraWindow | None = None
         self.tests: list[tuple[str, list[Observation]]] = []
         """Test recordings for the settings window, kept while vn-eye runs."""
         self.worker = Worker(config)
-        self._shown_frame: tuple[bytes, str, bool] | None = None
+        self._shown_status: tuple[str, bool] | None = None
 
         root.title("vn-eye")
         root.columnconfigure(0, weight=1)
@@ -166,6 +199,7 @@ class MainWindow:
         bar.grid(row=0, column=0, sticky="ew")
         self.pause_button = ttk.Button(bar, text="Pause", command=self.worker.toggle_pause)
         self.pause_button.pack(side="left")
+        ttk.Button(bar, text="Camera view…", command=self.open_camera).pack(side="left", padx=(6, 0))
         ttk.Button(bar, text="Settings…", command=self.open_settings).pack(side="left", padx=(6, 0))
         ttk.Button(bar, text="Gesture wizard…", command=self.open_wizard).pack(side="left", padx=(6, 0))
         self.practice = tk.BooleanVar(value=config.output.dry_run)
@@ -176,20 +210,15 @@ class MainWindow:
         self.status = ttk.Label(bar, text="Starting…", foreground=_MUTED)
         self.status.pack(side="right")
 
-        body = ttk.PanedWindow(root, orient="horizontal")
-        body.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
-        self.photo = tk.PhotoImage(width=640, height=480)
-        video = ttk.Label(body, image=self.photo, anchor="center")
-        body.add(video, weight=3)
-
-        side = ttk.Frame(body)
+        side = ttk.Frame(root)
+        side.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
         side.columnconfigure(0, weight=1)
         side.rowconfigure(1, weight=1)
         head = ttk.Frame(side)
         head.grid(row=0, column=0, columnspan=2, sticky="ew")
         ttk.Label(head, text="Log").pack(side="left")
         ttk.Button(head, text="Clear", command=self._clear_log).pack(side="right")
-        self.log_text = tk.Text(side, width=52, height=24, wrap="word", state="disabled",
+        self.log_text = tk.Text(side, width=90, height=24, wrap="word", state="disabled",
                                 font="TkFixedFont", borderwidth=1, relief="solid")
         self.log_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
         scroll = ttk.Scrollbar(side, orient="vertical", command=self.log_text.yview)
@@ -198,7 +227,6 @@ class MainWindow:
         self.log_text.tag_configure("fire", foreground=_OK)
         self.log_text.tag_configure("reject", foreground=_MUTED)
         self.log_text.tag_configure("time", foreground=_MUTED)
-        body.add(side, weight=2)
 
         root.bind("p", lambda _e: self.worker.toggle_pause())
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -210,13 +238,14 @@ class MainWindow:
                 self._append_log(self.worker.logs.get_nowait())
             except queue.Empty:
                 break
-        frame = self.worker.frame
-        if frame is not None and frame is not self._shown_frame:
-            self._shown_frame = frame
-            ppm, status, paused = frame
-            self.photo.configure(data=ppm, format="ppm")
-            self.status.configure(text=status)
+        status = self.worker.status
+        if status is not None and status != self._shown_status:
+            self._shown_status = status
+            text, paused = status
+            self.status.configure(text=text)
             self.pause_button.configure(text="Resume" if paused else "Pause")
+        if self.camera is not None:
+            self.camera.show(self.worker.frame)
         self.root.after(_POLL_MS, self._poll)
 
     def _append_log(self, message: str) -> None:
@@ -251,6 +280,13 @@ class MainWindow:
     def save_config(self, config: Config) -> None:
         self.apply_config(config)
         self.path.write_text(dump_config(config), encoding="utf-8")
+
+    def open_camera(self) -> None:
+        if self.camera is not None:
+            self.camera.win.lift()
+            self.camera.win.focus_force()
+            return
+        self.camera = CameraWindow(self)
 
     def open_settings(self) -> None:
         if self.settings is not None:
