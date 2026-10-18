@@ -29,8 +29,6 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
      "help": "what key or mouse input to send for a blink"}),
     ("--no-head-shake", "gestures.head_shake.enabled", {"action": "store_const", "const": False,
      "help": "disable the head-shake pause/resume gesture"}),
-    ("--dry-run", "output.dry_run", {"action": "store_const", "const": True,
-     "help": "print actions instead of sending input"}),
     ("--no-sound", "feedback.sound", {"action": "store_const", "const": False,
      "help": "don't beep when triggering"}),
 ]

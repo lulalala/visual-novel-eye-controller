@@ -175,7 +175,7 @@ Each step is one commit. Tests pass after every step.
 
 Each step also updates the docs it affects: README (config, flags, Layout), `config.example.toml`, and AGENTS.md (architecture, privacy, trigger checklist with `needs`).
 
-Each step changes behavior only where stated. Gestures must behave the same afterward, which needs a live check (`vn-eye --preview --dry-run`) after step 1.
+Each step changes behavior only where stated. Gestures must behave the same afterward, which needs a live check (`vn-eye --preview`, paused with `p`) after step 1.
 
 ## Open questions
 

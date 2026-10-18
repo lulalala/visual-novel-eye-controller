@@ -77,7 +77,7 @@ def test_head_shake_pauses_and_blinks_are_then_ignored():
     assert engine.paused
     assert output.sent == []
     assert "Paused" in messages
-    assert any(m.endswith("-> ignored (paused)") for m in messages)
+    assert any(m.endswith("-> enter (paused, not sent)") for m in messages)
 
 
 def test_new_config_takes_effect_on_the_next_step_and_keeps_calibration():

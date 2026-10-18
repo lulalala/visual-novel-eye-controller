@@ -112,11 +112,6 @@ def _default_gestures() -> dict[str, GestureConfig]:
 
 
 @dataclass(frozen=True)
-class OutputConfig:
-    dry_run: bool = False
-
-
-@dataclass(frozen=True)
 class FeedbackConfig:
     sound: bool = True
     # Print every gesture that didn't trigger (too short, too long, cooldown...).
@@ -137,7 +132,6 @@ class Config:
     gestures: dict[str, GestureConfig] = field(
         default_factory=_default_gestures, metadata={"item": GestureConfig}
     )
-    output: OutputConfig = field(default_factory=OutputConfig)
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
 
 

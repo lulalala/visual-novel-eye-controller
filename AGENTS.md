@@ -138,4 +138,4 @@ A change is finished only when all of these are true:
 3. Every new or changed config key exists in code defaults and `config.example.toml` with the same value, and works through `--set`.
 4. The README matches the change when users can see it (flags, gestures, defaults, Layout).
 5. Nothing violates the privacy rule. No new dependency was added without approval.
-6. Your final message says what you **could not** test. Real-camera and real-key-output behavior can only be checked by a human running `vn-eye --preview --dry-run`, then `vn-eye` in a game. Never claim a gesture "works" from unit tests alone. Say it is unit-tested and needs a live check.
+6. Your final message says what you **could not** test. Real-camera and real-key-output behavior can only be checked by a human running `vn-eye --preview` paused (press `p`), then `vn-eye` in a game. Never claim a gesture "works" from unit tests alone. Say it is unit-tested and needs a live check.

@@ -88,8 +88,8 @@ class Engine:
         self.triggers: list[Trigger] = supported_triggers(
             create_triggers(config, log_rejected), self.source, self._log
         )
-        if self._own_output and (old is None or config.output.dry_run != old.output.dry_run):
-            self._output = create_output(config.output.dry_run, self._log)
+        if self._own_output and self._output is None:
+            self._output = create_output()
         self._outputs = {name: g.output for name, g in config.gestures.items()}
         # App-level outputs (app:*) are handled in step(); only keystroke and
         # mouse outputs go to ActionDispatcher.
@@ -143,9 +143,8 @@ class Engine:
                     self.pause.toggle()
                 continue
             if self.pause.paused:
-                assert self.config is not None
-                if self.config.feedback.log_rejected:
-                    self._log(f"{event.trigger}: {event.detail} -> ignored (paused)")
+                # Log what would have been sent, so you can try gestures while paused.
+                self._log(f"{event.trigger}: {event.detail} -> {mapped} (paused, not sent)")
                 continue
             fired = self.dispatcher.dispatch(event) or fired
         return Frame(obs, fired)

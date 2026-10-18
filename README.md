@@ -29,7 +29,7 @@ The face landmark model (~4 MB) is downloaded on first run.
 ## Run
 
 ```sh
-vn-eye --preview --dry-run   # try it out: debug window, prints instead of pressing keys
+vn-eye --preview             # try it out: debug window (press p to pause, so gestures only print)
 vn-eye                       # real use: start it, then switch to the game
 vn-eye --config config.toml  # custom settings (copy config.example.toml)
 vn-eye --min-duration 0.5 --blink-key left_click   # common settings as flags
@@ -47,7 +47,7 @@ vn-eye-gui                       # loads config.toml if it exists
 vn-eye-gui --config my.toml      # load and save another file
 ```
 
-The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether vn-eye sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. vn-eye draws it only while that window is open, so close it when you don't need it to save CPU. **Pause** (or the `p` key) pauses and resumes. **Practice mode** logs the keys instead of sending them.
+The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether vn-eye sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. vn-eye draws it only while that window is open, so close it when you don't need it to save CPU. **Pause** (or the `p` key) pauses and resumes. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input.
 
 **Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
 

@@ -23,14 +23,6 @@ class Output(Protocol):
     def send(self, name: str) -> None: ...
 
 
-class DryRunOutput:
-    def __init__(self, log: Callable[[str], None] = print) -> None:
-        self._log = log
-
-    def send(self, name: str) -> None:
-        self._log(f"[dry-run] would send {name}")
-
-
 class Win32Output:
     _SCAN_CODES = {"enter": 0x1C, "space": 0x39, "up": 0x48, "down": 0x50}
     # Arrow keys are extended keys and need KEYEVENTF_EXTENDEDKEY.
@@ -162,9 +154,7 @@ def macos_accessibility_trusted() -> bool:
     return bool(lib.AXIsProcessTrusted())
 
 
-def create_output(dry_run: bool, log: Callable[[str], None] = print) -> Output:
-    if dry_run:
-        return DryRunOutput(log)
+def create_output() -> Output:
     if sys.platform == "win32":
         return Win32Output()
     if sys.platform == "darwin" and not macos_accessibility_trusted():

@@ -202,11 +202,6 @@ class MainWindow:
         ttk.Button(bar, text="Camera view…", command=self.open_camera).pack(side="left", padx=(6, 0))
         ttk.Button(bar, text="Settings…", command=self.open_settings).pack(side="left", padx=(6, 0))
         ttk.Button(bar, text="Gesture wizard…", command=self.open_wizard).pack(side="left", padx=(6, 0))
-        self.practice = tk.BooleanVar(value=config.output.dry_run)
-        ttk.Checkbutton(
-            bar, text="Practice mode (log keys instead of sending them)",
-            variable=self.practice, command=self._on_practice,
-        ).pack(side="left", padx=(12, 0))
         self.status = ttk.Label(bar, text="Starting…", foreground=_MUTED)
         self.status.pack(side="right")
 
@@ -249,7 +244,7 @@ class MainWindow:
         self.root.after(_POLL_MS, self._poll)
 
     def _append_log(self, message: str) -> None:
-        if " -> " in message and "ignored" not in message:
+        if " -> " in message and "not sent" not in message:
             tag = "fire"
         elif message.endswith(")") and "(" in message:
             tag = "reject"
@@ -268,13 +263,8 @@ class MainWindow:
         self.log_text.delete("1.0", "end")
         self.log_text.configure(state="disabled")
 
-    def _on_practice(self) -> None:
-        output = replace(self.config.output, dry_run=self.practice.get())
-        self.apply_config(replace(self.config, output=output))
-
     def apply_config(self, config: Config) -> None:
         self.config = config
-        self.practice.set(config.output.dry_run)
         self.worker.set_config(config)
 
     def save_config(self, config: Config) -> None:

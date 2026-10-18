@@ -87,9 +87,6 @@ output = "down"
 # steps = [{ gesture = "blink" }, { gesture = "nod_down", after_max_s = 1.5 }]
 # output = "space"
 
-[output]
-dry_run = false
-
 [feedback]
 sound = true
 # Print gestures that didn't trigger (too short, too long, cooldown, paused)
