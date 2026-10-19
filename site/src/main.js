@@ -21,9 +21,8 @@
   function show(i, instant) {
     idx = i;
     clearInterval(typer);
-    var text = LINES[i], last = i === LINES.length - 1;
+    var text = LINES[i];
     Array.prototype.forEach.call(dots.children, function (d, n) { d.className = n === i ? "on" : ""; });
-    hint.innerHTML = last ? "Click to replay" : 'Blink to continue <span class="next-ind">▼</span>';
     if (instant || reduce) { lineEl.textContent = text; return; }
     var n = 0; lineEl.textContent = "";
     typer = setInterval(function () {
@@ -58,7 +57,7 @@
     var prev = svg.getCurrentTime() % CYCLE;
     (function tick() {
       var now = svg.getCurrentTime() % CYCLE;
-      if (prev < BLINK_AT && now >= BLINK_AT && idx < LINES.length - 1) advance(true);
+      if (prev < BLINK_AT && now >= BLINK_AT) advance(true);
       prev = now;
       requestAnimationFrame(tick);
     })();
