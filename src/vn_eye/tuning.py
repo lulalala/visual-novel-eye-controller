@@ -25,6 +25,8 @@ _REST = {"eyes": 1.0, "pitch": 0.0, "yaw": 0.0}
 REACH = 0.6
 # An edge stays at least this far from rest, so small movements and noise don't count.
 _MIN_REACH = {"eyes": 0.15, "pitch": 5.0, "yaw": 5.0}
+# The wizard's plot cuts a take to where it gets this share of the way to its peak.
+TRIM_SHARE = 0.5
 # Space kept between a step's edge and the edge of a box around rest (the hysteresis).
 _GAP = {"eyes": 0.1, "pitch": 3.0, "yaw": 3.0}
 # A take that moves less than this share of your typical take is a miss and left out.
@@ -84,11 +86,16 @@ def can_tune(gesture: GestureConfig) -> bool:
 
 
 def trim(observations: list[Observation], signals: set[str], pad_s: float = 0.2) -> tuple[float, list[Observation]]:
-    """(start, observations) cut to the part where a signal leaves rest, plus
-    ``pad_s`` on each side, with times counted from the cut. A take with no
-    movement is kept whole."""
-    moved = [o.timestamp for o in observations for s in signals
-             if s in _REST and (v := signal_value(s, o)) is not None and abs(v - _REST[s]) >= _MIN_REACH[s]]
+    """(start, observations) cut to the part where a signal gets at least
+    ``TRIM_SHARE`` of the way to the take's peak, plus ``pad_s`` on each side,
+    with times counted from the cut. A take with no movement is kept whole."""
+    moved = []
+    for s in signals & _REST.keys():
+        away = [(o.timestamp, abs(v - _REST[s])) for o in observations if (v := signal_value(s, o)) is not None]
+        peak = max((d for _, d in away), default=0.0)
+        # A half blink or a glance before the real movement isn't part of it.
+        least = max(_MIN_REACH[s], TRIM_SHARE * peak)
+        moved += [t for t, d in away if d >= least]
     if not moved:
         return 0.0, observations
     start = max(0.0, min(moved) - pad_s)

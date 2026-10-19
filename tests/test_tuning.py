@@ -148,6 +148,15 @@ def test_trim_keeps_a_fifth_of_a_second_around_the_movement_and_restarts_the_clo
     assert cut[-1].timestamp == pytest.approx(71 / FPS + 0.2 - start)
 
 
+def test_trim_skips_a_half_blink_before_the_real_one():
+    # Half open (0.7) at 0.2 s, then the blink (0.1) at 1.25 s.
+    values = [1.0] * 6 + [0.7] * 6 + [1.0] * 25 + [0.1] * 5 + [1.0] * 48
+    observations = [obs(i, eyes=v) for i, v in enumerate(values)]
+    start, cut = trim(observations, {"eyes"})
+    assert start == pytest.approx(37 / FPS - 0.2)
+    assert all(o.combined != 0.7 for o in cut)
+
+
 def test_trim_keeps_a_take_without_movement_whole():
     take = blink_take(OTHER, 0)
     assert trim(take.observations, {"eyes"}) == (0.0, take.observations)
