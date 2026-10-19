@@ -1,6 +1,7 @@
 (function () {
   var LINES = [
     "H-hands full of snacks? Good. It's not like I wanted you to need them or anything!",
+    "Carpal tunnel? Tch, rest your hands. I-I'm not worried!",
     "I watch your webcam. When you blink, I press Enter. Don't read into it, idiot!",
     "Need a break? Shake your head. I'll wait. B-but only because I'm bored!",
     "Everything stays on your PC. I never save a frame. W-what, you thought I'd peek at you?!",
