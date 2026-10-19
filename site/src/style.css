@@ -175,25 +175,26 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
   min-width: min(100%, 560px);
   margin-inline: auto;
   aspect-ratio: 4 / 3;
-  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr) auto;
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr) auto;
+  --bar: clamp(28px, 3cqw, 42px);
   border-radius: 32px;
   background:
     linear-gradient(180deg, #CFE6FF 0%, #E9E0FF 55%, #FFDDE9 100%);
   box-shadow: 0 0 0 6px var(--line), 0 24px 60px -20px rgba(80, 70, 180, .35);
 }
-.chip { position: absolute; top: 2.4cqw; right: 2.4cqw; z-index: 4; }
-.title { grid-column: 1 / 9; grid-row: 1; z-index: 3; align-self: center; padding: 4cqw 0 0 5cqw; }
+.chip { position: absolute; top: calc(var(--bar) + 2cqw); right: 2.4cqw; z-index: 4; }
+.title { grid-column: 1 / 9; grid-row: 2; z-index: 3; align-self: center; padding: 0 0 3cqw 5cqw; }
 .title .sub { margin: 1.6cqw 0 0; max-width: 24ch; color: var(--ink-soft); font-size: clamp(14px, 1.9cqw, 28px); line-height: 1.5; }
 .title .cta { justify-content: flex-start; margin-top: 2.4cqw; gap: 10px; }
 .title .meta { margin-top: 1.2cqw; }
 .title .btn.big { font-size: clamp(14px, 1.9cqw, 24px); padding: .8em 1.7em; }
 .title .btn.alt { font-size: clamp(13px, 1.6cqw, 20px); }
-.portrait { grid-column: 5 / 13; grid-row: 1; display: grid; place-items: center end; padding: 2cqw 1cqw 0 0; min-height: 0; }
+.portrait { grid-column: 5 / 13; grid-row: 2; display: grid; place-items: center end; padding: 2cqw 1cqw 0 0; min-height: 0; }
 .eye { position: relative; width: 52cqw; max-width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
 
 /* dialogue window: the minor points */
 .dialog {
-  position: relative; grid-column: 1 / -1; grid-row: 2; z-index: 3;
+  position: relative; grid-column: 1 / -1; grid-row: 3; z-index: 3;
   margin: 0 3cqw 3cqw; padding: 3.4cqw 3cqw 1.8cqw;
   background: rgba(255,255,255,.92); border-radius: 24px;
   box-shadow: 0 0 0 3px var(--sakura-soft), 0 10px 30px -12px rgba(80,70,180,.35);
@@ -203,7 +204,8 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
 .line { margin: 0; font-size: clamp(15px, 2.2cqw, 32px); line-height: 1.5; min-height: 3em; }
 
 @media (max-width: 720px) {
-  .stage { aspect-ratio: auto; width: 100%; min-width: 0; grid-template-columns: 1fr; grid-template-rows: auto auto auto; border-radius: 26px; }
+  .stage { aspect-ratio: auto; width: 100%; min-width: 0; grid-template-columns: 1fr; grid-template-rows: none; border-radius: 26px; }
+  .titlebar { grid-row: auto; }
   .chip { position: static; justify-self: center; margin-top: 14px; }
   .title, .portrait { grid-column: 1; grid-row: auto; }
   .title { padding: 18px 16px 0; text-align: center; }
@@ -228,3 +230,14 @@ nav { width: min(100%, max(calc((100vh - 110px) * 4 / 3), 560px)); margin-inline
   .stage .eyebrow, .stage .chip, .stage .meta, .stage .foot { font-size: 13px; }
   .stage .name { font-size: 15px; }
 }
+
+/* fake window bar: three colored dots, so the demo reads as a game window */
+.titlebar {
+  grid-column: 1 / -1; grid-row: 1; z-index: 5;
+  display: flex; align-items: center; justify-content: flex-end; gap: .9cqw; height: var(--bar); padding-right: 1.6cqw;
+  background: rgba(255,255,255,.55);
+}
+.titlebar b { width: clamp(9px, 1.2cqw, 15px); aspect-ratio: 1; border-radius: 50%; background: var(--butter); }
+.titlebar b:nth-child(1) { background: #5FD6A4; }
+.titlebar b:nth-child(2) { background: #FFD66B; }
+.titlebar b:nth-child(3) { background: var(--sakura); }
