@@ -61,6 +61,21 @@ _LANE_HINTS = {
 # Settings that stay in the config file but not on the General tab. They only
 # decide which frames the eye baseline learns from, not when a gesture fires.
 _HIDDEN_GENERAL = {("eyes", "close_ratio"), ("eyes", "open_ratio")}
+# One-line help beside each General field, in user terms.
+_GENERAL_HELP = {
+    ("camera", "index"): "Which camera to use. 0 is usually the built-in one.",
+    ("camera", "width"): "Frame width in pixels (at least 160).",
+    ("camera", "height"): "Frame height in pixels (at least 120).",
+    ("camera", "fps"): "Frames per second to ask the camera for.",
+    ("eyes", "baseline_window_s"): "Seconds of history used to learn your usual open-eye level. "
+                                   "Try 5 if lighting or distance changes quickly.",
+    ("eyes", "warmup_s"): "Seconds to learn before blinks can trigger. Must be below the window.",
+    ("eyes", "require_both_eyes"): "Both eyes must close, so a wink doesn't count.",
+    ("head", "baseline_window_s"): "Seconds of history used to learn your usual head position. "
+                                   "Raise it if looking away for a while shifts your zero.",
+    ("feedback", "sound"): "Play a sound when a gesture fires or you pause.",
+    ("feedback", "log_rejected"): "Log gestures that were detected but didn't fire, and why.",
+}
 _GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 
 
@@ -1102,6 +1117,11 @@ class SettingsWindow:
                     if (section, key) == ("camera", "index"):
                         ttk.Button(tab, text="Choose from live views…",
                                    command=lambda v=svar: self._pick_camera(v)).grid(row=row, column=2, sticky="w")
+                help_text = _GENERAL_HELP.get((section, key))
+                if help_text:
+                    ttk.Label(tab, text=help_text, foreground=_MUTED, wraplength=380, justify="left").grid(
+                        row=row, column=3 if (section, key) == ("camera", "index") else 2,
+                        sticky="w", padx=(8, 0))
                 row += 1
 
     def _pick_camera(self, var: tk.StringVar) -> None:
