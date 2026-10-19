@@ -113,7 +113,7 @@ Follow the [developer documentation writing standard](https://github.com/NateBJo
 - Headings: sentence case, no skipped levels. Task sections start with a base-form verb ("Install the package"). Concept sections use a noun phrase ("Configuration fields").
 - Use code font in prose for filenames, paths, commands, flags, code elements, and text the reader must enter. Use fenced code blocks for longer examples; add a language identifier and introduce the block with a sentence.
 - Write in standard American English (behavior, center, license, color) everywhere: code, comments, docs, and commit messages.
-- `README.md` is user-facing: plain sentences, second person, concrete numbers ("turn past ~15° to one side"). Keep the **Layout** section and the flag examples in step with the code.
+- `README.md` is user-facing: plain sentences, second person, concrete numbers ("turn past ~15° to one side"). Keep the flag examples in step with the code. The **Layout** section is in `docs/development.md`.
 - Research and findings go in `docs/research.md`, not the README.
 
 ### Git
@@ -136,6 +136,6 @@ A change is finished only when all of these are true:
 1. `.venv/bin/python -m pytest -q` passes, and new behavior has tests (per the trigger checklist above when relevant).
 2. `.venv/bin/eyeokuri --help` and `.venv/bin/eyeokuri-gui --help` run without error, which shows the CLI and config still load.
 3. Every new or changed config key exists in code defaults and `config.example.toml` with the same value, and works through `--set`.
-4. The README matches the change when users can see it (flags, gestures, defaults, Layout).
+4. The README matches the change when users can see it (flags, gestures, defaults), and `docs/development.md` matches it (Layout).
 5. Nothing violates the privacy rule. No new dependency was added without approval.
 6. Your final message says what you **could not** test. Real-camera and real-key-output behavior can only be checked by a human running `eyeokuri --preview` paused (press `p`), then `eyeokuri` in a game. Never claim a gesture "works" from unit tests alone. Say it is unit-tested and needs a live check.

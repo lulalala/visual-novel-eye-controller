@@ -1,53 +1,50 @@
-# Eye tracker for playing visual novel
+# eyeokuri
 
-Visual novels (AVG) contain large amount of text. Each next line requires user inputting "enter", which can be tedius. Auto mode can solve the problem somewhat but user will have less flexiblity on controlling the pacing.
+Read your visual novel hands-free. `eyeokuri` watches your webcam and advances the text when you blink, so you can keep your hands off the keyboard and mouse.
 
-This repo aims to make an eye-tracking program which aids the reading of visual novel. Essentially we want trigger `enter` just by moving our eyeballs.
+- **Blink to advance.** A blink sends `Enter` to the game. You can send space, a left click or a scroll-down instead.
+- **Shake your head to pause.** Shake again to resume, for example when you look away or answer the phone.
+- **Make it fit you.** A gesture wizard learns your blink from a few practice takes. You can also edit each gesture's thresholds and timing in the settings window.
+- **Private.** It needs only a webcam. Frames are processed on your PC and never stored or sent anywhere.
 
-# Stage 1 - Research
+By default any closure of both eyes lasting 0.15–2 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes deliberately to advance, raise the blink's minimum closed time to about 0.35–0.45 s in the settings window (or run the wizard with a deliberate blink) (ordinary blinks were 0.17–0.34 s in our first test).
 
-Currently we'd like to gather related information. Maybe there already exists some solution (commercial/open source). If we are to develop our own, what is the difficulty level? What are the requirements (e.g. the head should still be able to move slightly during the detection)? What eye gesture is good for triggering `enter`? There are quite a few areas which needs research. If you are intersted, please head towards the wiki and add your findings.
-
-Initial findings are collected in [docs/research.md](docs/research.md).
-
-# Stage 2 - Prototype: long blink → Enter
-
-`eyeokuri` watches your webcam and sends `Enter` (or space, left click, or scroll-down) to the foreground window when you blink. By default any closure of both eyes lasting 0.15–2 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes deliberately to advance, raise `--min-duration` to about 0.35–0.45 s (ordinary blinks were 0.17–0.34 s in our first test). Shake your head to pause and resume. It needs only a webcam. Frames are processed locally and never stored.
-
-## Setup
+## Install
 
 Requires Python 3.11+.
 
 ```sh
 python -m venv .venv
-# macOS/Linux: source .venv/bin/activate    Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+.venv\Scripts\activate
+pip install -e .
 ```
 
-The face landmark model (~4 MB) is downloaded on first run.
+The face landmark model (~4 MB) is downloaded on first run. To build a standalone Windows executable or work on the code, see [docs/development.md](docs/development.md).
 
 ## Run
-
-```sh
-eyeokuri --preview             # try it out: debug window (press p to pause, so gestures only print)
-eyeokuri                       # real use: start it, then switch to the game
-eyeokuri --config config.toml  # custom settings (copy config.example.toml)
-eyeokuri --min-duration 0.5 --blink-key left_click   # common settings as flags
-eyeokuri --set eyes.open_ratio=0.8                # any config key (repeatable)
-```
-
-`eyeokuri --help` lists all flags. Command-line settings override the config file.
-
-### Use the window
-
-Run `eyeokuri-gui` for a window instead of the terminal:
 
 ```sh
 eyeokuri-gui                       # loads config.toml if it exists
 eyeokuri-gui --config my.toml      # load and save another file
 ```
 
-The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether eyeokuri sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. eyeokuri draws it only while that window is open, so close it when you don't need it to save CPU. In the settings window, **General** has a **Choose from live views…** button next to `camera.index`. It lists every camera it finds with its live view, and you click the one to use. **Pause** (or the `p` key) pauses and resumes. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input.
+Keep your eyes open normally for ~2 s at start so it can learn your "eyes open" level. It keeps adapting as your posture changes. Then switch to your game.
+
+To run without a window, see [docs/command-line.md](docs/command-line.md).
+
+## Use the window
+
+The main window shows the log: gestures that fired, gestures that didn't and why (too short, too long, cooldown, paused), and pauses. The status on the right shows whether eyeokuri sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. eyeokuri draws it only while that window is open, so close it when you don't need it to save CPU. In the settings window, **General** has a **Choose from live views…** button next to `camera.index`. It lists every camera it finds with its live view, and you click the one to use.
+
+**Pause** (or the `p` key) pauses and resumes. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input.
+
+## Default gestures
+
+- **Blink** (both eyes closed at least 0.15 s): you hear a beep and `Enter` is sent when you reopen your eyes. Closing them for more than 2 s cancels.
+- **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. A shake often comes with a blink, so it can also advance one line.
+- **Nod up or down** (sends the `up` or `down` arrow key) is off by default. Turn it on in the settings window.
+
+## Set up a gesture with the wizard
 
 **Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
 
@@ -60,21 +57,15 @@ The main window shows the log: gestures that fired, gestures that didn't and why
 
 Gestures whose steps are other gestures can't use the wizard. Set up the gestures they're made of instead.
 
+## Edit settings
+
 **Settings…** opens the settings window. On the **Gestures** tab, each step of the selected gesture is a box on a plot of your eye and head signals. Drag a box's top or bottom edge to change its threshold, or its left or right edge to change the time allowed after the previous step. You can also type the numbers in the table below the plot.
 
 To check your settings against your own movement, do the gesture and then select **Save last 4 s as a test**. The list shows, for every test, whether the gesture fires and, if not, why. It updates as you change the settings. Tests keep only the eye and head numbers, in memory, never images.
 
 **Apply** uses the settings right away. **Save** also writes them to the config file. Saving rewrites the file with only the values that differ from the defaults, so comments in it are not kept.
 
-- Keep your eyes open normally for ~2 s at start so it can learn your "eyes open" level. It keeps adapting as your posture changes.
-- Blink (both eyes, at least 0.15 s): you'll hear a beep and `Enter` is sent when you reopen your eyes. Closing them for more than 2 s cancels.
-- **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. Use `--set gestures.head_shake.within_s=1.5` to allow a slower shake, or `--no-head-shake` to turn it off. A shake often comes with a blink, so shaking your head can also advance one line.
-- Nodding up or down (sends the `up` or `down` arrow key) is off by default. Turn it on with `--set gestures.nod_down.enabled=true`.
-- In the preview window, `p` also pauses and resumes, and `q`/`Esc` closes it. `Ctrl+C` stops `eyeokuri` from the terminal.
-- Every gesture that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. Set `log_rejected = false` under `[feedback]` in your config file to turn this off.
-- `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
-- The face model runs with OpenCV, and nothing is sent over the network after the one-time model download.
-- If the camera stops sending frames (for example, it briefly disconnects), `eyeokuri` reopens it every second until frames come back. Gestures are not detected during the gap.
+If the camera stops sending frames (for example, it briefly disconnects), eyeokuri reopens it every second until frames come back. Gestures are not detected during the gap. Set `log_rejected = false` under `[feedback]` in your config file to stop logging gestures that don't fire.
 
 ## Gestures
 
@@ -122,44 +113,12 @@ steps = [{ gesture = "blink" }, { gesture = "nod_down", after_max_s = 1.5 }]
 output = "space"
 ```
 
-To change one step from the command line, give its position, starting from 0: `--set gestures.nod_down.steps.0.above_deg=15`.
+To change one step from the command line, see [docs/command-line.md](docs/command-line.md).
 
 When the same movement matches several gestures, each one fires. In this example, a blink followed by a nod also fires `blink`, so it sends `Enter` too. `config.example.toml` lists every field.
 
 Config files must start with `version = 1`. A file without it uses an older layout, and `eyeokuri` refuses to load it. Start again from `config.example.toml`.
 
-Platform notes:
-- **Windows** (main target): keys are sent with `SendInput` using hardware scan codes, so DirectInput games receive them too. If the game runs as administrator, run `eyeokuri` as administrator as well, or Windows will block the input.
-- **macOS**: give your terminal *Camera* permission, plus *Accessibility* (to send keys) under System Settings → Privacy & Security.
+## Windows notes
 
-## Build a Windows executable
-
-You can package `eyeokuri` so it runs on a Windows PC without Python. You need Python 3.11 or later on the build PC only.
-
-1. Double-click `build-windows.bat`. The first build takes a few minutes because it sets up `build\venv`.
-2. Copy `build\eyeokuri-windows.zip` (~65 MB) to the other PC and unzip it.
-3. Run `eyeokuri.exe` in the unzipped folder. It opens a console window. Close the window or press `Ctrl+C` to stop it.
-
-The first run downloads the face model, so the PC must be online once. Windows might show an "unknown publisher" warning because the executable is not signed.
-
-## Layout
-
-```
-src/eyeokuri/
-  sources/        Source interface and Signals (raw eye openness, head pose)
-    opencv.py     the built-in source: webcam -> face mesh -> Signals
-    face_mesh.py  MediaPipe's face model, run with OpenCV
-    camera.py     webcam capture that reconnects, plus the scanner for the camera picker
-  eyes.py         Signals -> Observation (open/closed vs. your open-eye level)
-  head.py         Signals -> head yaw/pitch relative to your usual pose
-  triggers.py     Observation -> step boxes entered -> gestures -> TriggerEvent
-  outputs.py      TriggerEvent -> key/mouse input
-  engine.py       runs the pipeline one frame at a time (used by both front ends)
-  app.py          command line: main loop and flags
-  gui.py          window: log, optional camera view, settings with the gesture plot, and the gesture wizard
-  tuning.py       fits a gesture's limits to takes recorded in the wizard
-```
-
-To add a gesture, add a `[gestures.NAME]` section to your config. To add a new signal, add it to `SIGNALS` in `config.py` and to `signal_value` in `triggers.py`. To add another input device, implement the `Source` protocol in `eyeokuri/sources/` (see [docs/design/sources.md](docs/design/sources.md)). For how the `[eyes]` and `[head]` settings work, see [docs/design/detection.md](docs/design/detection.md).
-
-Run the tests with `pytest`.
+Keys are sent with `SendInput` using hardware scan codes, so DirectInput games receive them too. If the game runs as administrator, run `eyeokuri` as administrator as well, or Windows will block the input.
