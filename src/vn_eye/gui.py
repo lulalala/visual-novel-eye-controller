@@ -323,22 +323,20 @@ class MainWindow:
         ttk.Button(bar, text="Camera view…", command=self.open_camera).pack(side="left", padx=(6, 0))
         ttk.Button(bar, text="Settings…", command=self.open_settings).pack(side="left", padx=(6, 0))
         ttk.Button(bar, text="Gesture wizard…", command=self.open_wizard).pack(side="left", padx=(6, 0))
-        self.status = ttk.Label(bar, text="Starting…", foreground=_MUTED)
+        # The status is what you check most, so it is larger than the rest.
+        self._status_font = _scaled_font("TkDefaultFont", 1.6)
+        self.status = ttk.Label(bar, text="Starting…", foreground=_MUTED, font=self._status_font)
         self.status.pack(side="right")
 
         side = ttk.Frame(root)
         side.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
         side.columnconfigure(0, weight=1)
-        side.rowconfigure(1, weight=1)
-        head = ttk.Frame(side)
-        head.grid(row=0, column=0, columnspan=2, sticky="ew")
-        ttk.Label(head, text="Log").pack(side="left")
-        ttk.Button(head, text="Clear", command=self._clear_log).pack(side="right")
+        side.rowconfigure(0, weight=1)
         self.log_text = tk.Text(side, width=90, height=24, wrap="word", state="disabled",
                                 font="TkFixedFont", borderwidth=1, relief="solid")
-        self.log_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
+        self.log_text.grid(row=0, column=0, sticky="nsew")
         scroll = ttk.Scrollbar(side, orient="vertical", command=self.log_text.yview)
-        scroll.grid(row=1, column=1, sticky="ns", pady=(4, 0))
+        scroll.grid(row=0, column=1, sticky="ns")
         self.log_text.configure(yscrollcommand=scroll.set)
         self.log_text.tag_configure("fire", foreground=_OK)
         self.log_text.tag_configure("reject", foreground=_MUTED)
@@ -378,11 +376,6 @@ class MainWindow:
         self.log_text.configure(state="disabled")
         if at_end:
             self.log_text.see("end")
-
-    def _clear_log(self) -> None:
-        self.log_text.configure(state="normal")
-        self.log_text.delete("1.0", "end")
-        self.log_text.configure(state="disabled")
 
     def apply_config(self, config: Config) -> None:
         self.config = config
