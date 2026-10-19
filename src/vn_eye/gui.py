@@ -58,6 +58,9 @@ _LANE_HINTS = {
     "pitch": "Head pitch: + = tilted down",
     "yaw": "Head yaw: + = turned to your left",
 }
+# Settings that stay in the config file but not on the General tab. They only
+# decide which frames the eye baseline learns from, not when a gesture fires.
+_HIDDEN_GENERAL = {("eyes", "close_ratio"), ("eyes", "open_ratio")}
 _GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 
 
@@ -1082,6 +1085,8 @@ class SettingsWindow:
                 row=row, column=0, sticky="w", pady=(8, 2))
             row += 1
             for key, value in values.items():
+                if (section, key) in _HIDDEN_GENERAL:
+                    continue
                 ttk.Label(tab, text=key).grid(row=row, column=0, sticky="w", padx=(12, 8))
                 if isinstance(value, bool):
                     bvar = tk.BooleanVar(value=value)
