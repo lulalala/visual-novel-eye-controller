@@ -22,7 +22,7 @@ With `eyes.require_both_eyes = true` (the default), the tracker uses the more op
 
 ## Head pose baseline
 
-`HeadTracker` in `head.py` reports yaw and pitch relative to the median pose over the last `head.baseline_window_s` seconds (10 by default). An off-center webcam or a habitual slight tilt therefore reads as 0°. Brief turns such as a head shake or nod barely move the median, so it stays close to the resting pose.
+`HeadTracker` in `head.py` reports yaw and pitch relative to the median pose over the last `head.baseline_window_s` seconds (10 by default). An off-center webcam or a habitual slight tilt therefore reads as 0°. Brief turns such as a head shake or nod barely move the median, so it stays close to the resting pose. For the first `head.warmup_s` seconds (2 by default), and again after a face loss longer than the window, the history is too short to trust, so the tracker reports no head pose and head gestures can't start.
 
 Pitch is positive when the head tilts down, because image y grows downward.
 

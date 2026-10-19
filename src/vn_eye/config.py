@@ -48,6 +48,8 @@ class EyeConfig:
 class HeadConfig:
     # Head yaw is measured relative to a rolling median of your usual pose.
     baseline_window_s: float = 10.0
+    # Seconds to learn before head gestures can trigger.
+    warmup_s: float = 2.0
 
 
 SIGNALS = ("eyes", "pitch", "yaw")

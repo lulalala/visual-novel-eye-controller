@@ -17,6 +17,11 @@ class HeadTracker:
         # A zero or negative window drops every sample, including the newest.
         if config.baseline_window_s <= 0:
             raise ValueError(f"head.baseline_window_s must be above 0, not {config.baseline_window_s}")
+        if not 0 <= config.warmup_s < config.baseline_window_s:
+            raise ValueError(
+                f"head.warmup_s must be 0 or more and below head.baseline_window_s "
+                f"({config.baseline_window_s}), not {config.warmup_s}"
+            )
         self.config = config
         self._yaw_history: deque[tuple[float, float]] = deque()
         self._pitch_history: deque[tuple[float, float]] = deque()
@@ -35,5 +40,9 @@ class HeadTracker:
         history.append((t, value))
         while t - history[0][0] > self.config.baseline_window_s:
             history.popleft()
+        # With almost no history the median is the current pose, so every pose
+        # would read as 0. None cancels any half-done gesture.
+        if t - history[0][0] < self.config.warmup_s:
+            return None
         # Brief turns barely move the median, so it stays close to the resting pose.
         return value - statistics.median(v for _, v in history)

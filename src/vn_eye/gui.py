@@ -73,6 +73,7 @@ _GENERAL_HELP = {
     ("eyes", "require_both_eyes"): "Both eyes must close, so a wink doesn't count.",
     ("head", "baseline_window_s"): "Seconds of history used to learn your usual head position. "
                                    "Raise it if looking away for a while shifts your zero.",
+    ("head", "warmup_s"): "Seconds to learn before head gestures can trigger. Must be below the window.",
     ("feedback", "sound"): "Play a sound when a gesture fires or you pause.",
     ("feedback", "log_rejected"): "Log gestures that were detected but didn't fire, and why.",
 }

@@ -24,6 +24,8 @@ require_both_eyes = true
 [head]
 # vn-eye learns your usual head position over this many seconds
 baseline_window_s = 10.0
+# Seconds to learn before head gestures can trigger
+warmup_s = 2.0
 
 # Each gesture is a list of steps. A step is a box on a plot of one signal
 # over time, and it counts the moment the signal enters the box:
