@@ -96,22 +96,8 @@
   <section class="install" id="install">
     <h2>Your hands are free now</h2>
     <p>Works with any webcam (e.g. Android phone as webcam). A wizard learns your blink from a few practice takes.</p>
-    <ol class="steps">
-      <li><b>Download.</b> Unzip the file anywhere.</li>
-      <li><b>Run eyeokuri.exe.</b> Keep your eyes open for 2 seconds.</li>
-      <li><b>Blink in your game.</b> The next line appears.</li>
-    </ol>
     <a class="btn big" href="https://github.com/lulalala/visual-novel-eye-controller/releases/latest">Download for Windows</a>
     <p class="small">The first run downloads a 4 MB face model, so be online once. Windows might warn about an unknown publisher because the app is not signed. Select <b>More info</b>, then <b>Run anyway</b>.</p>
-    <details class="source">
-      <summary>Prefer Python? Install from source</summary>
-      <div class="code" id="cmd"><button class="copy" id="copy" type="button">Copy</button><span class="c"># needs Python 3.11+</span>
-git clone https://github.com/lulalala/visual-novel-eye-controller
-cd visual-novel-eye-controller
-python -m venv .venv &amp;&amp; .venv\Scripts\activate
-pip install -e .
-eyeokuri-gui</div>
-    </details>
   </section>
 
   <section class="keep">
