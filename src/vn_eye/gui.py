@@ -272,6 +272,14 @@ class MainWindow:
 
     def apply_config(self, config: Config) -> None:
         self.config = config
+        self.push_config()
+
+    def push_config(self) -> None:
+        """Sends the settings in use to the engine. Gestures are off while the settings
+        or wizard window is open, so editing and recording send nothing to other windows."""
+        config = self.config
+        if self.settings is not None or self.wizard is not None:
+            config = replace(config, gestures={n: replace(g, enabled=False) for n, g in config.gestures.items()})
         self.worker.set_config(config)
 
     def save_config(self, config: Config) -> None:
@@ -291,6 +299,7 @@ class MainWindow:
             self.settings.win.focus_force()
             return
         self.settings = SettingsWindow(self)
+        self.push_config()
 
     def open_wizard(self, settings: SettingsWindow | None = None) -> None:
         """From the settings window, the wizard starts from its edits and hands
@@ -1060,6 +1069,7 @@ class SettingsWindow:
         if self.app.wizard is not None and self.app.wizard.settings is self:
             self.app.wizard.close()
         self.app.settings = None
+        self.app.push_config()
         self.win.destroy()
 
 
@@ -1437,8 +1447,8 @@ class WizardWindow:
     def close(self) -> None:
         if self._poll_id is not None:
             self.win.after_cancel(self._poll_id)
-        self.worker.set_config(self.app.config)
         self.app.wizard = None
+        self.app.push_config()
         self.win.grab_release()
         self.win.destroy()
 
