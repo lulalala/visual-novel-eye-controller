@@ -1,4 +1,4 @@
-/* Layout: a 4:3 visual novel title screen as the hero, then install steps and a closing band. */
+/* Layout: a 16:9 visual novel title screen as the hero, then install steps and a closing band. */
 :root {
   color-scheme: light;
   --paper: #F8F9FF;      /* page ground, faint blue */
@@ -44,7 +44,7 @@ nav .links a:hover { color: var(--sakura); }
 h1 {
   margin: 0;
   font-weight: 900;
-  font-size: clamp(40px, 10.5cqw, 150px);
+  font-size: clamp(40px, 7.4cqw, 130px);
   line-height: 1.02;
   letter-spacing: -0.03em;
   text-wrap: balance;
@@ -143,7 +143,6 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
   html { scroll-behavior: auto; }
 }
 
-.eyebrow { margin: 0 0 14px; font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--sakura); }
 .share { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 26px; font-size: 14px; color: var(--ink-soft); font-weight: 700; }
 .chipbtn { font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; color: var(--ink); background: #fff; border: 2px solid var(--sakura-soft); border-radius: 99px; padding: 4px 14px; }
 .chipbtn:hover { background: var(--sakura-soft); }
@@ -166,15 +165,15 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
 .source summary { cursor: pointer; text-align: center; font-size: 15px; font-weight: 700; color: var(--ink-soft); margin-bottom: 14px; }
 .source summary:hover { color: var(--sakura); }
 
-/* Hero: a 4:3 visual novel title screen. The tagline sits over the demo; sizes scale with the stage (cqw). */
+/* Hero: a 16:9 visual novel title screen. The tagline sits over the demo; sizes scale with the stage (cqw). */
 .top { display: block; }
 .stage {
   position: relative; isolation: isolate; overflow: hidden;
   container-type: inline-size;
-  width: min(100%, calc((100vh - 110px) * 4 / 3));
+  width: min(100%, calc((100vh - 110px) * 16 / 9));
   min-width: min(100%, 560px);
   margin-inline: auto;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr) auto;
   --bar: clamp(28px, 3cqw, 42px);
   border-radius: 32px;
@@ -183,25 +182,26 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
   box-shadow: 0 0 0 6px var(--line), 0 24px 60px -20px rgba(80, 70, 180, .35);
 }
 .chip { position: absolute; top: calc(var(--bar) + 2cqw); right: 2.4cqw; z-index: 4; }
-.title { grid-column: 1 / 9; grid-row: 2; z-index: 3; align-self: center; padding: 0 0 3cqw 5cqw; }
-.title .sub { margin: 1.6cqw 0 0; max-width: 24ch; color: var(--ink-soft); font-size: clamp(14px, 1.9cqw, 28px); line-height: 1.5; }
+.title { grid-column: 1 / 8; grid-row: 2; z-index: 3; align-self: center; padding: 0 0 2.4cqw 5cqw; }
+.title .sub { margin: 1.6cqw 0 0; max-width: 36ch; color: var(--ink-soft); font-size: clamp(14px, 1.9cqw, 28px); line-height: 1.5; }
 .title .cta { justify-content: flex-start; margin-top: 2.4cqw; gap: 10px; }
-.title .meta { margin-top: 1.2cqw; }
+.title .meta { margin: 0 0 0 .6cqw; }
+.title .cta { align-items: center; }
 .title .btn.big { font-size: clamp(14px, 1.9cqw, 24px); padding: .8em 1.7em; }
 .title .btn.alt { font-size: clamp(13px, 1.6cqw, 20px); }
-.portrait { grid-column: 5 / 13; grid-row: 2; display: grid; place-items: center end; padding: 2cqw 1cqw 0 0; min-height: 0; }
-.eye { position: relative; width: 52cqw; max-width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
+.portrait { grid-column: 5 / 13; grid-row: 2; display: grid; place-items: start end; padding: 0 1cqw 0 0; overflow: visible; min-height: 0; }
+.eye { position: relative; width: 46cqw; max-width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
 
 /* dialogue window: the minor points */
 .dialog {
   position: relative; grid-column: 1 / -1; grid-row: 3; z-index: 3;
-  margin: 0 3cqw 3cqw; padding: 3.4cqw 3cqw 1.8cqw;
+  margin: 0 3cqw 3cqw; padding: 2.8cqw 3cqw 1.4cqw;
   background: rgba(255,255,255,.92); border-radius: 24px;
   box-shadow: 0 0 0 3px var(--sakura-soft), 0 10px 30px -12px rgba(80,70,180,.35);
   cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s;
 }
 .dialog.pulse { transform: translateY(2px); }
-.line { margin: 0; font-size: clamp(15px, 2.2cqw, 32px); line-height: 1.5; min-height: 3em; }
+.line { margin: 0; font-size: clamp(15px, 2.2cqw, 32px); line-height: 1.5; min-height: 1.5em; }
 
 @media (max-width: 720px) {
   .stage { aspect-ratio: auto; width: 100%; min-width: 0; grid-template-columns: 1fr; grid-template-rows: none; border-radius: 26px; }
@@ -211,23 +211,23 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
   .title { padding: 18px 16px 0; text-align: center; }
   .title .sub { margin-inline: auto; font-size: 16px; }
   .title .cta { justify-content: center; margin-top: 18px; }
-  .title .meta { margin-top: 10px; }
+  .title .meta { margin: 6px 0 0; flex-basis: 100%; text-align: center; }
   .title .btn.big { font-size: 17px; }
   .title .btn.alt { font-size: 15px; }
   .portrait { place-items: center; padding: 8px 16px 0; }
   .eye { width: min(72cqw, 320px); }
   .dialog { grid-column: 1; grid-row: auto; margin: 0 12px 12px; padding: 30px 18px 14px; }
-  .line { font-size: 17px; }
+  .line { font-size: 17px; min-height: 3em; }
   .key { width: 88px; font-size: 12px; }
 }
 
 /* wide screens: small text grows with the stage, and the nav lines up with its width */
-nav { width: min(100%, max(calc((100vh - 110px) * 4 / 3), 560px)); margin-inline: auto; }
-.stage .eyebrow, .stage .chip, .stage .meta, .stage .foot { font-size: clamp(12px, 1.3cqw, 17px); }
+nav { width: min(100%, max(calc((100vh - 110px) * 16 / 9), 560px)); margin-inline: auto; }
+.stage .chip, .stage .meta, .stage .foot { font-size: clamp(12px, 1.3cqw, 17px); }
 .stage .name { font-size: clamp(14px, 1.5cqw, 20px); }
 @media (max-width: 720px) {
   nav { width: 100%; }
-  .stage .eyebrow, .stage .chip, .stage .meta, .stage .foot { font-size: 13px; }
+  .stage .chip, .stage .meta, .stage .foot { font-size: 13px; }
   .stage .name { font-size: 15px; }
 }
 
