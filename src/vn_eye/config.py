@@ -17,6 +17,18 @@ class CameraConfig:
     height: int = 480
     fps: int = 30
 
+    def __post_init__(self) -> None:
+        # Drivers pick their own mode for sizes they don't support, and a tiny
+        # frame has no usable face.
+        if self.index < 0:
+            raise ValueError(f"camera.index must be 0 or more, not {self.index}")
+        if self.width < 160:
+            raise ValueError(f"camera.width must be at least 160, not {self.width}")
+        if self.height < 120:
+            raise ValueError(f"camera.height must be at least 120, not {self.height}")
+        if self.fps < 1:
+            raise ValueError(f"camera.fps must be at least 1, not {self.fps}")
+
 
 @dataclass(frozen=True)
 class EyeConfig:

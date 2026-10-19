@@ -47,7 +47,7 @@ vn-eye-gui                       # loads config.toml if it exists
 vn-eye-gui --config my.toml      # load and save another file
 ```
 
-The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether vn-eye sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. vn-eye draws it only while that window is open, so close it when you don't need it to save CPU. **Pause** (or the `p` key) pauses and resumes. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input.
+The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether vn-eye sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. vn-eye draws it only while that window is open, so close it when you don't need it to save CPU. In the settings window, **General** has a **Choose from live views…** button next to `camera.index`. It lists every camera it finds with its live view, and you click the one to use. **Pause** (or the `p` key) pauses and resumes. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input.
 
 **Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
 
@@ -149,7 +149,7 @@ src/vn_eye/
   sources/        Source interface and Signals (raw eye openness, head pose)
     opencv.py     the built-in source: webcam -> face mesh -> Signals
     face_mesh.py  MediaPipe's face model, run with OpenCV
-    camera.py     webcam capture that reconnects
+    camera.py     webcam capture that reconnects, plus the scanner for the camera picker
   eyes.py         Signals -> Observation (open/closed vs. your open-eye level)
   head.py         Signals -> head yaw/pitch relative to your usual pose
   triggers.py     Observation -> step boxes entered -> gestures -> TriggerEvent

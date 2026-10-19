@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import Any, Callable
 
 import cv2
@@ -67,6 +68,66 @@ def _open_capture(cam: CameraConfig) -> cv2.VideoCapture:
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cam.height)
         cap.set(cv2.CAP_PROP_FPS, cam.fps)
     return cap
+
+
+class CameraScanner:
+    """Opens every camera it finds and keeps each one's latest frame in memory
+    (never saved), so the settings window can show them side by side."""
+
+    def __init__(self, skip: int | None = None, max_index: int = 8, width_px: int = 320) -> None:
+        self._skip = skip
+        self._max_index = max_index
+        self._width_px = width_px
+        self._lock = threading.Lock()
+        self._frames: dict[int, bytes] = {}
+        self.scanning = True
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def frames(self) -> dict[int, bytes]:
+        """The latest frame of each camera found so far, as PPM images."""
+        with self._lock:
+            return dict(self._frames)
+
+    def close(self) -> None:
+        self._stop.set()
+        self._thread.join(timeout=3.0)
+
+    def _run(self) -> None:
+        caps: dict[int, Any] = {}
+        try:
+            for index in range(self._max_index):
+                if self._stop.is_set():
+                    return
+                if index == self._skip:
+                    continue
+                cap = cv2.VideoCapture(index)
+                if cap.isOpened():
+                    caps[index] = cap
+                    self._grab(index, cap)
+                else:
+                    cap.release()
+            self.scanning = False
+            while not self._stop.is_set() and caps:
+                for index, cap in caps.items():
+                    self._grab(index, cap)
+                self._stop.wait(0.03)
+        finally:
+            self.scanning = False
+            for cap in caps.values():
+                cap.release()
+
+    def _grab(self, index: int, cap: Any) -> None:
+        ok, frame = cap.read()
+        if not ok:
+            return
+        scale = self._width_px / frame.shape[1]
+        small = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        rgb = cv2.cvtColor(small,cv2.COLOR_BGR2RGB)
+        data = b"P6 %d %d 255\n" % (rgb.shape[1], rgb.shape[0]) + rgb.tobytes()
+        with self._lock:
+            self._frames[index] = data
 
 
 def open_camera(cam: CameraConfig, log: Callable[[str], None] | None = None) -> ReconnectingCamera:

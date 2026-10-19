@@ -147,3 +147,10 @@ def test_guards_can_be_changed_with_set_and_survive_a_dump(tmp_path):
     path = tmp_path / "saved.toml"
     path.write_text(dump_config(config))
     assert load_config(path) == config
+
+
+def test_tiny_camera_size_is_rejected():
+    with pytest.raises(ValueError, match="camera.width"):
+        build_config(parse_args(["--set", "camera.width=1"]))
+    with pytest.raises(ValueError, match="camera.height"):
+        build_config(parse_args(["--set", "camera.height=1"]))
