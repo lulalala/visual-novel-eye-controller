@@ -1,10 +1,10 @@
 (function () {
   var LINES = [
-    "Hands full of snacks? Good. You won't need them.",
-    "I watch your webcam. When you blink, I press Enter.",
-    "Shake your head and I pause. Shake again and I carry on.",
-    "Everything stays on your PC. I never save a frame.",
-    "Ready? Blink once, and the story is yours."
+    "Blink and I press Enter. The next line appears.",
+    "Shake your head to pause. Shake again to carry on.",
+    "Works with any game that takes Enter, space or a click.",
+    "Camera frames stay on your PC. I never save a frame.",
+    "Your blink is different? The wizard learns it from a few takes."
   ];
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var svg = document.querySelector(".eye svg");
