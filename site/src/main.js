@@ -1,10 +1,10 @@
 (function () {
   var LINES = [
-    "Hands full of snacks? Good. You won't need them.",
-    "I watch your webcam. When you blink, I press Enter.",
-    "Shake your head and I pause. Shake again and I carry on.",
-    "Everything stays on your PC. I never save a frame.",
-    "Ready? Blink once, and the story is yours."
+    "H-hands full of snacks? Good. It's not like I wanted you to need them or anything!",
+    "I watch your webcam. When you blink, I press Enter. Don't read into it, idiot!",
+    "Need a break? Shake your head. I'll wait. B-but only because I'm bored!",
+    "Everything stays on your PC. I never save a frame. W-what, you thought I'd peek at you?!",
+    "Hmph. Ready? Blink once, and the story is yours. Just don't make me say it twice!"
   ];
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var svg = document.querySelector(".eye svg");
