@@ -5,10 +5,10 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from vn_eye.config import EyeConfig
-from vn_eye.eyes import Observation
+from eyeokuri.config import EyeConfig
+from eyeokuri.eyes import Observation
 
-WINDOW = "vn-eye preview"
+WINDOW = "eyeokuri preview"
 # Canvas for sources without an image, so the status overlay still shows.
 _BLANK_SIZE = (480, 640)
 

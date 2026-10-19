@@ -3,7 +3,7 @@ import urllib.request
 
 import pytest
 
-from vn_eye.sources import face_mesh
+from eyeokuri.sources import face_mesh
 
 GOOD = b"pinned model"
 BAD = b"some other model"

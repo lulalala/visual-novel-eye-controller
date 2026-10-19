@@ -1,8 +1,8 @@
 from dataclasses import replace
 
-from vn_eye.config import Config, apply_overrides
-from vn_eye.engine import Engine
-from vn_eye.sources import EYE_OPENNESS, HEAD_POSE, Signals
+from eyeokuri.config import Config, apply_overrides
+from eyeokuri.engine import Engine
+from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
 
 FPS = 30
 

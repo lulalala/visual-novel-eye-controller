@@ -2,9 +2,9 @@ from dataclasses import replace
 
 import pytest
 
-from vn_eye.config import Config, GestureConfig, StepConfig
-from vn_eye.eyes import Observation
-from vn_eye.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit, script, suggestions, trim
+from eyeokuri.config import Config, GestureConfig, StepConfig
+from eyeokuri.eyes import Observation
+from eyeokuri.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit, script, suggestions, trim
 
 FPS = 30
 

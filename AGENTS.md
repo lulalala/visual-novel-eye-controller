@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repo. Read all of it before ch
 
 ## Purpose
 
-`vn-eye` lets someone reading a visual novel advance the text without touching the keyboard. It watches a webcam, detects face gestures (blink, head shake, head nod), and sends a key or mouse input (`Enter` by default) to the foreground window.
+`eyeokuri` lets someone reading a visual novel advance the text without touching the keyboard. It watches a webcam, detects face gestures (blink, head shake, head nod), and sends a key or mouse input (`Enter` by default) to the foreground window.
 
 - Stage 1 (research) is done: see `docs/research.md`.
 - Stage 2 (current): a working webcam prototype. Blink → `Enter` is the core feature. Head shake toggles pause.
@@ -12,7 +12,7 @@ Instructions for AI coding agents working in this repo. Read all of it before ch
 
 ## Stack
 
-- Python ≥ 3.11 (the local `.venv` uses 3.14). `src/` layout, package `vn_eye`, installed with `pip install -e ".[dev]"`.
+- Python ≥ 3.11 (the local `.venv` uses 3.14). `src/` layout, package `eyeokuri`, installed with `pip install -e ".[dev]"`.
 - MediaPipe's Face Landmarker models (face detector + face mesh), run by OpenCV's DNN module. The `mediapipe` package is not used, because it includes telemetry. OpenCV also handles the camera and preview window. NumPy.
 - `pynput`: key output on macOS/Linux. On Windows, key output uses `SendInput` through `ctypes` with hardware scan codes.
 - Tests: `pytest` only. There is no linter, formatter or type checker set up. Don't add one unless asked.
@@ -134,8 +134,8 @@ Follow the [developer documentation writing standard](https://github.com/NateBJo
 A change is finished only when all of these are true:
 
 1. `.venv/bin/python -m pytest -q` passes, and new behavior has tests (per the trigger checklist above when relevant).
-2. `.venv/bin/vn-eye --help` and `.venv/bin/vn-eye-gui --help` run without error, which shows the CLI and config still load.
+2. `.venv/bin/eyeokuri --help` and `.venv/bin/eyeokuri-gui --help` run without error, which shows the CLI and config still load.
 3. Every new or changed config key exists in code defaults and `config.example.toml` with the same value, and works through `--set`.
 4. The README matches the change when users can see it (flags, gestures, defaults, Layout).
 5. Nothing violates the privacy rule. No new dependency was added without approval.
-6. Your final message says what you **could not** test. Real-camera and real-key-output behavior can only be checked by a human running `vn-eye --preview` paused (press `p`), then `vn-eye` in a game. Never claim a gesture "works" from unit tests alone. Say it is unit-tested and needs a live check.
+6. Your final message says what you **could not** test. Real-camera and real-key-output behavior can only be checked by a human running `eyeokuri --preview` paused (press `p`), then `eyeokuri` in a game. Never claim a gesture "works" from unit tests alone. Say it is unit-tested and needs a live check.

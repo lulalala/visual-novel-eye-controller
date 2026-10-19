@@ -30,7 +30,7 @@ With a **webcam**, design gestures that need only coarse gaze (a few large scree
 
 ### Minimum webcam spec for the blink prototype
 
-Testing so far covers only the MacBook built-in camera, where it works well. The figures below come from what the code needs, not from testing desktop webcams. `vn-eye` requests 640×480 at 30 fps. MediaPipe works on a small face crop, so higher resolution adds little. Frame rate, exposure, and placement matter more.
+Testing so far covers only the MacBook built-in camera, where it works well. The figures below come from what the code needs, not from testing desktop webcams. `eyeokuri` requests 640×480 at 30 fps. MediaPipe works on a small face crop, so higher resolution adds little. Frame rate, exposure, and placement matter more.
 
 | | Minimum | Recommended | Why |
 | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ Setup matters more than the camera:
 - Glare on glasses can hide the eyelids. Tilt the camera or lamp a little.
 - Turn off driver "low-light compensation" or auto-exposure modes that lower fps.
 
-To check a camera, run `vn-eye --preview` and press `p` to pause, so gestures print instead of sending keys. The preview shows live fps. It should stay near 30. Blink normally for a minute: if ordinary blinks are logged as "too short", or fps drops below about 20, improve the lighting or try another camera. Select a non-default camera with `--set camera.index=1`.
+To check a camera, run `eyeokuri --preview` and press `p` to pause, so gestures print instead of sending keys. The preview shows live fps. It should stay near 30. Blink normally for a minute: if ordinary blinks are logged as "too short", or fps drops below about 20, improve the lighting or try another camera. Select a non-default camera with `--set camera.index=1`.
 
 ## Software building blocks
 

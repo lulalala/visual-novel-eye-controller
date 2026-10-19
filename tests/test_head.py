@@ -1,8 +1,8 @@
 import pytest
 
-from vn_eye.config import HeadConfig
-from vn_eye.head import HeadTracker
-from vn_eye.sources import Signals
+from eyeokuri.config import HeadConfig
+from eyeokuri.head import HeadTracker
+from eyeokuri.sources import Signals
 
 
 def feed(tracker, start, end, yaw, fps=30):

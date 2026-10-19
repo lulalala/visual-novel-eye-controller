@@ -9,13 +9,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-from vn_eye import preview
-from vn_eye.config import Config, apply_overrides, load_config, nested, parse_override
-from vn_eye.engine import Engine
-from vn_eye.eyes import EyeStateTracker
-from vn_eye.head import HeadTracker
-from vn_eye.outputs import OUTPUT_NAMES
-from vn_eye.triggers import create_triggers
+from eyeokuri import preview
+from eyeokuri.config import Config, apply_overrides, load_config, nested, parse_override
+from eyeokuri.engine import Engine
+from eyeokuri.eyes import EyeStateTracker
+from eyeokuri.head import HeadTracker
+from eyeokuri.outputs import OUTPUT_NAMES
+from eyeokuri.triggers import create_triggers
 
 FLASH_S = 0.3
 
@@ -37,7 +37,7 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        prog="vn-eye",
+        prog="eyeokuri",
         description=__doc__,
         epilog="Precedence: built-in defaults < --config file < shortcut flags < --set.",
     )
@@ -155,6 +155,6 @@ def main(argv: list[str] | None = None) -> int:
     try:
         config = build_config(args)
     except (ValueError, OSError) as e:
-        print(f"vn-eye: {e}", file=sys.stderr)
+        print(f"eyeokuri: {e}", file=sys.stderr)
         return 2
     return run(config, args)

@@ -7,7 +7,7 @@ from typing import Any, Callable
 
 import cv2
 
-from vn_eye.config import CameraConfig
+from eyeokuri.config import CameraConfig
 
 # While frames keep failing, reopen the camera this often.
 _RECONNECT_AFTER_S = 1.0

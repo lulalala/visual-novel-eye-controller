@@ -11,9 +11,9 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable, Protocol
 
-from vn_eye.config import SIGNALS, Config, GestureConfig, StepConfig
-from vn_eye.eyes import Observation
-from vn_eye.sources import EYE_OPENNESS, HEAD_POSE, Source
+from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig
+from eyeokuri.eyes import Observation
+from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Source
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ class TriggerEvent:
 class Trigger(Protocol):
     name: str
     needs: frozenset[str]
-    """Signals the source must provide (see vn_eye.sources); otherwise the trigger is skipped."""
+    """Signals the source must provide (see eyeokuri.sources); otherwise the trigger is skipped."""
 
     def update(self, obs: Observation) -> TriggerEvent | None: ...
 

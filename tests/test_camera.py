@@ -1,4 +1,4 @@
-from vn_eye.sources.camera import ReconnectingCamera
+from eyeokuri.sources.camera import ReconnectingCamera
 
 
 class FakeCapture:

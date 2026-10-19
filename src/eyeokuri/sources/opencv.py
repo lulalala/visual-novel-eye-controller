@@ -8,10 +8,10 @@ from typing import Callable
 import cv2
 import numpy as np
 
-from vn_eye.config import CameraConfig
-from vn_eye.sources import EYE_OPENNESS, HEAD_POSE, Signals
-from vn_eye.sources.camera import open_camera
-from vn_eye.sources.face_mesh import FaceMesh, head_pose_from_landmarks
+from eyeokuri.config import CameraConfig
+from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
+from eyeokuri.sources.camera import open_camera
+from eyeokuri.sources.face_mesh import FaceMesh, head_pose_from_landmarks
 
 # Face mesh indices, ordered p1..p6 for the eye aspect ratio: p1/p4 are the
 # eye corners, (p2, p6) and (p3, p5) are upper/lower lid pairs.

@@ -278,7 +278,7 @@ def load_config(path: Path | None) -> Config:
     if version != CONFIG_VERSION:
         found = "no version key" if version is None else f"version = {version!r}"
         raise ValueError(
-            f"{path} has {found}, so it uses a layout this vn-eye can't read. "
+            f"{path} has {found}, so it uses a layout this eyeokuri can't read. "
             f"Start again from config.example.toml (version = {CONFIG_VERSION})."
         )
     return _merge(config, data, "")

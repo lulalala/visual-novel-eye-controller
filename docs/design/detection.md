@@ -1,6 +1,6 @@
 # Eye and head detection
 
-This page explains how `vn-eye` turns raw eye openness and head pose into the open/closed state and head angles that triggers see. It covers the `[eyes]` and `[head]` config sections. For the overall pipeline, see `sources.md`.
+This page explains how `eyeokuri` turns raw eye openness and head pose into the open/closed state and head angles that triggers see. It covers the `[eyes]` and `[head]` config sections. For the overall pipeline, see `sources.md`.
 
 ## Eye openness baseline
 

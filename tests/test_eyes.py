@@ -1,8 +1,8 @@
 import pytest
 
-from vn_eye.config import EyeConfig
-from vn_eye.eyes import EyeStateTracker
-from vn_eye.sources import Signals
+from eyeokuri.config import EyeConfig
+from eyeokuri.eyes import EyeStateTracker
+from eyeokuri.sources import Signals
 
 
 def feed(tracker, start, end, openness, fps=30, right=None):

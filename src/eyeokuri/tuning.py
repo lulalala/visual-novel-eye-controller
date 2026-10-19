@@ -6,9 +6,9 @@ import math
 import statistics
 from dataclasses import dataclass, replace
 
-from vn_eye.config import Config, GestureConfig, StepConfig
-from vn_eye.eyes import Observation
-from vn_eye.triggers import GestureTrigger, Replay, replay, signal_value
+from eyeokuri.config import Config, GestureConfig, StepConfig
+from eyeokuri.eyes import Observation
+from eyeokuri.triggers import GestureTrigger, Replay, replay, signal_value
 
 # What a take is: the gesture as you mean it, or a near miss that must not fire.
 DO = "do"

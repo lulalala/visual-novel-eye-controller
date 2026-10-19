@@ -1,4 +1,4 @@
-# Copy to config.toml and pass with `vn-eye --config config.toml`.
+# Copy to config.toml and pass with `eyeokuri --config config.toml`.
 # Every key except version is optional; the values below are the defaults.
 version = 1
 
@@ -9,7 +9,7 @@ height = 480
 fps = 30
 
 [eyes]
-# vn-eye learns how open your eyes usually are over this many seconds
+# eyeokuri learns how open your eyes usually are over this many seconds
 baseline_window_s = 10.0
 # Seconds to learn before blinks can trigger
 warmup_s = 2.0
@@ -22,7 +22,7 @@ open_ratio = 0.75
 require_both_eyes = true
 
 [head]
-# vn-eye learns your usual head position over this many seconds
+# eyeokuri learns your usual head position over this many seconds
 baseline_window_s = 10.0
 # Seconds to learn before head gestures can trigger
 warmup_s = 2.0

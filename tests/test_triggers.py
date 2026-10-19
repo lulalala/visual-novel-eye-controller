@@ -2,12 +2,12 @@ from dataclasses import replace
 
 import pytest
 
-from vn_eye.config import Config, GestureConfig, HeadConfig, StepConfig, apply_overrides
-from vn_eye.eyes import Observation
-from vn_eye.head import HeadTracker
-from vn_eye.outputs import ActionDispatcher
-from vn_eye.sources import EYE_OPENNESS, HEAD_POSE, Signals
-from vn_eye.triggers import GestureTrigger, TriggerEvent, create_triggers, replay, supported_triggers
+from eyeokuri.config import Config, GestureConfig, HeadConfig, StepConfig, apply_overrides
+from eyeokuri.eyes import Observation
+from eyeokuri.head import HeadTracker
+from eyeokuri.outputs import ActionDispatcher
+from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
+from eyeokuri.triggers import GestureTrigger, TriggerEvent, create_triggers, replay, supported_triggers
 
 FPS = 30
 DEFAULTS = Config().gestures

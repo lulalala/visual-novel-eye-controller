@@ -29,7 +29,7 @@ def cache_dir() -> Path:
         base = Path.home() / "Library" / "Caches"
     else:
         base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-    return base / "vn-eye"
+    return base / "eyeokuri"
 
 
 def _sha256(path: Path) -> str:
@@ -52,7 +52,7 @@ def ensure_model(path: Path | None = None) -> Path:
         tmp.unlink()
         raise SystemExit(
             f"Downloaded face landmark model has SHA-256 {digest}, expected {MODEL_SHA256}; "
-            "not using it. Run vn-eye again to retry the download."
+            "not using it. Run eyeokuri again to retry the download."
         )
     tmp.replace(path)
     return path

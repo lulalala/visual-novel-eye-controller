@@ -1,5 +1,5 @@
 @echo off
-rem Build a standalone vn-eye folder and zip under build\. Double-click to run.
+rem Build a standalone eyeokuri folder and zip under build\. Double-click to run.
 setlocal
 cd /d "%~dp0"
 
@@ -14,14 +14,14 @@ rem Reinstall so the bundle picks up the current source.
 build\venv\Scripts\python -m pip install -q --force-reinstall --no-deps . || goto :fail
 build\venv\Scripts\python -m pip install -q . || goto :fail
 
-build\venv\Scripts\pyinstaller --noconfirm --clean --log-level WARN --name vn-eye ^
+build\venv\Scripts\pyinstaller --noconfirm --clean --log-level WARN --name eyeokuri ^
     --exclude-module pynput --distpath build\dist --workpath build\work --specpath build ^
-    src\vn_eye\__main__.py || goto :fail
+    src\eyeokuri\__main__.py || goto :fail
 
-powershell -NoProfile -Command "Compress-Archive -Force build\dist\vn-eye build\vn-eye-windows.zip" || goto :fail
+powershell -NoProfile -Command "Compress-Archive -Force build\dist\eyeokuri build\eyeokuri-windows.zip" || goto :fail
 
 echo.
-echo Done. Copy build\vn-eye-windows.zip to another PC, unzip it and run vn-eye.exe.
+echo Done. Copy build\eyeokuri-windows.zip to another PC, unzip it and run eyeokuri.exe.
 pause
 exit /b 0
 

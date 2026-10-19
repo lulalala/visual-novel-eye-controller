@@ -5,8 +5,8 @@ from __future__ import annotations
 import statistics
 from collections import deque
 
-from vn_eye.config import HeadConfig
-from vn_eye.sources import Signals
+from eyeokuri.config import HeadConfig
+from eyeokuri.sources import Signals
 
 
 class HeadTracker:

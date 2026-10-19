@@ -5,14 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable
 
-from vn_eye.config import Config
-from vn_eye.eyes import EyeStateTracker, Observation
-from vn_eye.feedback import play_sound
-from vn_eye.head import HeadTracker
-from vn_eye.outputs import ActionDispatcher, Output, create_output
-from vn_eye.pause import PauseSwitch
-from vn_eye.sources import Source
-from vn_eye.triggers import Trigger, TriggerEvent, create_triggers, supported_triggers
+from eyeokuri.config import Config
+from eyeokuri.eyes import EyeStateTracker, Observation
+from eyeokuri.feedback import play_sound
+from eyeokuri.head import HeadTracker
+from eyeokuri.outputs import ActionDispatcher, Output, create_output
+from eyeokuri.pause import PauseSwitch
+from eyeokuri.sources import Source
+from eyeokuri.triggers import Trigger, TriggerEvent, create_triggers, supported_triggers
 
 
 @dataclass(frozen=True)
@@ -48,7 +48,7 @@ class Engine:
         self._own_source = source is None
         self._own_output = output is None
         if source is None:
-            from vn_eye.sources.opencv import OpenCVSource
+            from eyeokuri.sources.opencv import OpenCVSource
 
             source = OpenCVSource(config.camera, log)
         self.source = source
@@ -84,7 +84,7 @@ class Engine:
         old = self.config
         self.config = config
         if old is not None and self._own_source and config.camera != old.camera:
-            from vn_eye.sources.opencv import OpenCVSource
+            from eyeokuri.sources.opencv import OpenCVSource
 
             self.source.close()
             self.source = OpenCVSource(config.camera, self._log)

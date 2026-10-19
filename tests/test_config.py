@@ -1,7 +1,7 @@
 import pytest
 
-from vn_eye.app import build_config, parse_args
-from vn_eye.config import Config, StepConfig, dump_config, load_config
+from eyeokuri.app import build_config, parse_args
+from eyeokuri.config import Config, StepConfig, dump_config, load_config
 
 
 def config_from(*argv):

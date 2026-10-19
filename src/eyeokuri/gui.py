@@ -19,15 +19,15 @@ from typing import Any, Callable
 
 import cv2
 
-from vn_eye import preview
-from vn_eye.app import APP_OUTPUTS, FLASH_S, check_config
-from vn_eye.config import SIGNALS, Config, GestureConfig, StepConfig, dump_config, load_config
-from vn_eye.engine import Engine
-from vn_eye.eyes import Observation
-from vn_eye.outputs import OUTPUT_NAMES
-from vn_eye.sources.camera import CameraScanner
-from vn_eye.triggers import Replay, replay, signal_value
-from vn_eye.tuning import DO, KIND_LABELS, TOO_QUICK, TOO_SLOW, Fit, Take, can_tune, fit, script, trim
+from eyeokuri import preview
+from eyeokuri.app import APP_OUTPUTS, FLASH_S, check_config
+from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig, dump_config, load_config
+from eyeokuri.engine import Engine
+from eyeokuri.eyes import Observation
+from eyeokuri.outputs import OUTPUT_NAMES
+from eyeokuri.sources.camera import CameraScanner
+from eyeokuri.triggers import Replay, replay, signal_value
+from eyeokuri.tuning import DO, KIND_LABELS, TOO_QUICK, TOO_SLOW, Fit, Take, can_tune, fit, script, trim
 
 # Seconds of signal kept for "Live" and for saving a test recording.
 RECORD_S = 4.0
@@ -198,7 +198,7 @@ class CameraWindow:
     def __init__(self, app: MainWindow) -> None:
         self.app = app
         self.win = tk.Toplevel(app.root)
-        self.win.title("vn-eye camera view")
+        self.win.title("eyeokuri camera view")
         self.photo = tk.PhotoImage(width=640, height=480)
         ttk.Label(self.win, image=self.photo, anchor="center").pack(fill="both", expand=True)
         self.win.bind("p", lambda _e: app.worker.toggle_pause())
@@ -312,7 +312,7 @@ class MainWindow:
         self.worker = Worker(config)
         self._shown_status: tuple[str, bool] | None = None
 
-        root.title("vn-eye")
+        root.title("eyeokuri")
         root.columnconfigure(0, weight=1)
         root.rowconfigure(1, weight=1)
 
@@ -703,7 +703,7 @@ class SettingsWindow:
     def __init__(self, app: MainWindow) -> None:
         self.app = app
         self.win = tk.Toplevel(app.root)
-        self.win.title("vn-eye settings")
+        self.win.title("eyeokuri settings")
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         self.builtin = set(Config().gestures)
         self._suppress = False
@@ -1099,7 +1099,7 @@ class SettingsWindow:
         self.general_vars: list[Any] = []
         self._build_settings_tab(general, _GENERAL_SECTIONS, "Changing camera settings reopens the camera.")
         self._build_settings_tab(advanced, _ADVANCED_SECTIONS, (
-            "Most people never need to change these. Changing them makes vn-eye learn your usual "
+            "Most people never need to change these. Changing them makes eyeokuri learn your usual "
             "eye openness and head position again."))
 
     def _build_settings_tab(self, tab: ttk.Frame, sections: tuple[str, ...], note: str) -> None:
@@ -1596,7 +1596,7 @@ def _windows_sharp_text() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="vn-eye-gui", description="vn-eye with a window: live view, log and settings.")
+    p = argparse.ArgumentParser(prog="eyeokuri-gui", description="eyeokuri with a window: live view, log and settings.")
     p.add_argument("-c", "--config", type=Path, default=Path("config.toml"),
                    help="config file to load and save (default: config.toml, created on first save)")
     args = p.parse_args(argv)
@@ -1607,7 +1607,7 @@ def main(argv: list[str] | None = None) -> int:
         check_config(config)
     except (ValueError, OSError) as e:
         root.withdraw()
-        messagebox.showerror("vn-eye", f"Can't load {args.config}:\n\n{e}")
+        messagebox.showerror("eyeokuri", f"Can't load {args.config}:\n\n{e}")
         root.destroy()
         return 2
     MainWindow(root, config, args.config)

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from vn_eye.sources import EYE_OPENNESS, HEAD_POSE
-from vn_eye.sources.opencv import LEFT_EYE, RIGHT_EYE, OpenCVSource, eye_aspect_ratio, signals_from_landmarks
+from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE
+from eyeokuri.sources.opencv import LEFT_EYE, RIGHT_EYE, OpenCVSource, eye_aspect_ratio, signals_from_landmarks
 
 RIGHT_EYE_OUTER, LEFT_EYE_OUTER, FOREHEAD, CHIN = 33, 263, 10, 152
 

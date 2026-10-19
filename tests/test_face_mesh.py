@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 
-from vn_eye.sources.face_mesh import crop_transform, detector_anchors, head_pose_from_landmarks
+from eyeokuri.sources.face_mesh import crop_transform, detector_anchors, head_pose_from_landmarks
 
 RIGHT_EYE_OUTER, LEFT_EYE_OUTER, FOREHEAD, CHIN = 33, 263, 10, 152
 

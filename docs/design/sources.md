@@ -2,16 +2,16 @@
 
 Status: step 1 of the [migration plan](#migration-plan) is implemented. Step 2 (plugin loading) is deferred (see [Priority](#priority)).
 
-This document describes how `vn-eye` separates *sensing* (camera, face model, eye tracker) from *recognizing gestures*, and how a third party can add a new sensing method as a separate pip package without changing `vn-eye` itself.
+This document describes how `eyeokuri` separates *sensing* (camera, face model, eye tracker) from *recognizing gestures*, and how a third party can add a new sensing method as a separate pip package without changing `eyeokuri` itself.
 
 ## Priority
 
-The users `vn-eye` most needs to reach are less technical Windows users, many of them with iPhones. They install apps, not pip packages, so a plugin system doesn't help them directly. What they need first is an installer, a simple GUI, and a camera picker that shows camera names.
+The users `eyeokuri` most needs to reach are less technical Windows users, many of them with iPhones. They install apps, not pip packages, so a plugin system doesn't help them directly. What they need first is an installer, a simple GUI, and a camera picker that shows camera names.
 
 For that reason, only step 1 of the migration plan was scheduled:
 
-- **Step 1 (done):** the `Source` and `Signals` refactor, with one built-in source, `OpenCVSource`. It removes the leaks listed below whether or not plugins ever exist, and it is what any future built-in source needs, such as a receiver for a `vn-eye` phone app.
-- **Step 2 (deferred):** plugin loading and per-source configuration. Start it when a developer wants to write a source outside this repository, or when `vn-eye` gets a second built-in source.
+- **Step 1 (done):** the `Source` and `Signals` refactor, with one built-in source, `OpenCVSource`. It removes the leaks listed below whether or not plugins ever exist, and it is what any future built-in source needs, such as a receiver for a `eyeokuri` phone app.
+- **Step 2 (deferred):** plugin loading and per-source configuration. Start it when a developer wants to write a source outside this repository, or when `eyeokuri` gets a second built-in source.
 
 A future source for these users, such as a phone app receiver, must be built in so that it works from the installer.
 
@@ -41,7 +41,7 @@ owns its input      →     Signals  →  EyeStateTracker     →     Observatio
 
 ## Source contract
 
-These types live in the internal module `vn_eye.sources` (`src/vn_eye/sources/__init__.py`), and only the built-in source uses them. Step 2 moves them to a public module, `vn_eye.api`, and adds `API_VERSION`. A plugin must import only from `vn_eye.api`. Everything else in `vn_eye` is internal and can change without notice.
+These types live in the internal module `eyeokuri.sources` (`src/eyeokuri/sources/__init__.py`), and only the built-in source uses them. Step 2 moves them to a public module, `eyeokuri.api`, and adds `API_VERSION`. A plugin must import only from `eyeokuri.api`. Everything else in `eyeokuri` is internal and can change without notice.
 
 ```python
 API_VERSION = 1  # added in step 2
@@ -104,11 +104,11 @@ At startup, the core compares each enabled trigger's needs with the source's `pr
 
 This section is deferred to step 2. Until then, `app.py` creates `OpenCVSource` directly.
 
-A source plugin is a pip package that registers a class under the `vn_eye.sources` entry point group in its `pyproject.toml`:
+A source plugin is a pip package that registers a class under the `eyeokuri.sources` entry point group in its `pyproject.toml`:
 
 ```toml
-[project.entry-points."vn_eye.sources"]
-tobii = "vn_eye_tobii:TobiiSource"
+[project.entry-points."eyeokuri.sources"]
+tobii = "eyeokuri_tobii:TobiiSource"
 ```
 
 The class must have:
@@ -117,7 +117,7 @@ The class must have:
 - `Options`: a frozen dataclass with defaults, the plugin's settings.
 - `__init__(self, options: Options, log: Callable[[str], None])`.
 
-The built-in `OpenCVSource` registers through the same entry point group in `vn-eye`'s own `pyproject.toml`. The core has no special case for built-in sources.
+The built-in `OpenCVSource` registers through the same entry point group in `eyeokuri`'s own `pyproject.toml`. The core has no special case for built-in sources.
 
 The core imports a plugin only when it is selected. Installed but unused plugins never run.
 
@@ -156,26 +156,26 @@ Drawing landmarks moves into the source, because only the source knows its landm
 
 The privacy rule (frames stay in memory and are never written or sent) becomes structural for the core: the core never receives frames, only numbers and an optional debug image for the screen.
 
-`vn-eye` cannot enforce the rule for third-party code. To make that visible:
+`eyeokuri` cannot enforce the rule for third-party code. To make that visible:
 
-- When the selected source comes from another package (step 2), the core prints one line at startup, for example `Using source "tobii" from vn-eye-tobii 0.1.0 (third-party code)`.
-- The README states that the privacy guarantee covers `vn-eye`'s built-in sources only.
+- When the selected source comes from another package (step 2), the core prints one line at startup, for example `Using source "tobii" from eyeokuri-tobii 0.1.0 (third-party code)`.
+- The README states that the privacy guarantee covers `eyeokuri`'s built-in sources only.
 
 ## Migration plan
 
 Each step is one commit. Tests pass after every step.
 
-1. **Introduce `Signals` and `Source` inside `vn-eye` (done).**
+1. **Introduce `Signals` and `Source` inside `eyeokuri` (done).**
    - Move the camera, reconnect logic, OpenCV model code and EAR into `OpenCVSource`, which reads `[camera]`.
    - `EyeStateTracker` and `HeadTracker` consume `Signals` instead of `FaceFrame`. `FaceFrame` and the landmark indices disappear from the core.
    - Add the capability check.
    - Draw landmarks in the source's `debug_view()`, and draw the status overlay in the core.
    - Tests for `eyes.py` and `head.py` build `Signals` directly. EAR and landmark tests move to the OpenCV source's tests.
-2. **Add plugin loading (deferred).** Move the contract to `vn_eye.api`, add `API_VERSION` and `api_version` checks, discover sources through entry points, and print the third-party notice. Replace `[camera]` with `[source]` and per-source options, and add `--source`. Register `OpenCVSource` through an entry point.
+2. **Add plugin loading (deferred).** Move the contract to `eyeokuri.api`, add `API_VERSION` and `api_version` checks, discover sources through entry points, and print the third-party notice. Replace `[camera]` with `[source]` and per-source options, and add `--source`. Register `OpenCVSource` through an entry point.
 
 Each step also updates the docs it affects: README (config, flags, Layout), `config.example.toml`, and AGENTS.md (architecture, privacy, trigger checklist with `needs`).
 
-Each step changes behavior only where stated. Gestures must behave the same afterward, which needs a live check (`vn-eye --preview`, paused with `p`) after step 1.
+Each step changes behavior only where stated. Gestures must behave the same afterward, which needs a live check (`eyeokuri --preview`, paused with `p`) after step 1.
 
 ## Open questions
 

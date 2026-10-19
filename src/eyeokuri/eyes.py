@@ -6,8 +6,8 @@ import statistics
 from collections import deque
 from dataclasses import dataclass
 
-from vn_eye.config import EyeConfig
-from vn_eye.sources import Signals
+from eyeokuri.config import EyeConfig
+from eyeokuri.sources import Signals
 
 
 @dataclass(frozen=True)

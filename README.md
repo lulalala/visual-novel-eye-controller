@@ -12,7 +12,7 @@ Initial findings are collected in [docs/research.md](docs/research.md).
 
 # Stage 2 - Prototype: long blink → Enter
 
-`vn-eye` watches your webcam and sends `Enter` (or space, left click, or scroll-down) to the foreground window when you blink. By default any closure of both eyes lasting 0.15–2 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes deliberately to advance, raise `--min-duration` to about 0.35–0.45 s (ordinary blinks were 0.17–0.34 s in our first test). Shake your head to pause and resume. It needs only a webcam. Frames are processed locally and never stored.
+`eyeokuri` watches your webcam and sends `Enter` (or space, left click, or scroll-down) to the foreground window when you blink. By default any closure of both eyes lasting 0.15–2 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes deliberately to advance, raise `--min-duration` to about 0.35–0.45 s (ordinary blinks were 0.17–0.34 s in our first test). Shake your head to pause and resume. It needs only a webcam. Frames are processed locally and never stored.
 
 ## Setup
 
@@ -29,25 +29,25 @@ The face landmark model (~4 MB) is downloaded on first run.
 ## Run
 
 ```sh
-vn-eye --preview             # try it out: debug window (press p to pause, so gestures only print)
-vn-eye                       # real use: start it, then switch to the game
-vn-eye --config config.toml  # custom settings (copy config.example.toml)
-vn-eye --min-duration 0.5 --blink-key left_click   # common settings as flags
-vn-eye --set eyes.open_ratio=0.8                # any config key (repeatable)
+eyeokuri --preview             # try it out: debug window (press p to pause, so gestures only print)
+eyeokuri                       # real use: start it, then switch to the game
+eyeokuri --config config.toml  # custom settings (copy config.example.toml)
+eyeokuri --min-duration 0.5 --blink-key left_click   # common settings as flags
+eyeokuri --set eyes.open_ratio=0.8                # any config key (repeatable)
 ```
 
-`vn-eye --help` lists all flags. Command-line settings override the config file.
+`eyeokuri --help` lists all flags. Command-line settings override the config file.
 
 ### Use the window
 
-Run `vn-eye-gui` for a window instead of the terminal:
+Run `eyeokuri-gui` for a window instead of the terminal:
 
 ```sh
-vn-eye-gui                       # loads config.toml if it exists
-vn-eye-gui --config my.toml      # load and save another file
+eyeokuri-gui                       # loads config.toml if it exists
+eyeokuri-gui --config my.toml      # load and save another file
 ```
 
-The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether vn-eye sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. vn-eye draws it only while that window is open, so close it when you don't need it to save CPU. In the settings window, **General** has a **Choose from live views…** button next to `camera.index`. It lists every camera it finds with its live view, and you click the one to use. **Pause** (or the `p` key) pauses and resumes. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input.
+The main window shows the log: gestures that fired, gestures that didn't and why, and pauses. The status on the right shows whether eyeokuri sees your face. **Camera view…** opens the live camera view with your eye outlines and signal values. eyeokuri draws it only while that window is open, so close it when you don't need it to save CPU. In the settings window, **General** has a **Choose from live views…** button next to `camera.index`. It lists every camera it finds with its live view, and you click the one to use. **Pause** (or the `p` key) pauses and resumes. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input.
 
 **Gesture wizard…** sets up one gesture from your own movement, so you don't have to work out the numbers:
 
@@ -70,11 +70,11 @@ To check your settings against your own movement, do the gesture and then select
 - Blink (both eyes, at least 0.15 s): you'll hear a beep and `Enter` is sent when you reopen your eyes. Closing them for more than 2 s cancels.
 - **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. Use `--set gestures.head_shake.within_s=1.5` to allow a slower shake, or `--no-head-shake` to turn it off. A shake often comes with a blink, so shaking your head can also advance one line.
 - Nodding up or down (sends the `up` or `down` arrow key) is off by default. Turn it on with `--set gestures.nod_down.enabled=true`.
-- In the preview window, `p` also pauses and resumes, and `q`/`Esc` closes it. `Ctrl+C` stops `vn-eye` from the terminal.
+- In the preview window, `p` also pauses and resumes, and `q`/`Esc` closes it. `Ctrl+C` stops `eyeokuri` from the terminal.
 - Every gesture that doesn't trigger is printed with the reason (too short, too long, cooldown, paused), which helps you get a feel for the timing. Set `log_rejected = false` under `[feedback]` in your config file to turn this off.
 - `--log eyes.csv` writes per-frame eye values (numbers only, no images), which helps with tuning thresholds.
 - The face model runs with OpenCV, and nothing is sent over the network after the one-time model download.
-- If the camera stops sending frames (for example, it briefly disconnects), `vn-eye` reopens it every second until frames come back. Gestures are not detected during the gap.
+- If the camera stops sending frames (for example, it briefly disconnects), `eyeokuri` reopens it every second until frames come back. Gestures are not detected during the gap.
 
 ## Gestures
 
@@ -126,26 +126,26 @@ To change one step from the command line, give its position, starting from 0: `-
 
 When the same movement matches several gestures, each one fires. In this example, a blink followed by a nod also fires `blink`, so it sends `Enter` too. `config.example.toml` lists every field.
 
-Config files must start with `version = 1`. A file without it uses an older layout, and `vn-eye` refuses to load it. Start again from `config.example.toml`.
+Config files must start with `version = 1`. A file without it uses an older layout, and `eyeokuri` refuses to load it. Start again from `config.example.toml`.
 
 Platform notes:
-- **Windows** (main target): keys are sent with `SendInput` using hardware scan codes, so DirectInput games receive them too. If the game runs as administrator, run `vn-eye` as administrator as well, or Windows will block the input.
+- **Windows** (main target): keys are sent with `SendInput` using hardware scan codes, so DirectInput games receive them too. If the game runs as administrator, run `eyeokuri` as administrator as well, or Windows will block the input.
 - **macOS**: give your terminal *Camera* permission, plus *Accessibility* (to send keys) under System Settings → Privacy & Security.
 
 ## Build a Windows executable
 
-You can package `vn-eye` so it runs on a Windows PC without Python. You need Python 3.11 or later on the build PC only.
+You can package `eyeokuri` so it runs on a Windows PC without Python. You need Python 3.11 or later on the build PC only.
 
 1. Double-click `build-windows.bat`. The first build takes a few minutes because it sets up `build\venv`.
-2. Copy `build\vn-eye-windows.zip` (~65 MB) to the other PC and unzip it.
-3. Run `vn-eye.exe` in the unzipped folder. It opens a console window. Close the window or press `Ctrl+C` to stop it.
+2. Copy `build\eyeokuri-windows.zip` (~65 MB) to the other PC and unzip it.
+3. Run `eyeokuri.exe` in the unzipped folder. It opens a console window. Close the window or press `Ctrl+C` to stop it.
 
 The first run downloads the face model, so the PC must be online once. Windows might show an "unknown publisher" warning because the executable is not signed.
 
 ## Layout
 
 ```
-src/vn_eye/
+src/eyeokuri/
   sources/        Source interface and Signals (raw eye openness, head pose)
     opencv.py     the built-in source: webcam -> face mesh -> Signals
     face_mesh.py  MediaPipe's face model, run with OpenCV
@@ -160,6 +160,6 @@ src/vn_eye/
   tuning.py       fits a gesture's limits to takes recorded in the wizard
 ```
 
-To add a gesture, add a `[gestures.NAME]` section to your config. To add a new signal, add it to `SIGNALS` in `config.py` and to `signal_value` in `triggers.py`. To add another input device, implement the `Source` protocol in `vn_eye/sources/` (see [docs/design/sources.md](docs/design/sources.md)). For how the `[eyes]` and `[head]` settings work, see [docs/design/detection.md](docs/design/detection.md).
+To add a gesture, add a `[gestures.NAME]` section to your config. To add a new signal, add it to `SIGNALS` in `config.py` and to `signal_value` in `triggers.py`. To add another input device, implement the `Source` protocol in `eyeokuri/sources/` (see [docs/design/sources.md](docs/design/sources.md)). For how the `[eyes]` and `[head]` settings work, see [docs/design/detection.md](docs/design/detection.md).
 
 Run the tests with `pytest`.

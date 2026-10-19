@@ -11,7 +11,7 @@ import sys
 import time
 from typing import Callable, Protocol
 
-from vn_eye.triggers import TriggerEvent
+from eyeokuri.triggers import TriggerEvent
 
 OUTPUT_NAMES = ("enter", "space", "left_click", "right_click", "wheel_down", "up", "down")
 
@@ -112,7 +112,7 @@ class Win32Output:
             # Usually UIPI: the game runs as administrator and we don't.
             print(
                 f"SendInput failed (error {err}). If the game runs as administrator, "
-                "run vn-eye as administrator too.",
+                "run eyeokuri as administrator too.",
                 file=sys.stderr,
                 flush=True,
             )
