@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>eyeokuri: Blink. Next line.</title>
+<meta name="description" content="Read your visual novel hands-free. eyeokuri turns a blink into the Enter key.">
+<meta name="theme-color" content="#F8F9FF">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+<!-- @inline style.css -->
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="mark" href="#top"><i></i>eyeokuri</a>
+    <div class="links">
+      <a href="#install">Install</a>
+      <a href="https://github.com/lulalala/visual-novel-eye-controller">GitHub</a>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <h1>Blink.<br><span class="next">Next line.</span></h1>
+    <p class="sub">Read your visual novel hands-free. eyeokuri turns a blink into the Enter key.</p>
+  </header>
+
+  <section class="stage" aria-label="Interactive demo of eyeokuri in a visual novel">
+    <div class="bands" aria-hidden="true"><span></span><span></span><span></span></div>
+    <i class="spark" style="left:9%;top:24%;--s:26px;--d:0s" aria-hidden="true"></i>
+    <i class="spark" style="left:20%;top:48%;--s:14px;--d:1.1s" aria-hidden="true"></i>
+    <i class="spark" style="right:10%;top:40%;--s:30px;--d:.6s" aria-hidden="true"></i>
+    <i class="spark" style="right:22%;top:14%;--s:16px;--d:2s" aria-hidden="true"></i>
+
+    <div class="hud">
+      <span class="chip"><span class="dot"></span>Camera on, watching</span>
+      <span class="key" id="key">Enter ⏎ sent</span>
+    </div>
+
+    <div class="portrait">
+      <div class="eye" role="img" aria-label="An anime eye that blinks">
+        <!-- @logo -->
+      </div>
+    </div>
+
+    <div class="dialog" id="dialog" tabindex="0" role="button" aria-label="Advance the dialogue (blink, click, or press Space)">
+      <span class="name">eyeokuri</span>
+      <p class="line" id="line" aria-live="polite"></p>
+      <div class="choices" id="choices" hidden>
+        <a class="btn" href="#install">Get eyeokuri</a>
+        <a class="btn alt" href="https://github.com/lulalala/visual-novel-eye-controller">Read the docs</a>
+      </div>
+      <div class="foot">
+        <span class="dots" id="dots" aria-hidden="true"></span>
+        <span id="hint">Blink to continue <span class="next-ind">▼</span></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="facts">
+    <div class="fact">
+      <span class="glyph">blink → Enter</span>
+      <h2>Blink to advance</h2>
+      <p>A blink sends Enter to your game. Prefer space, a click or a scroll? Pick one.</p>
+    </div>
+    <div class="fact">
+      <span class="glyph">shake → pause</span>
+      <h2>Shake to pause</h2>
+      <p>Look away or answer the phone. Shake your head again to pick up where you left off.</p>
+    </div>
+    <div class="fact">
+      <span class="glyph">frames → nowhere</span>
+      <h2>Stays on your PC</h2>
+      <p>Camera frames are read in memory. They are never saved or sent anywhere.</p>
+    </div>
+  </section>
+
+  <section class="install" id="install">
+    <h2>Your hands are free now</h2>
+    <p>Windows, any webcam, any game that reads a keyboard. A wizard learns your blink from a few practice takes.</p>
+    <div class="code" id="cmd"><button class="copy" id="copy" type="button">Copy</button><span class="c"># needs Python 3.11+</span>
+git clone https://github.com/lulalala/visual-novel-eye-controller
+cd visual-novel-eye-controller
+python -m venv .venv &amp;&amp; .venv\Scripts\activate
+pip install -e .
+eyeokuri-gui</div>
+    <p class="small">Keep your eyes open for about 2 seconds at start so it learns your open-eye level. Then switch to your game.</p>
+  </section>
+
+  <footer>eyeokuri · open source · made for people who read a lot</footer>
+</div>
+<script>
+<!-- @inline main.js -->
+</script>
+</body>
+</html>

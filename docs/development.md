@@ -51,7 +51,14 @@ src/eyeokuri/
   app.py          command line: main loop and flags
   gui.py          window: log, optional camera view, settings with the gesture plot, and the gesture wizard
   tuning.py       fits a gesture's limits to takes recorded in the wizard
+site/             static homepage
+  src/            index.html, style.css and main.js, with markers that build.py fills in
+  build.py        writes site/dist/ (the page with its CSS, JS and logo inlined)
 ```
+
+## Build the homepage
+
+Run `python site/build.py`. It writes `site/dist/index.html` and `site/dist/logo.svg`, which you can host on any static file server. The build uses only the standard library. `site/dist/` is gitignored. The page loads two fonts from Google Fonts; nothing else leaves the page.
 
 ## Extend eyeokuri
 

@@ -7,3 +7,4 @@ __pycache__/
 /config.toml
 # Eye-value logs from --log
 *.csv
+/site/dist/
