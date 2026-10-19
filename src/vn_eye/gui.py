@@ -50,7 +50,7 @@ _GRID_TRACE = "#b4bac7"
 _RANGES: dict[str, tuple[float, float, tuple[float, ...], str, float]] = {
     "eyes": (0.0, 1.3, (0.0, 0.25, 0.5, 0.75, 1.0, 1.25), "", 0.01),
     "pitch": (-30.0, 30.0, (-30, -20, -10, 0, 10, 20, 30), "°", 0.5),
-    "yaw": (-30.0, 30.0, (-30, -20, -10, 0, 10, 20, 30), "°", 0.5),
+    "yaw": (-60.0, 60.0, (-60, -40, -20, 0, 20, 40, 60), "°", 0.5),
 }
 _LANE_HINTS = {
     "eyes": "Eyes: openness, 1.0 = your usual open level",
