@@ -94,9 +94,8 @@ h1 .next::after {
 
 .name {
   position: absolute; top: -16px; left: 22px;
-  background: var(--sakura); color: #fff; font-weight: 900; font-size: 15px; letter-spacing: .04em;
+  background: #fff; color: var(--ink); border: 2px solid var(--sakura-soft); font-weight: 900; font-size: 15px; letter-spacing: .04em;
   padding: 5px 20px; border-radius: 99px 99px 99px 6px;
-  box-shadow: 0 6px 14px -6px rgba(255,107,154,.8);
 }
 .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 13px; color: var(--ink-soft); font-weight: 700; }
 .dots { display: flex; gap: 6px; }
