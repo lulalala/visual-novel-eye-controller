@@ -119,6 +119,18 @@ def test_inverted_eye_ratios_are_rejected():
         config_from("--set", "eyes.close_ratio=0.9")
 
 
+def test_eye_warmup_longer_than_the_window_is_rejected():
+    with pytest.raises(ValueError, match="eyes.warmup_s"):
+        config_from("--set", "eyes.warmup_s=12")
+    with pytest.raises(ValueError, match="eyes.warmup_s"):
+        config_from("--set", "eyes.baseline_window_s=1.5")
+
+
+def test_head_window_must_be_above_zero():
+    with pytest.raises(ValueError, match="head.baseline_window_s"):
+        config_from("--set", "head.baseline_window_s=0")
+
+
 def test_dump_of_defaults_is_only_the_version():
     assert dump_config(Config()) == "version = 1\n"
 

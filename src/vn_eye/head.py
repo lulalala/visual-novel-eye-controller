@@ -14,6 +14,9 @@ class HeadTracker:
     off-center webcam or a habitual slight tilt reads as 0."""
 
     def __init__(self, config: HeadConfig) -> None:
+        # A zero or negative window drops every sample, including the newest.
+        if config.baseline_window_s <= 0:
+            raise ValueError(f"head.baseline_window_s must be above 0, not {config.baseline_window_s}")
         self.config = config
         self._yaw_history: deque[tuple[float, float]] = deque()
         self._pitch_history: deque[tuple[float, float]] = deque()

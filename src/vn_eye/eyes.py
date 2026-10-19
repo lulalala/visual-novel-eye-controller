@@ -35,6 +35,13 @@ class EyeStateTracker:
     def __init__(self, config: EyeConfig) -> None:
         # With close_ratio >= open_ratio, the eyes would reopen and re-close on
         # alternate frames between the two thresholds.
+        # The history never spans warmup_s if the window drops samples sooner, so
+        # the tracker would never become ready and blinks would never fire.
+        if not 0 <= config.warmup_s < config.baseline_window_s:
+            raise ValueError(
+                f"eyes.warmup_s must be 0 or more and below eyes.baseline_window_s "
+                f"({config.baseline_window_s}), not {config.warmup_s}"
+            )
         if not 0 < config.close_ratio < config.open_ratio:
             raise ValueError(
                 f"eyes.close_ratio must be above 0 and below eyes.open_ratio "

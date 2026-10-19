@@ -13,6 +13,7 @@ from vn_eye import preview
 from vn_eye.config import Config, apply_overrides, load_config, nested, parse_override
 from vn_eye.engine import Engine
 from vn_eye.eyes import EyeStateTracker
+from vn_eye.head import HeadTracker
 from vn_eye.outputs import OUTPUT_NAMES
 from vn_eye.triggers import create_triggers
 
@@ -80,6 +81,7 @@ def check_config(config: Config) -> None:
     """Raises ValueError for settings that would fail later, before the camera opens."""
     validate_outputs(config)
     EyeStateTracker(config.eyes)
+    HeadTracker(config.head)
     create_triggers(config)
 
 
