@@ -61,6 +61,9 @@ _LANE_HINTS = {
 # Settings that stay in the config file but not on the General tab. They only
 # decide which frames the eye baseline learns from, not when a gesture fires.
 _HIDDEN_GENERAL = {("eyes", "close_ratio"), ("eyes", "open_ratio")}
+# Settings sections on the General tab, and on the Advanced tab for the baseline settings.
+_GENERAL_SECTIONS = ("camera", "feedback")
+_ADVANCED_SECTIONS = ("eyes", "head")
 # One-line help beside each General field, in user terms.
 _GENERAL_HELP = {
     ("camera", "index"): "Which camera to use. 0 is usually the built-in one.",
@@ -714,9 +717,11 @@ class SettingsWindow:
         gestures_tab = ttk.Frame(notebook, padding=8)
         general_tab = ttk.Frame(notebook, padding=12)
         notebook.add(gestures_tab, text="Gestures")
+        advanced_tab = ttk.Frame(notebook, padding=12)
         notebook.add(general_tab, text="General")
+        notebook.add(advanced_tab, text="Advanced")
         self._build_gestures_tab(gestures_tab)
-        self._build_general_tab(general_tab)
+        self._build_general_tabs(general_tab, advanced_tab)
 
         bottom = ttk.Frame(self.win, padding=(8, 0, 8, 8))
         bottom.grid(row=1, column=0, sticky="ew")
@@ -1087,16 +1092,21 @@ class SettingsWindow:
         self._draw_plot(config)
         self.win.after(_LIVE_REFRESH_MS, self._live_loop)
 
-    # General tab
+    # General and Advanced tabs
 
-    def _build_general_tab(self, tab: ttk.Frame) -> None:
-        ttk.Label(tab, foreground=_MUTED, wraplength=640, justify="left", text=(
-            "Changing camera settings reopens the camera. Changing eyes or head settings makes "
-            "vn-eye learn your usual eye openness and head position again.")).grid(
-            row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+    def _build_general_tabs(self, general: ttk.Frame, advanced: ttk.Frame) -> None:
         self.general_vars: list[Any] = []
+        self._build_settings_tab(general, _GENERAL_SECTIONS, "Changing camera settings reopens the camera.")
+        self._build_settings_tab(advanced, _ADVANCED_SECTIONS, (
+            "Most people never need to change these. Changing them makes vn-eye learn your usual "
+            "eye openness and head position again."))
+
+    def _build_settings_tab(self, tab: ttk.Frame, sections: tuple[str, ...], note: str) -> None:
+        ttk.Label(tab, foreground=_MUTED, wraplength=640, justify="left", text=note).grid(
+            row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
         row = 1
-        for section, values in self.general.items():
+        for section in sections:
+            values = self.general[section]
             ttk.Label(tab, text=section.capitalize(), font="TkHeadingFont").grid(
                 row=row, column=0, sticky="w", pady=(8, 2))
             row += 1
@@ -1172,10 +1182,10 @@ class SettingsWindow:
         name = self.current if self.current in self.gestures else next(iter(self.gestures))
         for child in self.win.winfo_children():
             if isinstance(child, ttk.Notebook):
-                general = child.nametowidget(child.tabs()[1])
-                for widget in general.winfo_children():
+                general, advanced = (child.nametowidget(name) for name in child.tabs()[1:3])
+                for widget in (*general.winfo_children(), *advanced.winfo_children()):
                     widget.destroy()
-                self._build_general_tab(general)
+                self._build_general_tabs(general, advanced)
         self._select(name)
         self.message.configure(text="Reverted to the settings in use.", foreground=_MUTED)
 
