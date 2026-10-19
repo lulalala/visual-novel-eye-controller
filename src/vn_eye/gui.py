@@ -1196,20 +1196,9 @@ class WizardWindow:
         box.set(self.name)
         box.bind("<<ComboboxSelected>>", lambda _e: self._on_gesture(box))
         box.pack(side="left", padx=(6, 0))
-        self.plan = ttk.Label(self.content, style="Wizard.TLabel", wraplength=_WIZARD_WRAP, justify="left")
-        self.plan.pack(anchor="w", pady=(12, 0))
-        ttk.Label(self.content, style="Wizard.TLabel", foreground=_MUTED, wraplength=_WIZARD_WRAP,
-                  justify="left", text="Gestures are off while the wizard is open. Takes keep only numbers, "
-                                       "never images.").pack(anchor="w", pady=(12, 0))
-        self._describe_plan()
         self.back_button.configure(state="disabled")
         self.next_button.configure(text="Start", state="normal")
         self.next_button.focus_set()
-
-    def _describe_plan(self) -> None:
-        lines = [f"  {i}. {what[0].upper()}{what[1:]} ({_outcome(kind)})"
-                 for i, (kind, what) in enumerate(self.script, 1)]
-        self.plan.configure(text="\n".join(lines))
 
     def _on_gesture(self, box: ttk.Combobox) -> None:
         name = box.get()
@@ -1225,7 +1214,6 @@ class WizardWindow:
         self.takes = [None] * len(self.script)
         self.answers = {}
         self._refit()
-        self._describe_plan()
 
     def _take_page(self) -> None:
         kind, what = self.script[self.page]
