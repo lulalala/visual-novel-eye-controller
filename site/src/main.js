@@ -69,6 +69,20 @@
     hint.textContent = "Click to continue";
   }
 
+  // Share links use the page's own address, so they work wherever it is hosted.
+  var url = location.href.split("#")[0], msg = "Blink. Next line. Read your visual novel hands-free with eyeokuri.";
+  var q = encodeURIComponent;
+  var set = function (id, href) { var el = document.getElementById(id); if (el) el.href = href; };
+  set("share-bsky", "https://bsky.app/intent/compose?text=" + q(msg + " " + url));
+  set("share-x", "https://twitter.com/intent/tweet?text=" + q(msg) + "&url=" + q(url));
+  set("share-reddit", "https://www.reddit.com/submit?url=" + q(url) + "&title=" + q(msg));
+  document.getElementById("share-copy").addEventListener("click", function (e) {
+    var btn = e.currentTarget;
+    function done(ok) { btn.textContent = ok ? "Copied" : url; setTimeout(function () { btn.textContent = "Copy link"; }, 1600); }
+    try { navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(false); }); }
+    catch (err) { done(false); }
+  });
+
   document.getElementById("copy").addEventListener("click", function (e) {
     var btn = e.currentTarget;
     var text = document.getElementById("cmd").textContent.replace(/^Copy/, "").trim();

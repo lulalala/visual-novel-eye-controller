@@ -58,7 +58,7 @@ site/             static homepage
 
 ## Build the homepage
 
-Run `python site/build.py`. It writes `site/dist/index.html` and `site/dist/logo.svg`, which you can host on any static file server. The build uses only the standard library. `site/dist/` is gitignored. The page loads two fonts from Google Fonts; nothing else leaves the page.
+Run `python site/build.py`. It writes `site/dist/index.html` and `site/dist/logo.svg`, which you can host on any static file server. The build uses only the standard library. To edit with a live preview, run `python site/build.py --serve`, open `http://localhost:8000/`, and refresh the browser after each edit. The server rebuilds the page on every load. `site/dist/` is gitignored. The page loads two fonts from Google Fonts; nothing else leaves the page.
 
 ## Extend eyeokuri
 

@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>eyeokuri: Blink. Next line.</title>
 <meta name="description" content="Read your visual novel hands-free. eyeokuri turns a blink into the Enter key.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="eyeokuri: Blink. Next line.">
+<meta property="og:description" content="Read your visual novel hands-free. Blink to advance the text, shake your head to pause. Free, open source, and nothing leaves your PC.">
+<meta name="twitter:card" content="summary">
+<meta name="keywords" content="visual novel, hands-free, blink to advance, webcam, eye control, accessibility, auto advance">
 <meta name="theme-color" content="#F8F9FF">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,14 +25,31 @@
   <nav>
     <a class="mark" href="#top"><i></i>eyeokuri</a>
     <div class="links">
-      <a href="#install">Install</a>
+      <a class="navbtn" href="https://github.com/lulalala/visual-novel-eye-controller/releases/latest">Download</a>
       <a href="https://github.com/lulalala/visual-novel-eye-controller">GitHub</a>
     </div>
   </nav>
 
+  <main class="top">
   <header class="hero" id="top">
     <h1>Blink.<br><span class="next">Next line.</span></h1>
     <p class="sub">Read your visual novel hands-free. eyeokuri turns a blink into the Enter key.</p>
+    <div class="cta">
+      <a class="btn big" href="https://github.com/lulalala/visual-novel-eye-controller/releases/latest">Download for Windows</a>
+      <a class="btn alt" href="https://github.com/lulalala/visual-novel-eye-controller">★ Star on GitHub</a>
+    </div>
+    <p class="meta">Free · about 65 MB · no Python needed</p>
+    <ul class="proof">
+      <li>Works with any game that takes Enter, space or a click</li>
+      <li>Camera frames stay on your PC</li>
+    </ul>
+    <div class="share">
+      <span>Know a VN reader?</span>
+      <button class="chipbtn" id="share-copy" type="button">Copy link</button>
+      <a class="chipbtn" id="share-bsky" href="#" target="_blank" rel="noopener">Bluesky</a>
+      <a class="chipbtn" id="share-x" href="#" target="_blank" rel="noopener">X</a>
+      <a class="chipbtn" id="share-reddit" href="#" target="_blank" rel="noopener">Reddit</a>
+    </div>
   </header>
 
   <section class="stage" aria-label="Interactive demo of eyeokuri in a visual novel">
@@ -61,6 +83,7 @@
       </div>
     </div>
   </section>
+  </main>
 
   <section class="facts">
     <div class="fact">
@@ -82,14 +105,32 @@
 
   <section class="install" id="install">
     <h2>Your hands are free now</h2>
-    <p>Windows, any webcam, any game that reads a keyboard. A wizard learns your blink from a few practice takes.</p>
-    <div class="code" id="cmd"><button class="copy" id="copy" type="button">Copy</button><span class="c"># needs Python 3.11+</span>
+    <p>Works with any webcam. A wizard learns your blink from a few practice takes.</p>
+    <ol class="steps">
+      <li><b>Download.</b> Unzip the file anywhere.</li>
+      <li><b>Run eyeokuri.exe.</b> Keep your eyes open for 2 seconds.</li>
+      <li><b>Blink in your game.</b> The next line appears.</li>
+    </ol>
+    <a class="btn big" href="https://github.com/lulalala/visual-novel-eye-controller/releases/latest">Download for Windows</a>
+    <p class="small">The first run downloads a 4 MB face model, so be online once. Windows might warn about an unknown publisher because the app is not signed. Select <b>More info</b>, then <b>Run anyway</b>.</p>
+    <details class="source">
+      <summary>Prefer Python? Install from source</summary>
+      <div class="code" id="cmd"><button class="copy" id="copy" type="button">Copy</button><span class="c"># needs Python 3.11+</span>
 git clone https://github.com/lulalala/visual-novel-eye-controller
 cd visual-novel-eye-controller
 python -m venv .venv &amp;&amp; .venv\Scripts\activate
 pip install -e .
 eyeokuri-gui</div>
-    <p class="small">Keep your eyes open for about 2 seconds at start so it learns your open-eye level. Then switch to your game.</p>
+    </details>
+  </section>
+
+  <section class="keep">
+    <h2>Make it yours</h2>
+    <p>The gesture wizard learns your blink from a few practice takes. You can also turn on nod up and nod down for the arrow keys, or send space, a click or a scroll instead of Enter.</p>
+    <div class="cta">
+      <a class="btn alt" href="https://github.com/lulalala/visual-novel-eye-controller">★ Star to follow new gestures</a>
+      <a class="btn alt" href="https://github.com/lulalala/visual-novel-eye-controller/issues">Request a gesture</a>
+    </div>
   </section>
 
   <footer>eyeokuri · open source · made for people who read a lot</footer>

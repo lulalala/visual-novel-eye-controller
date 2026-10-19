@@ -178,7 +178,6 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
 
 @media (max-width: 760px) {
   .facts { grid-template-columns: 1fr; }
-  nav .links a:first-child { display: none; }
   .dialog { padding: 32px 20px 18px; margin: 0 12px 12px; }
   .hud { padding: 12px 14px 0; }
   .stage { border-radius: 26px; }
@@ -187,3 +186,44 @@ footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink
   .spark, .next-ind { animation: none; }
   html { scroll-behavior: auto; }
 }
+
+/* two columns on wide screens: pitch left, whole demo right */
+.top { display: block; }
+.eyebrow { margin: 0 0 14px; font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--sakura); }
+.cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 26px; }
+.proof { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 6px; font-size: 15px; color: var(--ink-soft); }
+.proof li::before { content: "✓"; color: var(--sakura); font-weight: 900; margin-right: 8px; }
+.share { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 26px; font-size: 14px; color: var(--ink-soft); font-weight: 700; }
+.chipbtn { font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; color: var(--ink); background: #fff; border: 2px solid var(--sakura-soft); border-radius: 99px; padding: 4px 14px; }
+.chipbtn:hover { background: var(--sakura-soft); }
+.steps { list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 auto 22px; padding: 0; max-width: 720px; text-align: left; font-size: 15px; }
+.steps li { counter-increment: s; background: #fff; border-radius: 18px; padding: 14px 16px; color: var(--ink-soft); box-shadow: 0 8px 22px -16px rgba(80,70,180,.5); }
+.steps li::before { content: counter(s); display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; background: var(--sakura); color: #fff; font-weight: 900; font-size: 13px; }
+.steps b { color: var(--ink); }
+.keep { margin-top: 56px; padding: 32px 24px; border-radius: 28px; text-align: center; background: linear-gradient(135deg, var(--lilac), var(--sakura-soft)); }
+.keep h2 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 32px); font-weight: 900; }
+.keep p { margin: 0 auto; max-width: 52ch; color: var(--ink-soft); }
+@media (min-width: 980px) {
+  body { padding-block: 16px 48px; }
+  nav { padding-block-end: 40px; }
+  .top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 40px; align-items: center; }
+  .top .hero { text-align: left; padding: 0; }
+  .top .sub { margin-inline: 0; }
+  .top .cta, .top .share { justify-content: flex-start; }
+  /* the whole stage fits in one screen */
+  .stage { min-height: 0; height: clamp(500px, calc(100vh - 120px), 640px); }
+  .eye { width: clamp(180px, 34vh, 360px); }
+  .dialog { min-height: 150px; padding: 32px 24px 18px; }
+  .line { font-size: 20px; min-height: 3.1em; }
+}
+@media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+
+/* download is the main action */
+.btn.big { font-size: 18px; padding: 15px 32px; }
+.navbtn { background: var(--sakura); color: #fff !important; border-radius: 99px; padding: 6px 18px; }
+.navbtn:hover { background: var(--ink); }
+.meta { margin: 10px 0 0; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.install > .btn { margin-top: 4px; }
+.source { margin: 26px auto 0; max-width: 720px; text-align: left; }
+.source summary { cursor: pointer; text-align: center; font-size: 15px; font-weight: 700; color: var(--ink-soft); margin-bottom: 14px; }
+.source summary:hover { color: var(--sakura); }

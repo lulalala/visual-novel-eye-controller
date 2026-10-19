@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 import shutil
 import sys
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 SITE = Path(__file__).resolve().parent
@@ -38,8 +40,32 @@ def build() -> Path:
     return DIST / "index.html"
 
 
+class RebuildHandler(SimpleHTTPRequestHandler):
+    # Rebuilds on every page load, so a browser refresh shows your last edit.
+    def do_GET(self) -> None:
+        if self.path.split("?")[0] in ("/", "/index.html"):
+            try:
+                build()
+            except (OSError, ValueError) as e:
+                print(f"build failed: {e}")
+        super().do_GET()
+
+
+def serve(port: int) -> None:
+    build()
+    handler = partial(RebuildHandler, directory=str(DIST))
+    with ThreadingHTTPServer(("127.0.0.1", port), handler) as server:
+        print(f"Serving http://localhost:{port}/ (Ctrl+C to stop)")
+        server.serve_forever()
+
+
 if __name__ == "__main__":
     try:
-        print(f"Wrote {build()}")
+        if "--serve" in sys.argv:
+            serve(8000)
+        else:
+            print(f"Wrote {build()}")
+    except KeyboardInterrupt:
+        pass
     except (OSError, ValueError) as e:
         sys.exit(f"build failed: {e}")
