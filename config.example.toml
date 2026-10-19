@@ -39,7 +39,7 @@ warmup_s = 2.0
 # A gesture also has: guards (boxes on pitch or yaw that the head must stay
 # inside; leaving one cancels the gesture), any_order, within_s (first step to last, 0 = no
 # limit), cooldown_s and output.
-# Outputs: enter, space, left_click, wheel_down, up, down, app:toggle_pause,
+# Outputs: enter, space, left_click, right_click, wheel_down, up, down, app:toggle_pause,
 # or "" to send nothing.
 
 [gestures.blink]

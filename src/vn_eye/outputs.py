@@ -13,7 +13,7 @@ from typing import Callable, Protocol
 
 from vn_eye.triggers import TriggerEvent
 
-OUTPUT_NAMES = ("enter", "space", "left_click", "wheel_down", "up", "down")
+OUTPUT_NAMES = ("enter", "space", "left_click", "right_click", "wheel_down", "up", "down")
 
 # Some engines poll key state once per frame, so hold keys down briefly.
 _PRESS_DURATION_S = 0.03
@@ -86,6 +86,10 @@ class Win32Output:
             self._mouse(0x0002)  # MOUSEEVENTF_LEFTDOWN
             time.sleep(_PRESS_DURATION_S)
             self._mouse(0x0004)  # MOUSEEVENTF_LEFTUP
+        elif name == "right_click":
+            self._mouse(0x0008)  # MOUSEEVENTF_RIGHTDOWN
+            time.sleep(_PRESS_DURATION_S)
+            self._mouse(0x0010)  # MOUSEEVENTF_RIGHTUP
         elif name == "wheel_down":
             # MOUSEEVENTF_WHEEL; one notch = WHEEL_DELTA (120), negative = towards user.
             self._mouse(0x0800, data=-120 & 0xFFFFFFFF)
@@ -126,7 +130,7 @@ class PynputOutput:
             "up": keyboard.Key.up,
             "down": keyboard.Key.down,
         }
-        self._button = mouse.Button.left
+        self._buttons = {"left_click": mouse.Button.left, "right_click": mouse.Button.right}
 
     def send(self, name: str) -> None:
         if name in self._keys:
@@ -134,10 +138,11 @@ class PynputOutput:
             self._keyboard.press(key)
             time.sleep(_PRESS_DURATION_S)
             self._keyboard.release(key)
-        elif name == "left_click":
-            self._mouse.press(self._button)
+        elif name in self._buttons:
+            button = self._buttons[name]
+            self._mouse.press(button)
             time.sleep(_PRESS_DURATION_S)
-            self._mouse.release(self._button)
+            self._mouse.release(button)
         elif name == "wheel_down":
             self._mouse.scroll(0, -1)
         else:

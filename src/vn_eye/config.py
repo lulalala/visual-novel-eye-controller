@@ -91,7 +91,7 @@ class GestureConfig:
     within_s: float = 0.0
     # The gesture is ignored this long after it last fired.
     cooldown_s: float = 1.0
-    # Keystroke outputs: enter, space, left_click, wheel_down, up, down.
+    # Keystroke outputs: enter, space, left_click, right_click, wheel_down, up, down.
     # App-level outputs: app:toggle_pause. Empty: send nothing (for a gesture
     # that is only a step of another gesture).
     output: str = ""
