@@ -83,8 +83,10 @@ _GENERAL_HELP = {
 _GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 
 
-def _state_text(obs: Observation, paused: bool, fps: float) -> str:
-    if paused:
+def _state_text(obs: Observation, paused: bool, suspended: bool, fps: float) -> str:
+    if suspended:
+        state = "Gestures off while editing"
+    elif paused:
         state = "Paused"
     elif not obs.face_present:
         state = "No face"
@@ -108,6 +110,7 @@ class Worker:
         self.show_view = threading.Event()
         self.engine: Engine | None = None
         self._config = config
+        self._suspended = False
         self._history: deque[Observation] = deque(maxlen=_HISTORY_FRAMES)
         self._lock = threading.Lock()
         self._stop = threading.Event()
@@ -127,10 +130,11 @@ class Worker:
             return
         with self._lock:
             self.engine = engine
-            # The camera takes a few seconds to start; a config set meanwhile
-            # (such as the wizard turning gestures off) must not be lost.
+            # The camera takes a few seconds to start; settings changed
+            # meanwhile must not be lost.
             if self._config is not config:
                 engine.set_config(self._config)
+            engine.set_suspended(self._suspended)
         self.log("Running. Keep your eyes open normally for a couple of seconds to calibrate.")
         try:
             while not self._stop.is_set():
@@ -138,7 +142,7 @@ class Worker:
                 obs = frame.obs
                 with self._lock:
                     self._history.append(obs)
-                self.status = (_state_text(obs, engine.paused, engine.fps), engine.paused)
+                self.status = (_state_text(obs, engine.paused, engine.suspended, engine.fps), engine.paused)
                 if not self.show_view.is_set():
                     # Drawing and converting the view costs CPU on every frame.
                     continue
@@ -163,6 +167,12 @@ class Worker:
             self._config = config
             if self.engine is not None:
                 self.engine.set_config(config)
+
+    def set_suspended(self, suspended: bool) -> None:
+        with self._lock:
+            self._suspended = suspended
+            if self.engine is not None:
+                self.engine.set_suspended(suspended)
 
     def toggle_pause(self) -> None:
         if self.engine is not None:
@@ -381,10 +391,8 @@ class MainWindow:
     def push_config(self) -> None:
         """Sends the settings in use to the engine. Gestures are off while the settings
         or wizard window is open, so editing and recording send nothing to other windows."""
-        config = self.config
-        if self.settings is not None or self.wizard is not None:
-            config = replace(config, gestures={n: replace(g, enabled=False) for n, g in config.gestures.items()})
-        self.worker.set_config(config)
+        self.worker.set_config(self.config)
+        self.worker.set_suspended(self.settings is not None or self.wizard is not None)
 
     def save_config(self, config: Config) -> None:
         self.apply_config(config)
@@ -1255,9 +1263,7 @@ class WizardWindow:
         self.win.transient(parent)
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         # Gestures are off while you record, so your takes send nothing to other windows.
-        config = app.config
-        quiet = {n: replace(g, enabled=False) for n, g in config.gestures.items()}
-        self.worker.set_config(replace(config, gestures=quiet))
+        self.worker.set_suspended(True)
         self._build()
         self.win.grab_set()
         self._show(-1)

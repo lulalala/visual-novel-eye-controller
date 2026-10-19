@@ -26,8 +26,13 @@ class Engine:
     """Owns the source, trackers, gestures and outputs. The command line loop
     and the GUI both drive it by calling step() once per frame.
 
-    set_config() and toggle_pause() may be called from another thread: they
-    take effect at the start of the next step().
+    set_config(), toggle_pause() and set_suspended() may be called from
+    another thread: they take effect at the start of the next step().
+
+    Suspended means the front end is using the signals itself (editing
+    settings, recording takes): the pipeline keeps producing observations,
+    but gestures neither match nor send anything. Unlike pause, no gesture
+    can end it.
     """
 
     def __init__(
@@ -54,6 +59,8 @@ class Engine:
         self._prev: float | None = None
         self._pending: Config | None = None
         self._pause_requested = False
+        self._suspend_requested: bool | None = None
+        self.suspended = False
         self.config: Config | None = None
         self._apply(config)
 
@@ -62,6 +69,9 @@ class Engine:
 
     def toggle_pause(self) -> None:
         self._pause_requested = True
+
+    def set_suspended(self, suspended: bool) -> None:
+        self._suspend_requested = suspended
 
     @property
     def paused(self) -> bool:
@@ -117,6 +127,13 @@ class Engine:
         if self._pause_requested:
             self._pause_requested = False
             self.pause.toggle()
+        requested, self._suspend_requested = self._suspend_requested, None
+        if requested is not None and requested != self.suspended:
+            self.suspended = requested
+            # Gestures didn't see the frames in between, so none may carry over.
+            for trigger in self.triggers:
+                trigger.reset()
+            self._log("Gestures off" if requested else "Gestures on")
 
         signals = self.source.read()
         now = signals.timestamp
@@ -128,7 +145,7 @@ class Engine:
         obs = replace(self.eyes.update(signals), head_yaw=head_yaw, head_pitch=head_pitch)
 
         fired = False
-        for trigger in self.triggers:
+        for trigger in () if self.suspended else self.triggers:
             event = trigger.update(obs)
             if event is None:
                 continue

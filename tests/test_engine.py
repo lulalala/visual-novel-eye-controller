@@ -107,3 +107,37 @@ def test_toggle_pause_from_another_thread_applies_on_the_next_step():
     engine.step()
     assert engine.paused
     assert sounds == ["pause"]
+
+
+def test_suspended_engine_sends_nothing_but_keeps_observing():
+    samples = calibrate() + blink()
+    engine, output, messages, sounds = make(samples)
+    run(engine, 80)
+    engine.set_suspended(True)
+    frames = run(engine, len(samples) - 80)
+    assert engine.suspended
+    assert output.sent == []
+    assert frames[-1].obs.face_present
+    assert "Gestures off" in messages
+
+
+def test_suspending_drops_a_half_done_gesture():
+    samples = calibrate() + blink()
+    engine, output, messages, sounds = make(samples)
+    run(engine, 94)  # closed, not yet open again
+    engine.set_suspended(True)
+    engine.step()
+    engine.set_suspended(False)
+    run(engine, len(samples) - 95)
+    assert output.sent == []
+    assert "Gestures on" in messages
+
+
+def test_head_shake_cannot_end_suspension_or_pause():
+    samples = calibrate() + shake()
+    engine, output, messages, sounds = make(samples)
+    run(engine, 90)
+    engine.set_suspended(True)
+    run(engine, len(samples) - 90)
+    assert engine.suspended
+    assert not engine.paused
