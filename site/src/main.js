@@ -35,7 +35,7 @@
   function flash() {
     key.classList.add("on"); dialog.classList.add("pulse");
     clearTimeout(keyTimer);
-    keyTimer = setTimeout(function () { key.classList.remove("on"); dialog.classList.remove("pulse"); }, 700);
+    keyTimer = setTimeout(function () { key.classList.remove("on"); dialog.classList.remove("pulse"); }, 900);
   }
 
   function advance(fromBlink) {
