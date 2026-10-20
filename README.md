@@ -42,7 +42,7 @@ The **All gestures** checkbox at the top of the list pauses and resumes eyeokuri
 
 The log shows gestures that fired, gestures that didn't and why (too short, too long, cooldown, paused), and pauses. The status bar shows whether eyeokuri sees your face.
 
-**View > Camera view…** opens the live camera view with your eye outlines and signal values. eyeokuri draws it only while that window is open, so close it when you don't need it, to save CPU.
+**View > Camera view…** opens the live camera view with your eye outlines and signal values, next to the main window (the two are the same height). eyeokuri draws it only while that window is open, so close it when you don't need it, to save CPU.
 
 **File > Config…** opens the config window for the camera, sounds and logging (**General**) and the eye and head baselines (**Advanced**). **General** has a **Choose from live views…** button next to `camera.index`. It lists every camera it finds with its live view, and you click the one to use.
 

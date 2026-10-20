@@ -8,6 +8,8 @@ from tkinter import ttk
 from typing import TYPE_CHECKING, Callable
 
 from eyeokuri import theme
+from eyeokuri.gui.model import view_size
+from eyeokuri.gui.tkutil import place_beside
 from eyeokuri.sources.camera import CameraScanner
 
 if TYPE_CHECKING:
@@ -20,13 +22,18 @@ class CameraWindow:
     def __init__(self, app: MainWindow) -> None:
         self.app = app
         self.win = tk.Toplevel(app.root)
+        self.win.withdraw()
         self.win.title("eyeokuri camera view")
-        self.photo = tk.PhotoImage(width=640, height=480)
-        ttk.Label(self.win, image=self.photo, anchor="center").pack(fill="both", expand=True)
+        self.win.resizable(False, False)
+        width, height = view_size(app.config.camera)
+        self.photo = tk.PhotoImage(width=width, height=height)
+        # No padding, so the window is as tall as the main window (see MainWindow).
+        ttk.Label(self.win, image=self.photo, anchor="center", padding=0, borderwidth=0).pack(fill="both", expand=True)
         self.win.bind("p", lambda _e: app.worker.toggle_pause())
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         self._shown: bytes | None = None
         app.worker.show_view.set()
+        place_beside(self.win, app.root)
 
     def show(self, frame: bytes | None) -> None:
         if frame is not None and frame is not self._shown:

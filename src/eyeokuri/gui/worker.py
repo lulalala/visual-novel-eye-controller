@@ -13,10 +13,10 @@ from eyeokuri import preview
 from eyeokuri.config import Config
 from eyeokuri.engine import Engine
 from eyeokuri.eyes import Observation
+from eyeokuri.gui.model import VIEW_MAX_WIDTH
 
 
 _HISTORY_FRAMES = 900
-_VIDEO_MAX_WIDTH = 640
 # A wizard take stops by itself after this long; the history keeps a bit more.
 MAX_TAKE_S = 20.0
 
@@ -90,8 +90,8 @@ class Worker:
                     engine.paused, engine.fps, obs.timestamp - engine.last_fire_at < preview.FLASH_S,
                     hints=False,
                 )
-                if img.shape[1] > _VIDEO_MAX_WIDTH:
-                    scale = _VIDEO_MAX_WIDTH / img.shape[1]
+                if img.shape[1] > VIEW_MAX_WIDTH:
+                    scale = VIEW_MAX_WIDTH / img.shape[1]
                     img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
                 rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 self.frame = b"P6 %d %d 255\n" % (rgb.shape[1], rgb.shape[0]) + rgb.tobytes()

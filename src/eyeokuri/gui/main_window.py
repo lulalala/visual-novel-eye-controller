@@ -15,7 +15,8 @@ from eyeokuri.engine import check_config
 from eyeokuri.gui.camera import CameraWindow
 from eyeokuri.gui.config_window import ConfigWindow
 from eyeokuri.gui.gesture_window import GestureWindow
-from eyeokuri.gui.model import GESTURE_NAME
+from eyeokuri.gui.model import GESTURE_NAME, view_size
+from eyeokuri.gui.tkutil import menu_bar_height
 from eyeokuri.gui.wizard import WizardWindow
 from eyeokuri.gui.worker import Worker
 
@@ -88,6 +89,9 @@ class MainWindow:
 
         root.bind("p", lambda _e: self._editing or self.worker.toggle_pause())
         root.protocol("WM_DELETE_WINDOW", self.close)
+        # As tall as the camera view window, so the two line up side by side.
+        root.update_idletasks()
+        root.geometry(f"{root.winfo_reqwidth()}x{view_size(config.camera)[1] - menu_bar_height(root)}")
         self._poll()
 
     # Gesture list

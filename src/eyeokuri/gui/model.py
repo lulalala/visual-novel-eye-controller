@@ -1,4 +1,4 @@
-"""Gesture settings as plain dicts for the editor, and the plot's ranges. No Tk, so it is unit-tested."""
+"""Gesture settings as plain dicts for the editor, the plot's ranges and the camera view's size. No Tk, so it is unit-tested."""
 
 from __future__ import annotations
 
@@ -6,11 +6,13 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from eyeokuri.config import GestureConfig, StepConfig
+from eyeokuri.config import CameraConfig, GestureConfig, StepConfig
 
 
 # Seconds of signal kept for "Live" and for saving a test recording.
 RECORD_S = 4.0
+# Wider camera frames are scaled down to this for the camera view.
+VIEW_MAX_WIDTH = 640
 
 @dataclass(frozen=True)
 class SignalPlot:
@@ -97,3 +99,10 @@ def new_step(kind: str) -> dict[str, Any]:
 def users_of(gestures: dict[str, GestureConfig], name: str) -> list[str]:
     """The gestures that have ``name`` as one of their steps, so deleting it would break them."""
     return [n for n, g in gestures.items() if n != name and any(s.gesture == name for s in g.steps)]
+
+
+def view_size(camera: CameraConfig) -> tuple[int, int]:
+    """The camera view's width and height in pixels for these camera settings."""
+    if camera.width <= VIEW_MAX_WIDTH:
+        return camera.width, camera.height
+    return VIEW_MAX_WIDTH, round(camera.height * VIEW_MAX_WIDTH / camera.width)

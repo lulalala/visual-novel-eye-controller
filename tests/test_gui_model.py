@@ -1,9 +1,9 @@
 import pytest
 
-from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig
+from eyeokuri.config import SIGNALS, CameraConfig, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    GESTURE_NAME, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step, users_of,
+    GESTURE_NAME, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step, users_of, view_size,
 )
 from eyeokuri.gui.worker import state_text
 
@@ -76,3 +76,11 @@ def test_users_of_lists_the_gestures_that_use_one_as_a_step():
     assert users_of(gestures, "blink") == ["blink_then_nod", "double_blink"]
     assert users_of(gestures, "nod_down") == ["blink_then_nod"]
     assert users_of(gestures, "head_shake") == []
+
+
+def test_camera_view_is_the_camera_frame_size():
+    assert view_size(Config().camera) == (640, 480)
+
+
+def test_wide_camera_frames_are_scaled_down_for_the_view():
+    assert view_size(CameraConfig(width=1280, height=720)) == (640, 360)

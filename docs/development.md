@@ -60,7 +60,7 @@ src/eyeokuri/
     plot.py         the plot with one draggable box per step
     camera.py       camera view window and the camera picker
     model.py        gesture settings as the editor's dicts, and the plot ranges (no Tk, unit-tested)
-    tkutil.py       window placement and fonts
+    tkutil.py       window placement and size, and fonts
   theme.py        the window's colors and ttk styles, taken from the site's palette
   icons/          the logo as PNG window icons (Tk 8.6 can't read SVG)
   tuning.py       fits a gesture's limits to takes recorded in the wizard
