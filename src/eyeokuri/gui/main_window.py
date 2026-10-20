@@ -48,11 +48,9 @@ class MainWindow:
         root.rowconfigure(0, weight=1)
 
         menubar = tk.Menu(root)
-        self.file_menu = tk.Menu(menubar, tearoff=False)
-        self.file_menu.add_command(label="Config…", command=self.open_config)
-        self.file_menu.add_separator()
-        self.file_menu.add_command(label="Quit", command=self.close)
-        menubar.add_cascade(label="File", menu=self.file_menu)
+        self.settings_menu = tk.Menu(menubar, tearoff=False)
+        self.settings_menu.add_command(label="Config…", command=self.open_config)
+        menubar.add_cascade(label="Settings", menu=self.settings_menu)
         view_menu = tk.Menu(menubar, tearoff=False)
         view_menu.add_command(label="Camera view…", command=self.open_camera)
         menubar.add_cascade(label="View", menu=view_menu)
@@ -226,7 +224,7 @@ class MainWindow:
         state = "disabled" if self._editing else "normal"
         for widget in [*self._row_controls, self.new_button]:
             widget.configure(state=state)
-        self.file_menu.entryconfigure("Config…", state=state)
+        self.settings_menu.entryconfigure("Config…", state=state)
 
     def save_config(self, config: Config) -> None:
         self.apply_config(config)
