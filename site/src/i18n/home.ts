@@ -65,12 +65,12 @@ export const home: Record<string, HomeText> = {
       {
         glyph: "blink → Enter",
         title: "Blink to advance",
-        text: "A blink sends Enter to your game. Prefer space, a click or a scroll? Pick one.",
+        text: "A blink sends Enter, space or click to your game.",
       },
       {
         glyph: "shake → pause",
         title: "Shake to pause",
-        text: "Look away or answer the phone. Shake your head again to pick up where you left off.",
+        text: "Shake your head to pause, and shake again to unpause.",
       },
       {
         glyph: "frames → nowhere",
