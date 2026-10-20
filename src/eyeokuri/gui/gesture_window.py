@@ -144,11 +144,6 @@ class GestureWindow:
 
         self.steps_frame = ttk.Frame(tab)
         self.steps_frame.grid(row=3, column=0, sticky="ew", pady=(8, 0))
-        buttons = ttk.Frame(tab)
-        buttons.grid(row=4, column=0, sticky="w", pady=(6, 0))
-        ttk.Button(buttons, text="+ Add step", command=self._add_step).pack(side="left")
-        ttk.Button(buttons, text="+ Add head limit", command=self._add_guard).pack(side="left", padx=(8, 0))
-        ttk.Label(buttons, foreground=theme.MUTED, text="Leave a number empty for no limit.").pack(side="left", padx=10)
 
     def _load_fields(self) -> None:
         """Shows the model in the widgets, after opening, a reset or the wizard."""
@@ -256,7 +251,9 @@ class GestureWindow:
             ttk.Label(frame, text=unit).grid(row=r, column=5, sticky="w")
             ttk.Button(frame, text="✕", width=3, command=lambda i=i: self._delete_step(i),
                        state="normal" if len(m["steps"]) > 1 else "disabled").grid(row=r, column=9, padx=3)
-        self._add_guard_rows(frame, len(m["steps"]) + 1)
+        ttk.Button(frame, text="+ Add step", command=self._add_step).grid(
+            row=len(m["steps"]) + 1, column=1, sticky="w", padx=3, pady=(4, 0))
+        self._add_guard_rows(frame, len(m["steps"]) + 2)
 
     def _build_guards(self) -> None:
         """Head limits share the steps table's columns, so rebuilding one rebuilds both."""
@@ -265,6 +262,12 @@ class GestureWindow:
     def _add_guard_rows(self, frame: ttk.Frame, row: int) -> None:
         self.guard_vars: dict[tuple[int, str], tk.StringVar] = {}
         guards = self.model["guards"]
+        end = row + (1 + len(guards) if guards else 0)
+        # Lined up with "+ Add step" above, in the Signal column.
+        ttk.Button(frame, text="+ Add head limit", command=self._add_guard).grid(
+            row=end, column=1, sticky="w", padx=3, pady=(4, 0))
+        ttk.Label(frame, foreground=theme.MUTED, text="Leave a number empty for no limit.").grid(
+            row=end, column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
         if not guards:
             return
         ttk.Label(frame, text="Only while the head stays within", foreground=theme.MUTED).grid(
