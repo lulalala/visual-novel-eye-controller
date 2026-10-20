@@ -51,14 +51,32 @@ src/eyeokuri/
   app.py          command line: main loop and flags
   gui.py          window: log, optional camera view, settings with the gesture plot, and the gesture wizard
   tuning.py       fits a gesture's limits to takes recorded in the wizard
-site/             static homepage
-  src/            index.html, style.css and main.js, with markers that build.py fills in
-  build.py        writes site/dist/ (the page with its CSS, JS and logo inlined)
+site/             static site (Astro with Starlight)
+  astro.config.mjs  site settings, languages and docs sidebar
+  src/pages/      homepage routes: index.astro (English), one folder per added language
+  src/components/ Home.astro, the homepage
+  src/i18n/       home.ts, the homepage text for each language
+  src/scripts/    home.js, the homepage demo
+  src/styles/     home.css (homepage) and docs.css (docs theme)
+  src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
 ```
 
-## Build the homepage
+## Build the site
 
-Run `python site/build.py`. It writes `site/dist/index.html` and `site/dist/logo.svg`, which you can host on any static file server. The build uses only the standard library. To edit with a live preview, run `python site/build.py --serve`, open `http://localhost:8000/`, and refresh the browser after each edit. The server rebuilds the page on every load. `site/dist/` is gitignored. The page loads two fonts from Google Fonts; nothing else leaves the page.
+The site needs Node.js 22.22 or later. In `site/`, run `npm install` once, then:
+
+- `npm run dev` serves the site at `http://localhost:4321/` and reloads on each edit.
+- `npm run build` writes the site to `site/dist/`, which you can host on any static file server.
+- `npm run preview` serves the built `site/dist/`.
+
+`site/dist/`, `site/node_modules/` and `site/.astro/` are gitignored. The homepage loads two fonts from Google Fonts; nothing else leaves the page. Astro collects anonymous usage data by default; run `npx astro telemetry disable` to opt out.
+
+## Translate the site
+
+The docs are set up for English, Japanese (`ja`) and Traditional Chinese (`zh-tw`). A docs page without a translation shows the English text with a notice.
+
+- To translate a docs page, copy it to the same path under `site/src/content/docs/ja/` or `zh-tw/` and translate it.
+- To translate the homepage, add the language to `site/src/i18n/home.ts`, then add `site/src/pages/<language>/index.astro` that renders `<Home locale="<language>" />`.
 
 ## Extend eyeokuri
 

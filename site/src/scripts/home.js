@@ -1,12 +1,6 @@
 (function () {
-  var LINES = [
-    "H-hands full of snacks? Good. It's not like I wanted you to need them or anything!",
-    "Carpal tunnel? Tch, rest your hands. I-I'm not worried!",
-    "I watch your webcam. When you blink, I press Enter. Don't read into it, idiot!",
-    "Need a break? Shake your head. I'll wait. B-but only because I'm bored!",
-    "Everything stays on your PC. I never save a frame. W-what, you thought I'd peek at you?!",
-    "Hmph. Ready? Blink once, and the story is yours. Just don't make me say it twice!"
-  ];
+  var ui = document.getElementById("home").dataset;
+  var LINES = JSON.parse(ui.lines);
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var svg = document.querySelector(".eye svg");
   var lineEl = document.getElementById("line");
@@ -64,11 +58,11 @@
     })();
   } else if (svg && svg.pauseAnimations) {
     svg.pauseAnimations();
-    hint.textContent = "Click to continue";
+    hint.textContent = ui.hintClick;
   }
 
   // Share links use the page's own address, so they work wherever it is hosted.
-  var url = location.href.split("#")[0], msg = "Blink. Next line. Read your visual novel hands-free with eyeokuri.";
+  var url = location.href.split("#")[0], msg = ui.shareMessage;
   var q = encodeURIComponent;
   var set = function (id, href) { var el = document.getElementById(id); if (el) el.href = href; };
   set("share-bsky", "https://bsky.app/intent/compose?text=" + q(msg + " " + url));
@@ -76,16 +70,8 @@
   set("share-reddit", "https://www.reddit.com/submit?url=" + q(url) + "&title=" + q(msg));
   document.getElementById("share-copy").addEventListener("click", function (e) {
     var btn = e.currentTarget;
-    function done(ok) { btn.textContent = ok ? "Copied" : url; setTimeout(function () { btn.textContent = "Copy link"; }, 1600); }
+    function done(ok) { btn.textContent = ok ? ui.copied : url; setTimeout(function () { btn.textContent = ui.copy; }, 1600); }
     try { navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(false); }); }
-    catch (err) { done(false); }
-  });
-
-  document.getElementById("copy").addEventListener("click", function (e) {
-    var btn = e.currentTarget;
-    var text = document.getElementById("cmd").textContent.replace(/^Copy/, "").trim();
-    function done(ok) { btn.textContent = ok ? "Copied" : "Select and copy"; setTimeout(function () { btn.textContent = "Copy"; }, 1600); }
-    try { navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); }); }
     catch (err) { done(false); }
   });
 })();

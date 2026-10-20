@@ -8,3 +8,5 @@ __pycache__/
 # Eye-value logs from --log
 *.csv
 /site/dist/
+/site/node_modules/
+/site/.astro/

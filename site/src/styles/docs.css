@@ -1,0 +1,11 @@
+/* Docs theme: the homepage's sakura accent on Starlight. */
+:root {
+  --sl-color-accent-low: #ffd8e5;
+  --sl-color-accent: #d9376f;
+  --sl-color-accent-high: #8f1c47;
+}
+:root[data-theme="dark"] {
+  --sl-color-accent-low: #4a1630;
+  --sl-color-accent: #ff6b9a;
+  --sl-color-accent-high: #ffc2d6;
+}
