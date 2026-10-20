@@ -46,6 +46,7 @@ src/eyeokuri/
   eyes.py         Signals -> Observation (open/closed vs. your open-eye level)
   head.py         Signals -> head yaw/pitch relative to your usual pose
   triggers.py     Observation -> step boxes entered -> gestures -> TriggerEvent
+  keys.py         key names and combinations ("ctrl+s"): parsing and press order
   outputs.py      TriggerEvent -> key/mouse input
   engine.py       runs the pipeline one frame at a time (used by both front ends)
   app.py          command line: main loop and flags

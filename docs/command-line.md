@@ -8,7 +8,7 @@
 eyeokuri --preview             # try it out: debug window (press p to pause, so gestures only print)
 eyeokuri                       # real use: start it, then switch to the game
 eyeokuri --config config.toml  # custom settings (copy config.example.toml)
-eyeokuri --min-duration 0.5 --blink-key left_click   # common settings as flags
+eyeokuri --min-duration 0.5 --blink-key ctrl+enter   # common settings as flags
 eyeokuri --set eyes.open_ratio=0.8                # any config key (repeatable)
 ```
 
@@ -22,6 +22,7 @@ eyeokuri --set eyes.open_ratio=0.8                # any config key (repeatable)
 eyeokuri --set gestures.nod_down.steps.0.above_deg=15
 eyeokuri --set gestures.head_shake.within_s=1.5     # allow a slower shake
 eyeokuri --set gestures.nod_down.enabled=true       # turn on nodding
+eyeokuri --set gestures.blink.output=page_down    # any key, or a combination like ctrl+s
 ```
 
 Common settings also have flags, such as `--min-duration`, `--blink-key` and `--no-head-shake` (turns the head shake off).

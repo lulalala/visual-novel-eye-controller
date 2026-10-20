@@ -55,7 +55,7 @@ Other modules: `config.py` (dataclasses, TOML loading and `dump_config` for savi
    - Every setting belongs to one step, so changing it never affects another step or gesture. Hysteresis is two boxes: a nod enters past 12° and returns inside ±8°. The eye openness signal is relative to the open-eye baseline; `[eyes] close_ratio`/`open_ratio` only decide what that baseline learns from and what the preview shows.
    - When the same movement matches several gestures, each one fires. There is no arbitration.
    - The config shape is meant for a plot-based editor: each step maps to one box, and each limit to one draggable edge. Keep new step fields drawable that way.
-2. Outputs come in two kinds. Keystroke/mouse outputs are listed in `OUTPUT_NAMES` in `outputs.py` (`enter`, `space`, `left_click`, `right_click`, `wheel_down`, `up`, `down`). App-level outputs start with `app:` (currently only `app:toggle_pause`). The event loop in `app.py` handles `app:` outputs before `ActionDispatcher` sees them.
+2. Outputs come in two kinds. Keystroke/mouse outputs are a key name from `KEY_VK` in `keys.py`, optionally after modifiers (`ctrl+s`), or one of `MOUSE_OUTPUTS` in `outputs.py` (`left_click`, `right_click`, `wheel_down`). `check_output_name` validates them; `OUTPUT_NAMES` is only the list of common ones the GUI offers. App-level outputs start with `app:` (currently only `app:toggle_pause`). The event loop in `app.py` handles `app:` outputs before `ActionDispatcher` sees them.
 3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, the face model, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
 4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.
 5. Head signs: **positive pitch = head tilted down** (image y grows downward), and **positive yaw = your left** (the face turns toward the unmirrored camera image's right). `signal_value` in `triggers.py` reads each signal.
@@ -95,7 +95,7 @@ A gesture made of existing signals needs no new trigger code. Do all of these in
 
 Adding a new signal: add it to `SIGNALS` in `config.py`, read it in `signal_value` in `triggers.py`, and give it bound fields with its unit in `StepConfig`. Include it in `GestureTrigger.needs`, so that a gesture is skipped at startup with a notice when the source doesn't provide the signal.
 
-Adding a new output name: add it to `OUTPUT_NAMES` and implement it in **both** `Win32Output` (scan code, plus `KEYEVENTF_EXTENDEDKEY` for extended keys) and `PynputOutput`.
+Adding a key name: add its Windows virtual-key code to `KEY_VK` in `keys.py` (and to `EXTENDED_KEYS` if Windows sends it with the `0xE0` prefix). Check that `PynputOutput` finds it (a single character, or a `Key` attribute, renamed in `_PYNPUT_NAMES` if needed) and that `from_tk_event` maps its Tk keysym. Adding a mouse output: add it to `MOUSE_OUTPUTS` and implement it in **both** `Win32Output` and `PynputOutput`.
 
 ### Tests
 

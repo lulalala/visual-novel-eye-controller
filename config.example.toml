@@ -39,8 +39,10 @@ warmup_s = 2.0
 # A gesture also has: guards (boxes on pitch or yaw that the head must stay
 # inside; leaving one cancels the gesture), any_order, within_s (first step to last, 0 = no
 # limit), cooldown_s and output.
-# Outputs: enter, space, left_click, right_click, wheel_down, up, down, app:toggle_pause,
-# or "" to send nothing.
+# Outputs: a key (a-z, 0-9, f1-f24, enter, space, tab, escape, backspace, delete, insert,
+# home, end, page_up, page_down, up, down, left, right), optionally after modifiers
+# ctrl, shift, alt or win (ctrl+s, shift+tab); left_click, right_click, wheel_down;
+# app:toggle_pause; or "" to send nothing.
 
 [gestures.blink]
 # Close your eyes, then open them again. 0.15 lets natural blinks advance;

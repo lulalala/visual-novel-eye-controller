@@ -104,6 +104,22 @@ def test_invalid_keystroke_output_is_rejected():
         config_from("--set", "gestures.blink.output=notakey")
 
 
+def test_key_combination_output_is_accepted():
+    config = config_from("--set", "gestures.blink.output=ctrl+s", "--set", "gestures.nod_up.output=page_down")
+    assert config.gestures["blink"].output == "ctrl+s"
+    assert config.gestures["nod_up"].output == "page_down"
+
+
+def test_blink_key_flag_accepts_any_key():
+    assert config_from("--blink-key", "F5").gestures["blink"].output == "f5"
+
+
+def test_blink_key_flag_rejects_unknown_key(capsys):
+    with pytest.raises(SystemExit):
+        config_from("--blink-key", "ctrl+zz")
+    assert "unknown key 'zz'" in capsys.readouterr().err
+
+
 def test_invalid_app_output_is_rejected():
     with pytest.raises(ValueError, match="gestures.blink.output"):
         config_from("--set", "gestures.blink.output=app:notacommand")

@@ -2,7 +2,7 @@
 
 Read your visual novel hands-free. `eyeokuri` watches your webcam and advances the text when you blink, so you can keep your hands off the keyboard and mouse.
 
-- **Blink to advance.** A blink sends `Enter` to the game. You can send space, a left click or a scroll-down instead.
+- **Blink to advance.** A blink sends `Enter` to the game. You can send any other key, a key combination such as `Ctrl+S`, a left click or a scroll-down instead.
 - **Shake your head to pause.** Shake again to resume, for example when you look away or answer the phone.
 - **Make it fit you.** A gesture wizard learns your blink from a few practice takes. You can also edit each gesture's thresholds and timing in the settings window.
 - **Private.** It needs only a webcam. Frames are processed on your PC and never stored or sent anywhere.
@@ -100,6 +100,15 @@ Each step sets its own box and timing, so you can change one step without changi
 - `hold_s` makes you stay inside the box that long before the step counts, for example to fire on looking left for 1 s.
 
 A gesture also has `guards` (see above), `any_order` (the head shake uses it, so you can start on either side), `within_s` (time allowed from the first step to the last), `cooldown_s` and `output`.
+
+`output` is what the gesture sends:
+
+- A key: `a`–`z`, `0`–`9`, `f1`–`f24`, `enter`, `space`, `tab`, `escape`, `backspace`, `delete`, `insert`, `home`, `end`, `page_up`, `page_down`, `up`, `down`, `left` or `right`.
+- A key after one or more modifiers (`ctrl`, `shift`, `alt`, `win`), joined with `+`, for example `ctrl+s` or `shift+tab`. On macOS, `win` is the Command key.
+- A mouse input: `left_click`, `right_click` or `wheel_down`.
+- `app:toggle_pause`, which pauses or resumes eyeokuri, or `""` to send nothing.
+
+In the settings window you can type the output, or select **Press a key…** and press the key or combination.
 
 You can add your own gesture under a new name. A step can also be another gesture, which counts when that gesture fires. This gesture sends `space` when you blink and then nod down within 1.5 s:
 

@@ -11,9 +11,13 @@ import sys
 import time
 from typing import Callable, Protocol
 
+from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, KeyCombo, parse_key, press_order
 from eyeokuri.triggers import TriggerEvent
 
-OUTPUT_NAMES = ("enter", "space", "left_click", "right_click", "wheel_down", "up", "down")
+MOUSE_OUTPUTS = ("left_click", "right_click", "wheel_down")
+# Common outputs, offered in the settings window. Any key name or combination
+# that parse_key accepts (a, f5, ctrl+s, ...) works too.
+OUTPUT_NAMES = ("enter", "space", "left_click", "right_click", "wheel_down", "up", "down", "page_down", "escape")
 
 # Some engines poll key state once per frame, so hold keys down briefly.
 _PRESS_DURATION_S = 0.03
@@ -23,11 +27,21 @@ class Output(Protocol):
     def send(self, name: str) -> None: ...
 
 
-class Win32Output:
-    _SCAN_CODES = {"enter": 0x1C, "space": 0x39, "up": 0x48, "down": 0x50}
-    # Arrow keys are extended keys and need KEYEVENTF_EXTENDEDKEY.
-    _EXTENDED_KEYS = frozenset({"up", "down"})
+def check_output_name(name: str) -> None:
+    """Raises ValueError unless name is a mouse output or a key (combination)."""
+    if name not in MOUSE_OUTPUTS:
+        parse_key(name)
 
+
+def is_output_name(name: str) -> bool:
+    try:
+        check_output_name(name)
+    except ValueError:
+        return False
+    return True
+
+
+class Win32Output:
     def __init__(self) -> None:
         import ctypes
         from ctypes import wintypes
@@ -74,15 +88,12 @@ class Win32Output:
         self._user32 = ctypes.WinDLL("user32", use_last_error=True)
         self._user32.SendInput.argtypes = (wintypes.UINT, ctypes.POINTER(INPUT), ctypes.c_int)
         self._user32.SendInput.restype = wintypes.UINT
+        self._user32.MapVirtualKeyW.argtypes = (wintypes.UINT, wintypes.UINT)
+        self._user32.MapVirtualKeyW.restype = wintypes.UINT
+        self._scans: dict[str, int] = {}
 
     def send(self, name: str) -> None:
-        if name in self._SCAN_CODES:
-            scan = self._SCAN_CODES[name]
-            extended = name in self._EXTENDED_KEYS
-            self._key(scan, up=False, extended=extended)
-            time.sleep(_PRESS_DURATION_S)
-            self._key(scan, up=True, extended=extended)
-        elif name == "left_click":
+        if name == "left_click":
             self._mouse(0x0002)  # MOUSEEVENTF_LEFTDOWN
             time.sleep(_PRESS_DURATION_S)
             self._mouse(0x0004)  # MOUSEEVENTF_LEFTUP
@@ -94,7 +105,17 @@ class Win32Output:
             # MOUSEEVENTF_WHEEL; one notch = WHEEL_DELTA (120), negative = towards user.
             self._mouse(0x0800, data=-120 & 0xFFFFFFFF)
         else:
-            raise ValueError(f"Unknown output: {name}")
+            combo = parse_key(name)
+            for key, down in press_order(combo):
+                self._key(self._scan(key), up=not down, extended=key in EXTENDED_KEYS)
+                if key == combo.key and down:
+                    time.sleep(_PRESS_DURATION_S)
+
+    def _scan(self, key: str) -> int:
+        # Asks the current layout which key types this letter, so "a" is a on AZERTY too.
+        if key not in self._scans:
+            self._scans[key] = self._user32.MapVirtualKeyW(KEY_VK[key], 0) & 0xFF  # MAPVK_VK_TO_VSC
+        return self._scans[key]
 
     def _key(self, scan: int, up: bool, extended: bool = False) -> None:
         flags = 0x0008 | (0x0002 if up else 0) | (0x0001 if extended else 0)
@@ -118,27 +139,20 @@ class Win32Output:
             )
 
 
+_PYNPUT_NAMES = {"escape": "esc", "win": "cmd"}
+
+
 class PynputOutput:
     def __init__(self) -> None:
         from pynput import keyboard, mouse
 
+        self._keyboard_module = keyboard
         self._keyboard = keyboard.Controller()
         self._mouse = mouse.Controller()
-        self._keys = {
-            "enter": keyboard.Key.enter,
-            "space": keyboard.Key.space,
-            "up": keyboard.Key.up,
-            "down": keyboard.Key.down,
-        }
         self._buttons = {"left_click": mouse.Button.left, "right_click": mouse.Button.right}
 
     def send(self, name: str) -> None:
-        if name in self._keys:
-            key = self._keys[name]
-            self._keyboard.press(key)
-            time.sleep(_PRESS_DURATION_S)
-            self._keyboard.release(key)
-        elif name in self._buttons:
+        if name in self._buttons:
             button = self._buttons[name]
             self._mouse.press(button)
             time.sleep(_PRESS_DURATION_S)
@@ -146,7 +160,28 @@ class PynputOutput:
         elif name == "wheel_down":
             self._mouse.scroll(0, -1)
         else:
-            raise ValueError(f"Unknown output: {name}")
+            self._send_keys(parse_key(name))
+
+    def _send_keys(self, combo: KeyCombo) -> None:
+        keys = {k: self._pynput_key(k) for k in (*combo.modifiers, combo.key)}
+        missing = [k for k, v in keys.items() if v is None]
+        if missing:
+            print(f"Can't send {combo}: {', '.join(missing)} is not available on this system.",
+                  file=sys.stderr, flush=True)
+            return
+        for key, down in press_order(combo):
+            if down:
+                self._keyboard.press(keys[key])
+                if key == combo.key:
+                    time.sleep(_PRESS_DURATION_S)
+            else:
+                self._keyboard.release(keys[key])
+
+    def _pynput_key(self, key: str) -> object | None:
+        if len(key) == 1:
+            return self._keyboard_module.KeyCode.from_char(key)
+        # pynput's Key has no f21-f24, and no insert on macOS.
+        return getattr(self._keyboard_module.Key, _PYNPUT_NAMES.get(key, key), None)
 
 
 def macos_accessibility_trusted() -> bool:
@@ -184,11 +219,10 @@ class ActionDispatcher:
         on_fire: Callable[[TriggerEvent, str], None] | None = None,
     ) -> None:
         for action, name in actions.items():
-            if name not in OUTPUT_NAMES:
-                raise ValueError(
-                    f"Action {action!r} maps to unknown output {name!r}; "
-                    f"choose from {', '.join(OUTPUT_NAMES)}"
-                )
+            try:
+                check_output_name(name)
+            except ValueError as e:
+                raise ValueError(f"Action {action!r}: {e}") from None
         self._output = output
         self._actions = actions
         self._on_fire = on_fire

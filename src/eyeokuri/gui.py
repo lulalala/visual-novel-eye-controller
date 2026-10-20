@@ -24,6 +24,7 @@ from eyeokuri.app import APP_OUTPUTS, FLASH_S, check_config
 from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig, dump_config, load_config
 from eyeokuri.engine import Engine
 from eyeokuri.eyes import Observation
+from eyeokuri.keys import from_tk_event
 from eyeokuri.outputs import OUTPUT_NAMES
 from eyeokuri.sources.camera import CameraScanner
 from eyeokuri.triggers import Replay, replay, signal_value
@@ -782,10 +783,15 @@ class SettingsWindow:
         self.enabled = tk.BooleanVar()
         ttk.Checkbutton(top, text="Enabled", variable=self.enabled, command=self._on_gesture_field).pack(side="left")
         ttk.Label(top, text="Output").pack(side="left", padx=(14, 4))
-        self.output = ttk.Combobox(top, state="readonly", width=18,
+        # Editable: any key or combination (f5, ctrl+s) can be typed, or captured below.
+        self.output_var = tk.StringVar()
+        self.output_var.trace_add("write", lambda *_a: self._on_gesture_field())
+        self.output = ttk.Combobox(top, width=18, textvariable=self.output_var,
                                    values=["(none)", *OUTPUT_NAMES, *sorted(APP_OUTPUTS)])
-        self.output.bind("<<ComboboxSelected>>", lambda _e: self._on_gesture_field())
         self.output.pack(side="left")
+        self.capture_button = ttk.Button(top, text="Press a key…", command=self._toggle_capture)
+        self.capture_button.pack(side="left", padx=(4, 0))
+        self._capturing = False
         self.any_order = tk.BooleanVar()
         ttk.Checkbutton(top, text="Steps in any order", variable=self.any_order,
                         command=self._on_gesture_field).pack(side="left", padx=(14, 0))
@@ -836,7 +842,8 @@ class SettingsWindow:
         m = self.gestures[name]
         self._suppress = True
         self.enabled.set(m["enabled"])
-        self.output.set(m["output"] or "(none)")
+        self._stop_capture()
+        self.output_var.set(m["output"] or "(none)")
         self.any_order.set(m["any_order"])
         for key, var in self.gesture_vars.items():
             var.set(_fmt(m[key]))
@@ -859,12 +866,40 @@ class SettingsWindow:
             return
         m = self.gestures[self.current]
         m["enabled"] = self.enabled.get()
-        m["output"] = "" if self.output.get() == "(none)" else self.output.get()
+        output = self.output_var.get().strip().lower()
+        # Invalid text is stored too; build_config() reports it and blocks Apply.
+        m["output"] = "" if output in ("", "(none)") else output
         if m["any_order"] != self.any_order.get():
             m["any_order"] = self.any_order.get()
             self._build_steps()
         self._refresh_list()
         self._refresh()
+
+    def _toggle_capture(self) -> None:
+        if self._capturing:
+            self._stop_capture()
+            return
+        self._capturing = True
+        self.capture_button.configure(text="Press a key now (click to cancel)")
+        # Keys go to the focused button; "break" stops Space or Tab from acting on it.
+        self.capture_button.focus_set()
+        self.capture_button.bind("<KeyPress>", self._on_capture_key)
+        self.capture_button.bind("<FocusOut>", lambda _e: self._stop_capture())
+
+    def _on_capture_key(self, event: tk.Event) -> str:
+        name = from_tk_event(event.keysym, event.state, sys.platform)
+        if name is not None:
+            self._stop_capture()
+            self.output_var.set(name)
+        return "break"
+
+    def _stop_capture(self) -> None:
+        if not self._capturing:
+            return
+        self._capturing = False
+        self.capture_button.unbind("<KeyPress>")
+        self.capture_button.unbind("<FocusOut>")
+        self.capture_button.configure(text="Press a key…")
 
     def _on_gesture_number(self, key: str) -> None:
         if self._suppress:

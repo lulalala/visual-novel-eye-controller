@@ -14,10 +14,18 @@ from eyeokuri.config import Config, apply_overrides, load_config, nested, parse_
 from eyeokuri.engine import Engine
 from eyeokuri.eyes import EyeStateTracker
 from eyeokuri.head import HeadTracker
-from eyeokuri.outputs import OUTPUT_NAMES
+from eyeokuri.outputs import OUTPUT_NAMES, check_output_name
 from eyeokuri.triggers import create_triggers
 
 FLASH_S = 0.3
+
+
+def _output_arg(text: str) -> str:
+    try:
+        check_output_name(text)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from None
+    return text.strip().lower()
 
 
 # Shortcut flags: (flag, config path, argparse options). Anything else can be
@@ -26,8 +34,9 @@ _SHORTCUTS: list[tuple[str, str, dict[str, Any]]] = [
     ("--camera", "camera.index", {"type": int, "metavar": "N", "help": "camera index"}),
     ("--min-duration", "gestures.blink.steps.1.after_min_s", {"type": float, "metavar": "S",
      "help": "shortest closure that triggers, in seconds"}),
-    ("--blink-key", "gestures.blink.output", {"choices": OUTPUT_NAMES,
-     "help": "what key or mouse input to send for a blink"}),
+    ("--blink-key", "gestures.blink.output", {"type": _output_arg, "metavar": "KEY",
+     "help": "key, key combination or mouse input to send for a blink, e.g. "
+             f"{', '.join(OUTPUT_NAMES[:5])}, f5, ctrl+s"}),
     ("--no-head-shake", "gestures.head_shake.enabled", {"action": "store_const", "const": False,
      "help": "disable the head-shake pause/resume gesture"}),
     ("--no-sound", "feedback.sound", {"action": "store_const", "const": False,
@@ -70,11 +79,14 @@ def validate_outputs(config: Config) -> None:
                     f"gestures.{name}.output: unknown app output {output!r}; "
                     f"choose from {', '.join(sorted(APP_OUTPUTS))}"
                 )
-        elif output not in OUTPUT_NAMES:
-            raise ValueError(
-                f"gestures.{name}.output: unknown output {output!r}; "
-                f"choose from {', '.join(OUTPUT_NAMES)}, or \"\" for none"
-            )
+        else:
+            try:
+                check_output_name(output)
+            except ValueError as e:
+                raise ValueError(
+                    f"gestures.{name}.output: {e}; mouse outputs are left_click, right_click, "
+                    "wheel_down, and \"\" sends nothing"
+                ) from None
 
 
 def check_config(config: Config) -> None:
