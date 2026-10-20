@@ -11,13 +11,8 @@ from typing import Any
 
 from eyeokuri import preview
 from eyeokuri.config import Config, apply_overrides, load_config, nested, parse_override
-from eyeokuri.engine import Engine
-from eyeokuri.eyes import EyeStateTracker
-from eyeokuri.head import HeadTracker
+from eyeokuri.engine import Engine, check_config
 from eyeokuri.outputs import OUTPUT_NAMES, check_output_name
-from eyeokuri.triggers import create_triggers
-
-FLASH_S = 0.3
 
 
 def _output_arg(text: str) -> str:
@@ -65,38 +60,6 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-APP_OUTPUTS = frozenset({"app:toggle_pause"})
-
-
-def validate_outputs(config: Config) -> None:
-    for name, gesture in config.gestures.items():
-        output = gesture.output
-        if output == "":
-            continue
-        if output.startswith("app:"):
-            if output not in APP_OUTPUTS:
-                raise ValueError(
-                    f"gestures.{name}.output: unknown app output {output!r}; "
-                    f"choose from {', '.join(sorted(APP_OUTPUTS))}"
-                )
-        else:
-            try:
-                check_output_name(output)
-            except ValueError as e:
-                raise ValueError(
-                    f"gestures.{name}.output: {e}; mouse outputs are left_click, right_click, "
-                    "wheel_down, and \"\" sends nothing"
-                ) from None
-
-
-def check_config(config: Config) -> None:
-    """Raises ValueError for settings that would fail later, before the camera opens."""
-    validate_outputs(config)
-    EyeStateTracker(config.eyes)
-    HeadTracker(config.head)
-    create_triggers(config)
-
-
 def build_config(args: argparse.Namespace) -> Config:
     config = load_config(args.config)
     for _, path, _ in _SHORTCUTS:
@@ -142,7 +105,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
             if args.preview:
                 key = preview.show(
                     engine.source.debug_view(), obs, config.eyes, engine.statuses(),
-                    engine.paused, engine.fps, now - engine.last_fire_at < FLASH_S,
+                    engine.paused, engine.fps, now - engine.last_fire_at < preview.FLASH_S,
                 )
                 if key in (ord("q"), 27):
                     break

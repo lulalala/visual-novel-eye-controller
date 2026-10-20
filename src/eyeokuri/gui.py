@@ -20,12 +20,11 @@ from typing import Any, Callable
 import cv2
 
 from eyeokuri import preview, theme
-from eyeokuri.app import APP_OUTPUTS, FLASH_S, check_config
 from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig, dump_config, load_config
-from eyeokuri.engine import Engine
+from eyeokuri.engine import Engine, check_config
 from eyeokuri.eyes import Observation
 from eyeokuri.keys import from_tk_event
-from eyeokuri.outputs import OUTPUT_NAMES
+from eyeokuri.outputs import APP_OUTPUTS, OUTPUT_NAMES
 from eyeokuri.sources.camera import CameraScanner
 from eyeokuri.triggers import Replay, replay, signal_value
 from eyeokuri.tuning import DO, KIND_LABELS, TOO_QUICK, TOO_SLOW, Fit, Take, can_tune, fit, script, trim
@@ -152,7 +151,7 @@ class Worker:
                 assert engine.config is not None
                 img = preview.render(
                     engine.source.debug_view(), obs, engine.config.eyes, engine.statuses(),
-                    engine.paused, engine.fps, obs.timestamp - engine.last_fire_at < FLASH_S,
+                    engine.paused, engine.fps, obs.timestamp - engine.last_fire_at < preview.FLASH_S,
                     hints=False,
                 )
                 if img.shape[1] > _VIDEO_MAX_WIDTH:

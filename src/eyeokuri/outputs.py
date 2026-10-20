@@ -15,6 +15,9 @@ from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, KeyCombo, parse_key, press_orde
 from eyeokuri.triggers import TriggerEvent
 
 MOUSE_OUTPUTS = ("left_click", "right_click", "wheel_down")
+# Outputs the app handles itself instead of sending input.
+APP_PREFIX = "app:"
+APP_OUTPUTS = frozenset({"app:toggle_pause"})
 # Common outputs, offered in the settings window. Any key name or combination
 # that parse_key accepts (a, f5, ctrl+s, ...) works too.
 OUTPUT_NAMES = ("enter", "space", "left_click", "right_click", "wheel_down", "up", "down", "page_down", "escape")

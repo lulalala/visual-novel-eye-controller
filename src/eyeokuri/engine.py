@@ -9,10 +9,41 @@ from eyeokuri.config import Config
 from eyeokuri.eyes import EyeStateTracker, Observation
 from eyeokuri.feedback import play_sound
 from eyeokuri.head import HeadTracker
-from eyeokuri.outputs import ActionDispatcher, Output, create_output
+from eyeokuri.outputs import (
+    APP_OUTPUTS, APP_PREFIX, ActionDispatcher, Output, check_output_name, create_output,
+)
 from eyeokuri.pause import PauseSwitch
 from eyeokuri.sources import Source
 from eyeokuri.triggers import Trigger, TriggerEvent, create_triggers, supported_triggers
+
+
+def validate_outputs(config: Config) -> None:
+    for name, gesture in config.gestures.items():
+        output = gesture.output
+        if output == "":
+            continue
+        if output.startswith(APP_PREFIX):
+            if output not in APP_OUTPUTS:
+                raise ValueError(
+                    f"gestures.{name}.output: unknown app output {output!r}; "
+                    f"choose from {', '.join(sorted(APP_OUTPUTS))}"
+                )
+        else:
+            try:
+                check_output_name(output)
+            except ValueError as e:
+                raise ValueError(
+                    f"gestures.{name}.output: {e}; mouse outputs are left_click, right_click, "
+                    "wheel_down, and \"\" sends nothing"
+                ) from None
+
+
+def check_config(config: Config) -> None:
+    """Raises ValueError for settings that would fail later, before the camera opens."""
+    validate_outputs(config)
+    EyeStateTracker(config.eyes)
+    HeadTracker(config.head)
+    create_triggers(config)
 
 
 @dataclass(frozen=True)
@@ -103,7 +134,7 @@ class Engine:
         self._outputs = {name: g.output for name, g in config.gestures.items()}
         # App-level outputs (app:*) are handled in step(); only keystroke and
         # mouse outputs go to ActionDispatcher.
-        key_actions = {k: v for k, v in self._outputs.items() if v and not v.startswith("app:")}
+        key_actions = {k: v for k, v in self._outputs.items() if v and not v.startswith(APP_PREFIX)}
         assert self._output is not None
         self.dispatcher = ActionDispatcher(self._output, key_actions, self._on_fire)
 
@@ -154,7 +185,7 @@ class Engine:
                 # Only a step of other gestures.
                 self._log(f"{event.trigger}: {event.detail}")
                 continue
-            if mapped.startswith("app:"):
+            if mapped.startswith(APP_PREFIX):
                 self._log(f"{event.trigger}: {event.detail}")
                 if mapped == "app:toggle_pause":
                     self.pause.toggle()

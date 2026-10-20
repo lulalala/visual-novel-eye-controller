@@ -9,6 +9,8 @@ from eyeokuri.config import EyeConfig
 from eyeokuri.eyes import Observation
 
 WINDOW = "eyeokuri preview"
+# How long the border stays lit after a gesture fires.
+FLASH_S = 0.3
 # Canvas for sources without an image, so the status overlay still shows.
 _BLANK_SIZE = (480, 640)
 
