@@ -19,11 +19,21 @@ export interface HomeText {
   hintClick: string;
   enterSent: string;
   lines: string[];
-  share: { prompt: string; copy: string; copied: string; message: string };
-  facts: { glyph: string; title: string; text: string }[];
-  install: { title: string; text: string; button: string; small: string };
-  keep: { title: string; text: string; star: string; request: string };
+  share: { copy: string; copied: string; message: string };
+  gestures: {
+    kicker: string;
+    title: string;
+    text: string;
+    panel: string;
+    rows: { gesture: string; note: string; key: string; on: boolean }[];
+    on: string;
+    off: string;
+    foot: string;
+  };
+  start: { kicker: string; title: string; steps: { title: string; text: string }[]; button: string; trust: string[] };
+  pass: { title: string; text: string; star: string; request: string };
   footer: string;
+  footerReleases: string;
 }
 
 export const home: Record<string, HomeText> = {
@@ -56,41 +66,46 @@ export const home: Record<string, HomeText> = {
       "Hmph. Ready? Blink once, and the story is yours. Just don't make me say it twice!",
     ],
     share: {
-      prompt: "Know a VN reader?",
       copy: "Copy link",
       copied: "Copied",
       message: "Blink. Next line. Read your visual novel hands-free with eyeokuri.",
     },
-    facts: [
-      {
-        glyph: "blink → Enter",
-        title: "Blink to advance",
-        text: "A blink sends Enter, space or click to your game.",
-      },
-      {
-        glyph: "shake → pause",
-        title: "Shake to pause",
-        text: "Shake your head to pause, and shake again to unpause.",
-      },
-      {
-        glyph: "frames → nowhere",
-        title: "Stays on your PC",
-        text: "Camera frames are read in memory. They are never saved or sent anywhere.",
-      },
-    ],
-    install: {
-      title: "Your hands are free now",
-      text: "Works with any webcam (e.g. Android phone as webcam). A wizard learns your blink from a few practice takes.",
-      button: "Download for Windows",
-      small:
-        "The first run downloads a 4 MB face model, so be online once. Windows might warn about an unknown publisher because the app is not signed. Select <b>More info</b>, then <b>Run anyway</b>.",
+    gestures: {
+      kicker: "face → keys",
+      title: "Your face is the controller",
+      text: "eyeokuri watches your webcam and presses keys for you. Blink to read on, and shake your head when you need a break.",
+      panel: "Controls",
+      rows: [
+        { gesture: "Blink", note: "Next line", key: "Enter ⏎", on: true },
+        { gesture: "Shake your head", note: "Pause or resume", key: "pause", on: true },
+        { gesture: "Nod up", note: "Turn on in settings", key: "↑", on: false },
+        { gesture: "Nod down", note: "Turn on in settings", key: "↓", on: false },
+      ],
+      on: "On",
+      off: "Off",
+      foot: "Your game wants something else? Send space, a click or a scroll instead of Enter.",
     },
-    keep: {
-      title: "Make it yours",
-      text: "The gesture wizard learns your blink from a few practice takes. You can also turn on nod up and nod down for the arrow keys, or send space, a click or a scroll instead of Enter.",
-      star: "★ Star to follow new gestures",
-      request: "Request a gesture",
+    start: {
+      kicker: "3 steps",
+      title: "Your hands are free now",
+      steps: [
+        { title: "Download", text: "Free for Windows, about 65 MB. Any webcam works, even an Android phone as a webcam." },
+        {
+          title: "Run it",
+          text: "The app is not signed, so Windows might warn about an unknown publisher. Select <b>More info</b>, then <b>Run anyway</b>.",
+        },
+        { title: "Adjust", text: "A wizard is available to learn your blink, or you can customize new gestures manually." },
+      ],
+      button: "Download for Windows",
+      trust: ["Camera frames never leave your PC", "Free and open source", "Online once, for a 4 MB face model"],
+    },
+    pass: {
+      title: "Know a VN reader?",
+      text: "Send them this page. Star the repo, or ask for the one you want.",
+      star: "★ Star on GitHub",
+      request: "Request a gesture →",
     },
     footer: "eyeokuri · open source · made for people who read a lot",
+    footerReleases: "All releases",
   },
 };

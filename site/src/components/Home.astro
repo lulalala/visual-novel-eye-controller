@@ -1,5 +1,5 @@
 ---
-// The homepage: a visual novel title screen as the hero, then facts, install and a closing band.
+// The homepage: a visual novel title screen as the hero, then what it does, how to start, and a share band.
 import "../styles/home.css";
 import logoSource from "../../../logo/eye-blink.svg?raw";
 import { home } from "../i18n/home";
@@ -95,42 +95,66 @@ const alternates = Astro.site
       </div>
     </div>
   </section>
-  <div class="share">
-    <span>{t.share.prompt}</span>
-    <button class="chipbtn" id="share-copy" type="button">{t.share.copy}</button>
-    <a class="chipbtn" id="share-bsky" href="#" target="_blank" rel="noopener">Bluesky</a>
-    <a class="chipbtn" id="share-x" href="#" target="_blank" rel="noopener">X</a>
-    <a class="chipbtn" id="share-reddit" href="#" target="_blank" rel="noopener">Reddit</a>
-  </div>
   </main>
 
-  <section class="facts">
-    {t.facts.map((f) => (
-      <div class="fact">
-        <span class="glyph">{f.glyph}</span>
-        <h2>{f.title}</h2>
-        <p>{f.text}</p>
-      </div>
-    ))}
-  </section>
-
-  <section class="install" id="install">
-    <h2>{t.install.title}</h2>
-    <p>{t.install.text}</p>
-    <a class="btn big" href={`${REPO}/releases/latest`}>{t.install.button}</a>
-    <p class="small" set:html={t.install.small} />
-  </section>
-
-  <section class="keep">
-    <h2>{t.keep.title}</h2>
-    <p>{t.keep.text}</p>
-    <div class="cta">
-      <a class="btn alt" href={REPO}>{t.keep.star}</a>
-      <a class="btn alt" href={`${REPO}/issues`}>{t.keep.request}</a>
+  <section class="sec controls" id="gestures">
+    <div class="intro">
+      <span class="kicker">{t.gestures.kicker}</span>
+      <h2>{t.gestures.title}</h2>
+      <p>{t.gestures.text}</p>
+    </div>
+    <div class="panel">
+      <p class="panel-head" aria-hidden="true">{t.gestures.panel}</p>
+      <ul>
+        {t.gestures.rows.map((r) => (
+          <li class={r.on ? "" : "off"}>
+            <span class="what"><b>{r.gesture}</b><small>{r.note}</small></span>
+            <span class="glyph">{r.key}</span>
+            <span class="switch"><span class="sr">{r.on ? t.gestures.on : t.gestures.off}</span></span>
+          </li>
+        ))}
+      </ul>
+      <p class="panel-foot">{t.gestures.foot}</p>
     </div>
   </section>
 
-  <footer>{t.footer}</footer>
+  <section class="sec start" id="install">
+    <span class="kicker">{t.start.kicker}</span>
+    <h2>{t.start.title}</h2>
+    <ol class="steps">
+      {t.start.steps.map((st) => (
+        <li><b>{st.title}</b><span set:html={st.text} /></li>
+      ))}
+    </ol>
+    <a class="btn big" href={`${REPO}/releases/latest`}>{t.start.button}</a>
+    <ul class="trust">
+      {t.start.trust.map((x) => <li>{x}</li>)}
+    </ul>
+  </section>
+
+  <section class="sec pass">
+    <h2>{t.pass.title}</h2>
+    <p>{t.pass.text}</p>
+    <div class="share">
+      <button class="chipbtn" id="share-copy" type="button">{t.share.copy}</button>
+      <a class="chipbtn" id="share-bsky" href="#" target="_blank" rel="noopener">Bluesky</a>
+      <a class="chipbtn" id="share-x" href="#" target="_blank" rel="noopener">X</a>
+      <a class="chipbtn" id="share-reddit" href="#" target="_blank" rel="noopener">Reddit</a>
+    </div>
+    <p class="follow">
+      <a class="btn alt" href={REPO}>{t.pass.star}</a>
+      <a class="textlink" href={`${REPO}/issues`}>{t.pass.request}</a>
+    </p>
+  </section>
+
+  <footer>
+    <span>{t.footer}</span>
+    <div class="foot-links">
+      <a href={docsPath}>{t.nav.docs}</a>
+      <a href={REPO}>{t.nav.github}</a>
+      <a href={`${REPO}/releases`}>{t.footerReleases}</a>
+    </div>
+  </footer>
 </div>
 <script>
   import "../scripts/home.js";

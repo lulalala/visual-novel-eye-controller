@@ -1,4 +1,4 @@
-/* Layout: a 16:9 visual novel title screen as the hero, then install steps and a closing band. */
+/* Layout: a 16:9 visual novel title screen as the hero, then controls, start steps and a share band. */
 :root {
   color-scheme: light;
   --paper: #F8F9FF;      /* page ground, faint blue */
@@ -116,53 +116,18 @@ h1 .next::after {
 .btn.alt { background: #fff; color: var(--sakura); box-shadow: none; }
 .btn.alt:hover { background: var(--sakura-soft); }
 
-/* install */
-.install, .keep { max-width: 1040px; margin-inline: auto; }
-.install { margin-top: 56px; text-align: center; scroll-margin-top: 24px; }
-.install h2 { margin: 0 0 6px; font-size: clamp(28px, 5vw, 40px); font-weight: 900; letter-spacing: -0.02em; text-wrap: balance; }
-.install > p { margin: 0 auto 22px; color: var(--ink-soft); max-width: 46ch; }
-.code {
-  position: relative; text-align: left; margin-inline: auto; max-width: 720px;
-  background: var(--ink); color: #EDEBFF; border-radius: 20px; padding: 20px 76px 20px 22px;
-  font-family: var(--mono); font-size: 14px; line-height: 1.8; overflow-x: auto; white-space: pre;
-}
-.code .c { color: #8F8CC4; }
-.copy {
-  position: absolute; top: 12px; right: 12px; font: inherit; font-family: var(--display); font-size: 13px; font-weight: 700;
-  background: #fff; color: var(--ink); border: 0; border-radius: 99px; padding: 6px 14px; cursor: pointer;
-}
-.copy:hover { background: var(--sakura-soft); }
-.small { margin-top: 18px; font-size: 14px; color: var(--ink-soft); }
-
-footer { margin-top: 56px; text-align: center; font-size: 14px; color: var(--ink-soft); }
-
 @media (prefers-reduced-motion: reduce) {
   .spark, .next-ind, .key.on { animation: none; }
   .key.on { transform: rotate(8deg); }
   html { scroll-behavior: auto; }
 }
 
-.share { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 26px; font-size: 14px; color: var(--ink-soft); font-weight: 700; }
-.chipbtn { font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; color: var(--ink); background: #fff; border: 2px solid var(--sakura-soft); border-radius: 99px; padding: 4px 14px; }
-.chipbtn:hover { background: var(--sakura-soft); }
-.steps { list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 auto 22px; padding: 0; max-width: 720px; text-align: left; font-size: 15px; }
-.steps li { counter-increment: s; background: #fff; border-radius: 18px; padding: 14px 16px; color: var(--ink-soft); box-shadow: 0 8px 22px -16px rgba(80,70,180,.5); }
-.steps li::before { content: counter(s); display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; background: var(--sakura); color: #fff; font-weight: 900; font-size: 13px; }
-.steps b { color: var(--ink); }
-.keep { margin-top: 56px; padding: 32px 24px; border-radius: 28px; text-align: center; background: linear-gradient(135deg, var(--lilac), var(--sakura-soft)); }
-.keep h2 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 32px); font-weight: 900; }
-.keep p { margin: 0 auto; max-width: 52ch; color: var(--ink-soft); }
-@media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
 
 /* download is the main action */
 .btn.big { font-size: 18px; padding: 15px 32px; }
 .navbtn { background: var(--sakura); color: #fff !important; border-radius: 99px; padding: 6px 18px; }
 .navbtn:hover { background: var(--ink); }
 .meta { margin: 10px 0 0; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
-.install > .btn { margin-top: 4px; }
-.source { margin: 26px auto 0; max-width: 720px; text-align: left; }
-.source summary { cursor: pointer; text-align: center; font-size: 15px; font-weight: 700; color: var(--ink-soft); margin-bottom: 14px; }
-.source summary:hover { color: var(--sakura); }
 
 /* Hero: a 16:9 visual novel title screen. The tagline sits over the demo; sizes scale with the stage (cqw). */
 .top { display: block; }
@@ -241,13 +206,67 @@ nav { width: min(100%, max(calc((100vh - 110px) * 16 / 9), 560px)); margin-inlin
 .titlebar b:nth-child(2) { background: #FFD66B; }
 .titlebar b:nth-child(3) { background: var(--sakura); }
 
-/* facts */
-.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 44px; }
-.fact { padding: 22px 22px 24px; border-radius: 24px; background: #fff; box-shadow: 0 10px 30px -18px rgba(80,70,180,.4); }
-.fact:nth-child(1) { background: var(--sakura-soft); }
-.fact:nth-child(2) { background: var(--sky); }
-.fact:nth-child(3) { background: var(--butter); }
-.fact h2 { margin: 0 0 6px; font-size: 22px; font-weight: 900; letter-spacing: -0.01em; }
-.fact p { margin: 0; color: var(--ink-soft); font-size: 16px; }
-.fact .glyph { font-family: var(--mono); font-size: 13px; background: #fff; display: inline-block; border-radius: 8px; padding: 2px 10px; margin-bottom: 12px; color: var(--ink); }
-@media (max-width: 720px) { .facts { grid-template-columns: 1fr; } }
+/* Below the demo: three sections share one rhythm (kicker, heading, one block) so the page reads top to bottom. */
+.sec { max-width: 1040px; margin: 96px auto 0; scroll-margin-top: 24px; }
+.sec h2 { margin: 0 0 10px; font-size: clamp(28px, 4.6vw, 44px); font-weight: 900; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
+.sec p { color: var(--ink-soft); }
+.kicker, .glyph {
+  display: inline-block; font-family: var(--mono); font-size: 13px; color: var(--ink);
+  background: #fff; border-radius: 8px; padding: 2px 10px;
+}
+.kicker { margin-bottom: 14px; background: var(--sakura-soft); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* What it does: a game's controls screen */
+.controls { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: center; }
+.controls .intro p { margin: 0; font-size: 18px; max-width: 34ch; }
+.panel { background: #fff; border-radius: 28px; padding: 22px 26px 20px; box-shadow: 0 0 0 6px var(--line), 0 24px 50px -24px rgba(80, 70, 180, .45); }
+.panel-head { margin: 0 0 6px; font-size: 13px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--sakura) !important; }
+.panel ul { list-style: none; margin: 0; padding: 0; }
+.panel li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 2px dashed var(--lilac); }
+.panel .what b { display: block; font-size: 18px; font-weight: 900; line-height: 1.3; }
+.panel .what small { font-size: 14px; color: var(--ink-soft); }
+.panel .glyph { background: var(--sky); min-width: 4.5em; text-align: center; }
+.switch { position: relative; width: 44px; height: 26px; border-radius: 99px; background: var(--sakura); }
+.switch::after { content: ""; position: absolute; top: 3px; left: 21px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(42,40,80,.3); }
+.panel li.off .switch { background: var(--lilac); }
+.panel li.off .switch::after { left: 3px; }
+.panel li.off .what b, .panel li.off .glyph { opacity: .6; }
+.panel-foot { margin: 14px 0 0; font-size: 15px; }
+
+/* How to start: three steps, then the one download button */
+.start { text-align: center; }
+.steps { list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 26px 0 32px; padding: 0; text-align: left; }
+.steps li { counter-increment: s; position: relative; background: #fff; border-radius: 24px; padding: 22px 22px 24px; color: var(--ink-soft); font-size: 15px; box-shadow: 0 10px 30px -18px rgba(80,70,180,.4); }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: 12px; border-radius: 50%; background: var(--sakura); color: #fff; font-weight: 900; font-size: 16px; }
+.steps li b { display: block; color: var(--ink); font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+.steps li span b { display: inline; font-size: inherit; margin: 0; }
+.trust { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin: 18px 0 0; padding: 0; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.trust li::before { content: "✓"; color: var(--sakura); font-weight: 900; margin-right: 6px; }
+
+/* Pass it on: share first, then follow */
+.pass { padding: 44px 24px; border-radius: 32px; text-align: center; background: linear-gradient(135deg, var(--lilac), var(--sakura-soft)); }
+.pass > p { margin: 0 auto 20px; max-width: 46ch; }
+.share { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.chipbtn { font: inherit; font-size: 15px; font-weight: 700; text-decoration: none; cursor: pointer; color: var(--ink); background: #fff; border: 0; border-radius: 99px; padding: 8px 18px; }
+.chipbtn:hover { background: var(--ink); color: #fff; }
+#share-copy { background: var(--ink); color: #fff; }
+#share-copy:hover { background: var(--sakura); }
+.follow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 22px; margin: 26px 0 0; }
+.textlink { font-weight: 700; color: var(--ink-soft); text-decoration: none; }
+.textlink:hover { color: var(--sakura); }
+
+footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; max-width: 1040px; margin: 56px auto 0; padding-top: 22px; border-top: 2px dashed var(--lilac); font-size: 14px; color: var(--ink-soft); }
+.foot-links { display: flex; gap: 20px; font-weight: 700; }
+.foot-links a { text-decoration: none; }
+.foot-links a:hover { color: var(--sakura); }
+
+@media (max-width: 760px) {
+  .sec { margin-top: 64px; }
+  .controls { grid-template-columns: 1fr; gap: 24px; }
+  .panel { padding: 18px 18px 16px; }
+  .panel li { gap: 10px; }
+  .steps { grid-template-columns: 1fr; }
+  .pass { padding: 32px 16px; }
+  footer { justify-content: center; text-align: center; }
+}
