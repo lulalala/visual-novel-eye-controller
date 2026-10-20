@@ -50,6 +50,7 @@ src/eyeokuri/
   engine.py       runs the pipeline one frame at a time (used by both front ends)
   app.py          command line: main loop and flags
   gui.py          window: log, optional camera view, settings with the gesture plot, and the gesture wizard
+  theme.py        the window's colors and ttk styles, taken from the site's palette
   tuning.py       fits a gesture's limits to takes recorded in the wizard
 site/             static site (Astro with Starlight)
   astro.config.mjs  site settings, languages and docs sidebar

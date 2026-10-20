@@ -19,7 +19,7 @@ from typing import Any, Callable
 
 import cv2
 
-from eyeokuri import preview
+from eyeokuri import preview, theme
 from eyeokuri.app import APP_OUTPUTS, FLASH_S, check_config
 from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig, dump_config, load_config
 from eyeokuri.engine import Engine
@@ -38,14 +38,14 @@ _LIVE_REFRESH_MS = 250
 # A wizard take stops by itself after this long; the history keeps a bit more.
 MAX_TAKE_S = 20.0
 
-STEP_COLORS = ("#2f6fde", "#d4761c", "#2b9a66", "#b2449a", "#7656d4")
-_OK = "#1d8357"
-_BAD = "#bf3e2a"
-_MUTED = "#5b6477"
-_GRID = "#eceef3"
-_ZERO = "#c9ced8"
-_TRACE = "#1a2130"
-_GRID_TRACE = "#b4bac7"
+STEP_COLORS = theme.STEP_COLORS
+_OK = theme.OK
+_BAD = theme.BAD
+_MUTED = theme.MUTED
+_GRID = theme.GRID
+_ZERO = theme.ZERO
+_TRACE = theme.TRACE
+_GRID_TRACE = theme.GRID_TRACE
 
 # Plot ranges per signal: (min, max, grid lines, unit, value snap when dragging).
 _RANGES: dict[str, tuple[float, float, tuple[float, ...], str, float]] = {
@@ -276,7 +276,7 @@ class CameraPicker:
         self.win.after(100, self._poll)
 
     def _add_tile(self, index: int) -> None:
-        tile = ttk.Frame(self.grid, padding=4, relief="groove")
+        tile = ttk.Frame(self.grid, padding=4, relief="solid")
         n = len(self.tiles)
         tile.grid(row=n // 2, column=n % 2, padx=4, pady=4)
         label = ttk.Label(tile, cursor="hand2")
@@ -318,7 +318,7 @@ class MainWindow:
 
         bar = ttk.Frame(root, padding=(8, 6))
         bar.grid(row=0, column=0, sticky="ew")
-        self.pause_button = ttk.Button(bar, text="Pause", command=self.worker.toggle_pause)
+        self.pause_button = ttk.Button(bar, text="Pause", style="Accent.TButton", command=self.worker.toggle_pause)
         self.pause_button.pack(side="left")
         ttk.Button(bar, text="Camera view…", command=self.open_camera).pack(side="left", padx=(6, 0))
         ttk.Button(bar, text="Settings…", command=self.open_settings).pack(side="left", padx=(6, 0))
@@ -332,8 +332,9 @@ class MainWindow:
         side.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
         side.columnconfigure(0, weight=1)
         side.rowconfigure(0, weight=1)
-        self.log_text = tk.Text(side, width=90, height=24, wrap="word", state="disabled",
-                                font="TkFixedFont", borderwidth=1, relief="solid")
+        self.log_text = tk.Text(side, width=90, height=24, wrap="word", state="disabled", font="TkFixedFont",
+                                borderwidth=0, padx=8, pady=6, highlightthickness=1,
+                                highlightbackground=theme.LINE, highlightcolor=theme.LINE)
         self.log_text.grid(row=0, column=0, sticky="nsew")
         scroll = ttk.Scrollbar(side, orient="vertical", command=self.log_text.yview)
         scroll.grid(row=0, column=1, sticky="ns")
@@ -356,7 +357,7 @@ class MainWindow:
         if status is not None and status != self._shown_status:
             self._shown_status = status
             text, paused = status
-            self.status.configure(text=text)
+            self.status.configure(text=text, foreground=theme.ACCENT if paused else _MUTED)
             self.pause_button.configure(text="Resume" if paused else "Pause")
         if self.camera is not None:
             self.camera.show(self.worker.frame)
@@ -502,8 +503,8 @@ class PlotEditor:
     L, R, TOP, LANE_H, GAP, AXIS = 58, 14, 24, 150, 34, 26
 
     def __init__(self, parent: tk.Misc, on_drag: Callable[[int, str, float], None]) -> None:
-        self.canvas = tk.Canvas(parent, width=680, height=220, background="white",
-                                highlightthickness=1, highlightbackground=_ZERO)
+        self.canvas = tk.Canvas(parent, width=680, height=220, background=theme.SURFACE,
+                                highlightthickness=1, highlightbackground=theme.LINE)
         self._on_drag = on_drag
         self._handles: list[tuple[float, float, float, float, str, int, float | None]] = []
         self._drag: tuple[str, int, float | None, str] | None = None
@@ -728,7 +729,7 @@ class SettingsWindow:
         bottom.grid(row=1, column=0, sticky="ew")
         self.message = ttk.Label(bottom, text="", foreground=_BAD, wraplength=640)
         self.message.pack(side="left", fill="x", expand=True)
-        self.save_button = ttk.Button(bottom, text="Save", command=self.save)
+        self.save_button = ttk.Button(bottom, text="Save", style="Accent.TButton", command=self.save)
         self.save_button.pack(side="right")
         self.apply_button = ttk.Button(bottom, text="Apply", command=self.apply)
         self.apply_button.pack(side="right", padx=6)
@@ -1271,6 +1272,7 @@ class WizardWindow:
             style.configure(f"Wizard.{widget}", font=self._text)
         style.configure("Wizard.Treeview", font=self._text, rowheight=self._text.metrics("linespace") + 6)
         style.configure("Wizard.Treeview.Heading", font=self._bold)
+        style.configure("Wizard.Accent.TButton", font=self._text)
 
         self.body = ttk.Frame(self.win, padding=16)
         self.body.pack(fill="both", expand=True)
@@ -1286,7 +1288,7 @@ class WizardWindow:
         nav = ttk.Frame(self.body)
         nav.grid(row=4, column=0, sticky="ew", pady=(16, 0))
         ttk.Button(nav, text="Cancel", style="Wizard.TButton", command=self.close).pack(side="left")
-        self.next_button = ttk.Button(nav, style="Wizard.TButton", command=self._next)
+        self.next_button = ttk.Button(nav, style="Wizard.Accent.TButton", command=self._next)
         self.next_button.pack(side="right")
         self.back_button = ttk.Button(nav, text="Back", style="Wizard.TButton",
                                       command=lambda: self._show(self.page - 1))
@@ -1338,7 +1340,7 @@ class WizardWindow:
         box.bind("<<ComboboxSelected>>", lambda _e: self._on_gesture(box))
         box.pack(side="left", padx=(6, 0))
         self.back_button.configure(state="disabled")
-        self.next_button.configure(text="Start", state="normal")
+        self.next_button.configure(text="Start", state="normal", style="Wizard.Accent.TButton")
         self.next_button.focus_set()
 
     def _on_gesture(self, box: ttk.Combobox) -> None:
@@ -1397,15 +1399,18 @@ class WizardWindow:
         kind = self._kind(self.page)
         take = self.takes[self.page]
         recording = self._started is not None
-        self.record_button.configure(text="■ Stop" if recording else "● Redo" if take else "● Record")
+        # The loud button is the one to press next: Record until there is a take, then Next.
+        self.record_button.configure(text="■ Stop" if recording else "● Redo" if take else "● Record",
+                                     style="Wizard.TButton" if take else "Wizard.Accent.TButton")
         state = "disabled" if recording else "normal"
         self.back_button.configure(state=state)
         answered = planned not in _ASK_KINDS or self.page in self.answers
         if take is None and planned != DO:
-            self.next_button.configure(text="Skip", state=state)
+            self.next_button.configure(text="Skip", state=state, style="Wizard.TButton")
         else:
             ready = take is not None and answered and not recording
-            self.next_button.configure(text="Next", state="normal" if ready else "disabled")
+            self.next_button.configure(text="Next", state="normal" if ready else "disabled",
+                                       style="Wizard.Accent.TButton" if ready else "Wizard.TButton")
         if recording or take is None:
             self.result.configure(text="")
         elif not answered:
@@ -1469,7 +1474,8 @@ class WizardWindow:
                             ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(10, 0))
         self.back_button.configure(state="normal")
         has_do = any(t is not None and t.kind == DO for t in self.takes)
-        self.next_button.configure(text="Use these settings", state="normal" if has_do else "disabled")
+        self.next_button.configure(text="Use these settings", state="normal" if has_do else "disabled",
+                                   style="Wizard.Accent.TButton")
         self.next_button.focus_set()
         if recorded:
             view.selection_set(str(recorded[0]))
@@ -1602,6 +1608,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     _windows_sharp_text()
     root = tk.Tk()
+    theme.apply(root)
     try:
         config = load_config(args.config) if args.config.exists() else Config()
         check_config(config)
