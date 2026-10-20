@@ -36,7 +36,7 @@ To run without a window, see [docs/command-line.md](docs/command-line.md).
 
 The main window lists your gestures on the left and shows the log on the right.
 
-Each gesture row shows the gesture's name and the key it sends. It also has a checkbox that turns the gesture on or off, and a **Configure…** button that opens its gesture window. A change to the checkbox is saved to the config file right away. **New gesture…** asks for a name, then opens a gesture window for the new gesture.
+Each gesture row shows the gesture's name and the key it sends. It also has a checkbox that turns the gesture on or off, and a gear button (⚙) that opens its gesture window. A change to the checkbox is saved to the config file right away. **New gesture…** asks for a name, then opens a gesture window for the new gesture.
 
 The **All gestures** checkbox at the top of the list pauses and resumes eyeokuri, as do the `p` key and a head shake. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input. eyeokuri saves the pause state, and the next start (in the window or on the command line) begins paused if you left it paused.
 
@@ -65,7 +65,7 @@ The wizard starts from your edits in the gesture window. **Set up with wizard…
 
 ## Edit settings
 
-**Configure…** opens a gesture's window. Each step of the gesture is a box on a plot of your eye and head signals. Drag a box's top or bottom edge to change its threshold, or its left or right edge to change the time allowed after the previous step. You can also type the numbers in the table below the plot.
+The gear button (⚙) opens a gesture's window. Each step of the gesture is a box on a plot of your eye and head signals. Drag a box's top or bottom edge to change its threshold, or its left or right edge to change the time allowed after the previous step. You can also type the numbers in the table below the plot.
 
 To check your settings against your own movement, do the gesture while the window is open. The plot shows your signal over the last 4 s, and the line above it says whether the gesture fires on it and, if not, why. It updates as you change the settings. The plot keeps only the eye and head numbers, in memory, never images.
 

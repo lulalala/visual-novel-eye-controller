@@ -25,7 +25,7 @@ _POLL_MS = 15
 
 
 class MainWindow:
-    """The gesture list (each with its key, an on/off toggle and Configure…),
+    """The gesture list (each with its key, an on/off toggle and a gear button to configure it),
     a toggle for all gestures (pause), and the log."""
 
     def __init__(self, root: tk.Tk, config: Config, path: Path) -> None:
@@ -115,7 +115,8 @@ class MainWindow:
             var = tk.BooleanVar(value=gesture.enabled)
             toggle = ttk.Checkbutton(self.rows, variable=var, command=lambda n=name, v=var: self._set_enabled(n, v))
             toggle.grid(row=r, column=2, padx=4, pady=2)
-            configure = ttk.Button(self.rows, text="Configure…", command=lambda n=name: self.open_gesture(n))
+            configure = ttk.Button(self.rows, text="⚙", width=3,
+                                  command=lambda n=name: self.open_gesture(n))
             configure.grid(row=r, column=3, padx=4, pady=2)
             # Tk drops a variable nobody refers to, and its checkbox goes blank.
             toggle.var = var  # type: ignore[attr-defined]
