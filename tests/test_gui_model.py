@@ -3,7 +3,7 @@ import pytest
 from eyeokuri.config import SIGNALS, CameraConfig, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    GESTURE_NAME, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step, users_of, view_size,
+    GESTURE_NAME, SIGNAL_PLOTS, find_notice_file, fmt, gesture_config, gesture_model, new_step, users_of, view_size,
 )
 from eyeokuri.gui.worker import state_text
 
@@ -84,3 +84,15 @@ def test_camera_view_is_the_camera_frame_size():
 
 def test_wide_camera_frames_are_scaled_down_for_the_view():
     assert view_size(CameraConfig(width=1280, height=720)) == (640, 360)
+
+
+def test_notice_file_is_found_in_the_first_folder_that_has_it(tmp_path):
+    first, second = tmp_path / "first", tmp_path / "second"
+    first.mkdir()
+    second.mkdir()
+    (second / "LICENSE").write_text("text")
+    assert find_notice_file("LICENSE", [first, second]) == second / "LICENSE"
+
+
+def test_missing_notice_file_gives_none(tmp_path):
+    assert find_notice_file("LICENSE", [tmp_path]) is None

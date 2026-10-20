@@ -22,6 +22,7 @@ build\venv\Scripts\pyinstaller --noconfirm --clean --log-level WARN --name eyeok
     --exclude-module pynput --distpath build\dist --workpath build\work --specpath build ^
     src\eyeokuri\__main__.py || goto :fail
 
+copy /y LICENSE build\dist\eyeokuri\ >nul || goto :fail
 copy /y THIRD_PARTY_NOTICES.md build\dist\eyeokuri\ >nul || goto :fail
 
 powershell -NoProfile -Command "Compress-Archive -Force build\dist\eyeokuri build\eyeokuri-windows.zip" || goto :fail

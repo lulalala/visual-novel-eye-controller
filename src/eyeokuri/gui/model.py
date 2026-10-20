@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from eyeokuri.config import CameraConfig, GestureConfig, StepConfig
@@ -106,3 +107,12 @@ def view_size(camera: CameraConfig) -> tuple[int, int]:
     if camera.width <= VIEW_MAX_WIDTH:
         return camera.width, camera.height
     return VIEW_MAX_WIDTH, round(camera.height * VIEW_MAX_WIDTH / camera.width)
+
+
+def find_notice_file(name: str, folders: list[Path]) -> Path | None:
+    """The first file called `name` in the folders, for the About window's license buttons."""
+    for folder in folders:
+        candidate = folder / name
+        if candidate.is_file():
+            return candidate
+    return None

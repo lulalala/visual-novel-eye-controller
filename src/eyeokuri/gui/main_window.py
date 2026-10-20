@@ -12,6 +12,7 @@ from tkinter import messagebox, simpledialog, ttk
 from eyeokuri import theme
 from eyeokuri.config import Config, GestureConfig, StepConfig, dump_config
 from eyeokuri.engine import check_config
+from eyeokuri.gui.about import AboutWindow
 from eyeokuri.gui.camera import CameraWindow
 from eyeokuri.gui.config_window import ConfigWindow
 from eyeokuri.gui.gesture_window import GestureWindow
@@ -36,6 +37,7 @@ class MainWindow:
         self.config_window: ConfigWindow | None = None
         self.wizard: WizardWindow | None = None
         self.camera: CameraWindow | None = None
+        self.about: AboutWindow | None = None
         self.worker = Worker(config)
         self._shown_status: tuple[str, bool] | None = None
         self._shown_rows: tuple[tuple[str, str, bool], ...] | None = None
@@ -54,6 +56,9 @@ class MainWindow:
         view_menu = tk.Menu(menubar, tearoff=False)
         view_menu.add_command(label="Camera view…", command=self.open_camera)
         menubar.add_cascade(label="View", menu=view_menu)
+        help_menu = tk.Menu(menubar, tearoff=False)
+        help_menu.add_command(label="About eyeokuri…", command=self.open_about)
+        menubar.add_cascade(label="Help", menu=help_menu)
         root.configure(menu=menubar)
 
         left = ttk.Frame(root, padding=(8, 8, 0, 8))
@@ -235,6 +240,13 @@ class MainWindow:
             self.camera.win.focus_force()
             return
         self.camera = CameraWindow(self)
+
+    def open_about(self) -> None:
+        if self.about is not None:
+            self.about.win.lift()
+            self.about.win.focus_force()
+            return
+        self.about = AboutWindow(self)
 
     def open_gesture(self, name: str) -> None:
         if self.gesture_window is not None:

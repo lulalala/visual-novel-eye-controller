@@ -33,7 +33,7 @@ You can package `eyeokuri` so it runs on a Windows PC without Python. You need P
 2. Copy `build\eyeokuri-windows.zip` (~65 MB) to the other PC and unzip it.
 3. Run `eyeokuri.exe` in the unzipped folder. It opens a console window. Close the window or press `Ctrl+C` to stop it.
 
-The build downloads the face model and packs it into the zip, so the other PC does not need to be online. The zip also contains `THIRD_PARTY_NOTICES.md`, which carries the model's Apache 2.0 license. Windows might show an "unknown publisher" warning because the executable is not signed.
+The build downloads the face model and packs it into the zip, so the other PC does not need to be online. The zip also contains `LICENSE` and `THIRD_PARTY_NOTICES.md`, which carries the model's Apache 2.0 license. The About window opens both. Windows might show an "unknown publisher" warning because the executable is not signed.
 
 ## Layout
 
@@ -55,6 +55,7 @@ src/eyeokuri/
     main_window.py  the gesture list with on/off and pause toggles, the log, and the menu bar
     worker.py       runs the Engine on a background thread
     gesture_window.py  one gesture's window: output, plot, steps table, head limits
+    about.py        About window: version, and buttons that open LICENSE and THIRD_PARTY_NOTICES.md
     config_window.py   config window: General and Advanced tabs
     wizard.py       gesture wizard for the gesture window's gesture
     plot.py         the plot with one draggable box per step
