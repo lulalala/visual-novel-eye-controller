@@ -50,7 +50,16 @@ src/eyeokuri/
   outputs.py      TriggerEvent -> key/mouse input
   engine.py       runs the pipeline one frame at a time (used by both front ends)
   app.py          command line: main loop and flags
-  gui.py          window: log, optional camera view, settings with the gesture plot, and the gesture wizard
+  gui/            window (Tkinter); eyeokuri-gui runs gui:main
+    launch.py       parses the flags and starts the main window
+    main_window.py  the log, and the buttons for pause, camera view, settings and the wizard
+    worker.py       runs the Engine on a background thread
+    settings.py     settings window: gesture list, plot, steps table, General and Advanced tabs
+    wizard.py       gesture wizard
+    plot.py         the plot with one draggable box per step
+    camera.py       camera view window and the camera picker
+    model.py        gesture settings as the editor's dicts, and the plot ranges (no Tk, unit-tested)
+    tkutil.py       window placement and fonts
   theme.py        the window's colors and ttk styles, taken from the site's palette
   icons/          the logo as PNG window icons (Tk 8.6 can't read SVG)
   tuning.py       fits a gesture's limits to takes recorded in the wizard

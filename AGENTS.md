@@ -36,16 +36,17 @@ sources/          Source.read()      → Signals (raw eye openness, head pose; f
 
 The design and the planned plugin loading are in `docs/design/sources.md`.
 
-`Engine` (`engine.py`) owns the whole pipeline and advances it with `step()`, once per frame. Both front ends drive it: `app.py` (command line, OpenCV preview window, CSV log) and `gui.py` (Tkinter window). Put new pipeline behavior in `Engine`, not in a front end.
+`Engine` (`engine.py`) owns the whole pipeline and advances it with `step()`, once per frame. Both front ends drive it: `app.py` (command line, OpenCV preview window, CSV log) and `gui/` (Tkinter window). Put new pipeline behavior in `Engine`, not in a front end.
 
 Other modules: `config.py` (dataclasses, TOML loading and `dump_config` for saving, overrides), `preview.py` (draws the state overlay on the source's `debug_view()`), `pause.py` (pause switch), `feedback.py` (sounds), `tuning.py` (fits a gesture's limits to labeled takes for the GUI wizard).
 
 ### GUI
 
-- `gui.py` uses Tkinter only (no extra dependency). It runs `Engine` on a worker thread. Only the main thread touches Tk widgets: it polls the worker for the latest frame (as PPM bytes) and for log lines. `Engine.set_config()` and `toggle_pause()` are safe to call from the main thread; they apply at the next `step()`.
+- `gui/` (a package; `launch.py` has `main`) uses Tkinter only (no extra dependency). `worker.py` runs `Engine` on a worker thread. Only the main thread touches Tk widgets: it polls the worker for the latest frame (as PPM bytes) and for log lines. `Engine.set_config()` and `toggle_pause()` are safe to call from the main thread; they apply at the next `step()`.
 - The settings window edits a working copy and applies it with `Engine.set_config()` shortly after each valid edit (there is no Apply button). OK writes `dump_config()` and closes; Cancel (and the window's close button, after asking if anything changed) goes back to the settings in use when the window opened and closes. While the settings or wizard window is open, gestures are suspended and the main window's Pause, Settings and wizard buttons are disabled. Its plot shows the live signal and runs `triggers.replay()`, which runs the real matcher over the last few seconds of observations. Keep the editor's results coming from `replay()` instead of reimplementing the matching.
 - Recorded observations (numbers) stay in memory only.
 - The gesture wizard (`WizardWindow`) is a sequence of pages: choose a gesture, then one page per take from `tuning.script()` (the gesture `DO_TAKES` times, then each near miss), then a review. Each take's kind (`tuning.DO`, `TOO_QUICK`, `TOO_SLOW`, `OTHER`) comes from the script, except that for `TOO_QUICK` and `TOO_SLOW` takes the wizard asks whether they should fire (yes makes them `DO`), since you might want them to count. It refits all takes with `tuning.fit()` after each take, and applies the result. Opened from the main window, it uses `MainWindow.config` and offers to save; opened from the settings window, it starts from that window's edits and hands the result back to it. It disables all gestures while open. `fit()` only moves limits a gesture already has (edges that leave rest, and nonzero time limits) and reports each take's result through `replay()`. Keep the fitting in `tuning.py`, which has no Tk code, so it stays unit-tested.
+- Keep each window in its own module, and logic that needs no widgets in `gui/model.py` (or `tuning.py`), where it is unit-tested. Windows refer to `MainWindow` only in annotations (under `TYPE_CHECKING`), so `main_window.py` can import them without a cycle.
 - The `gui-wip` branch (PySide6) is replaced by this; don't build on it.
 
 ### Rules the design depends on
@@ -93,7 +94,7 @@ A gesture made of existing signals needs no new trigger code. Do all of these in
 3. Tests in `tests/test_triggers.py` that drive the gesture with synthetic `Observation` streams at 30 FPS (see the `drive` helper). Cover at least: it fires, it doesn't fire (each rejection reason), cooldown, and face loss.
 4. The README, if users can see the change (a new gesture, flag or default).
 
-Adding a new signal: add it to `SIGNALS` in `config.py`, read it in `signal_value` in `triggers.py`, and give it bound fields with its unit in `StepConfig`. Include it in `GestureTrigger.needs`, so that a gesture is skipped at startup with a notice when the source doesn't provide the signal.
+Adding a new signal: add it to `SIGNALS` in `config.py`, read it in `signal_value` in `triggers.py`, and give it bound fields with its unit in `StepConfig`. Also give it an entry in `PLOT_RANGES` and `LANE_HINTS` (`gui/model.py`) and in the tables at the top of `tuning.py`; `test_plot_tables_cover_every_signal` and `test_tuning_tables_cover_every_signal` fail until you do. Include it in `GestureTrigger.needs`, so that a gesture is skipped at startup with a notice when the source doesn't provide the signal.
 
 Adding a key name: add its Windows virtual-key code to `KEY_VK` in `keys.py` (and to `EXTENDED_KEYS` if Windows sends it with the `0xE0` prefix). Check that `PynputOutput` finds it (a single character, or a `Key` attribute, renamed in `_PYNPUT_NAMES` if needed) and that `from_tk_event` maps its Tk keysym. Adding a mouse output: add it to `MOUSE_OUTPUTS` and implement it in **both** `Win32Output` and `PynputOutput`.
 
@@ -127,7 +128,7 @@ Follow the [developer documentation writing standard](https://github.com/NateBJo
 ### Branches
 
 - Feature work happens on `claude/*` branches. `master` is the main branch.
-- `gui-wip` holds an older, unfinished PySide6 GUI that crashes on macOS 26. The Tkinter GUI in `gui.py` replaces it, so don't merge it or build on it.
+- `gui-wip` holds an older, unfinished PySide6 GUI that crashes on macOS 26. The Tkinter GUI in `gui/` replaces it, so don't merge it or build on it.
 
 ## Definition of done
 

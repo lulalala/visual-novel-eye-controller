@@ -160,3 +160,11 @@ def test_trim_skips_a_half_blink_before_the_real_one():
 def test_trim_keeps_a_take_without_movement_whole():
     take = blink_take(OTHER, 0)
     assert trim(take.observations, {"eyes"}) == (0.0, take.observations)
+
+
+def test_tuning_tables_cover_every_signal():
+    # Adding a signal to config.SIGNALS needs a rest value, a minimum reach and a gap here too.
+    from eyeokuri import tuning
+    from eyeokuri.config import SIGNALS
+
+    assert set(tuning._REST) == set(tuning._MIN_REACH) == set(tuning._GAP) == set(SIGNALS)
