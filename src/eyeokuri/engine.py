@@ -174,27 +174,27 @@ class Engine:
         fired = False
         for trigger in () if self.suspended else self.triggers:
             event = trigger.update(obs)
-            if event is None:
-                continue
-            mapped = self._outputs.get(event.action)
-            if not mapped:
-                # Only a step of other gestures.
-                self._log(f"{event.trigger}: {event.detail}")
-                continue
-            if mapped.startswith(APP_PREFIX):
-                self._log(f"{event.trigger}: {event.detail}")
-                if mapped == "app:toggle_pause":
-                    self.pause.toggle()
-                continue
-            if self.pause.paused:
-                # Log what would have been sent, so you can try gestures while paused.
-                self._log(f"{event.trigger}: {event.detail} -> {mapped} (paused, not sent)")
-                continue
-            assert self._output is not None
-            self._output.send(mapped)
-            self._on_fire(event, mapped)
-            fired = True
+            if event is not None:
+                fired = self._handle(event) or fired
         return Frame(obs, fired)
+
+    def _handle(self, event: TriggerEvent) -> bool:
+        """Acts on a gesture that fired. True if it sent keyboard or mouse input."""
+        mapped = self._outputs.get(event.action)
+        if not mapped or mapped.startswith(APP_PREFIX):
+            # No output: only a step of other gestures. Otherwise an app-level output.
+            self._log(f"{event.trigger}: {event.detail}")
+            if mapped == "app:toggle_pause":
+                self.pause.toggle()
+            return False
+        if self.pause.paused:
+            # Log what would have been sent, so you can try gestures while paused.
+            self._log(f"{event.trigger}: {event.detail} -> {mapped} (paused, not sent)")
+            return False
+        assert self._output is not None
+        self._output.send(mapped)
+        self._on_fire(event, mapped)
+        return True
 
     def close(self) -> None:
         if self._own_source:

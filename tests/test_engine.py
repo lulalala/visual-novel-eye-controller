@@ -72,6 +72,17 @@ def test_blink_sends_its_output_and_beeps():
     assert sounds == ["trigger"]
 
 
+def test_gesture_without_an_output_is_only_logged():
+    config = apply_overrides(Config(), {"gestures": {"blink": {"output": ""}}})
+    samples = calibrate() + blink()
+    engine, output, messages, sounds = make(samples, config)
+    frames = run(engine, len(samples))
+    assert output.sent == []
+    assert not any(f.fired for f in frames)
+    assert any(m.startswith("blink: ") and "->" not in m for m in messages)
+    assert sounds == []
+
+
 def test_unknown_output_is_rejected_when_the_config_is_applied():
     config = apply_overrides(Config(), {"gestures": {"blink": {"output": "nonsense"}}})
     with pytest.raises(ValueError, match="gestures.blink.output"):
