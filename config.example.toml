@@ -101,3 +101,8 @@ output = "down"
 sound = true
 # Print gestures that didn't trigger (too short, too long, cooldown, paused)
 log_rejected = true
+
+[app]
+# Start paused: gestures are detected and logged but send nothing. The GUI
+# saves this whenever you pause or resume.
+paused = false

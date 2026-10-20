@@ -84,7 +84,9 @@ class Engine:
             source = OpenCVSource(config.camera, log)
         self.source = source
         self._output = output
-        self.pause = PauseSwitch(self._on_pause_change)
+        # Only read here: afterwards the engine owns the paused state, and
+        # set_config() leaves it alone.
+        self.pause = PauseSwitch(self._on_pause_change, paused=config.app.paused)
         self.fps = 0.0
         self.last_fire_at = -1e9
         self._prev: float | None = None
@@ -94,6 +96,8 @@ class Engine:
         self.suspended = False
         self.config: Config | None = None
         self._apply(config)
+        if self.pause.paused:
+            self._log("Starting paused (app.paused): gestures send nothing until you resume")
 
     def set_config(self, config: Config) -> None:
         self._pending = config

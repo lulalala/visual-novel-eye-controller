@@ -160,3 +160,22 @@ def test_head_shake_cannot_end_suspension_or_pause():
     run(engine, len(samples) - 90)
     assert engine.suspended
     assert not engine.paused
+
+
+def test_engine_starts_paused_when_the_config_says_so():
+    config = apply_overrides(Config(), {"app": {"paused": True}})
+    samples = calibrate() + blink()
+    engine, output, messages, sounds = make(samples, config)
+    run(engine, len(samples))
+    assert engine.paused
+    assert output.sent == []
+    assert any(m.startswith("Starting paused") for m in messages)
+
+
+def test_new_config_keeps_the_live_paused_state():
+    engine, *_ = make(calibrate(5))
+    engine.toggle_pause()
+    engine.step()
+    engine.set_config(Config())
+    engine.step()
+    assert engine.paused

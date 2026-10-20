@@ -27,6 +27,8 @@ eyeokuri --set gestures.blink.output=page_down    # any key, or a combination li
 
 Common settings also have flags, such as `--min-duration`, `--blink-key` and `--no-head-shake` (turns the head shake off).
 
+If the config file has `paused = true` under `[app]` (the GUI saves it when you pause), `eyeokuri` starts paused. The command line never writes it. To start running anyway, use `--set app.paused=false`.
+
 ## Preview window
 
 `--preview` opens a window with your eye outlines and signal values.

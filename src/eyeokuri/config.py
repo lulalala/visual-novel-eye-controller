@@ -155,6 +155,13 @@ class FeedbackConfig:
     log_rejected: bool = True
 
 
+@dataclass(frozen=True)
+class AppConfig:
+    # Start paused: gestures are detected and logged but send nothing. The GUI
+    # saves this whenever you pause or resume, so it starts the way you left it.
+    paused: bool = False
+
+
 CONFIG_VERSION = 1
 
 
@@ -170,6 +177,7 @@ class Config:
         default_factory=_default_gestures, metadata={"item": GestureConfig}
     )
     feedback: FeedbackConfig = field(default_factory=FeedbackConfig)
+    app: AppConfig = field(default_factory=AppConfig)
 
 
 def _merge(obj: Any, data: dict[str, Any], path: str) -> Any:

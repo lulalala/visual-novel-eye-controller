@@ -6,8 +6,8 @@ from typing import Callable
 
 
 class PauseSwitch:
-    def __init__(self, on_change: Callable[[bool], None] | None = None) -> None:
-        self.paused = False
+    def __init__(self, on_change: Callable[[bool], None] | None = None, paused: bool = False) -> None:
+        self.paused = paused
         self._on_change = on_change
 
     def toggle(self) -> None:

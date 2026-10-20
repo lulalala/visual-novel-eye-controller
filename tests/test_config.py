@@ -189,3 +189,13 @@ def test_step_unit_and_bounds_follow_the_signal():
     head = StepConfig(signal="yaw", above_deg=-5.0, below_deg=5.0)
     assert (eyes.unit, eyes.bounds) == ("ratio", (0.75, None))
     assert (head.unit, head.bounds) == ("deg", (-5.0, 5.0))
+
+
+def test_paused_survives_a_dump_and_works_with_set(tmp_path):
+    config = config_from("--set", "app.paused=true")
+    assert config.app.paused
+    text = dump_config(config)
+    assert text == "version = 1\n\n[app]\npaused = true\n"
+    path = tmp_path / "saved.toml"
+    path.write_text(text)
+    assert load_config(path) == config
