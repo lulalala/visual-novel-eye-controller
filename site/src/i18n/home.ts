@@ -34,6 +34,7 @@ export interface HomeText {
   pass: { title: string; text: string; star: string; request: string };
   footer: string;
   footerReleases: string;
+  footerCredits: string;
 }
 
 export const home: Record<string, HomeText> = {
@@ -107,5 +108,6 @@ export const home: Record<string, HomeText> = {
     },
     footer: "eyeokuri · open source · made for people who read a lot",
     footerReleases: "All releases",
+    footerCredits: "Credits",
   },
 };

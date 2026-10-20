@@ -17,6 +17,7 @@ const logo = logoSource
   .replace('width="352" height="352"', 'width="100%" height="100%"');
 
 const path = (l: string) => (l === "en" ? "/" : `/${l}/`);
+const creditsPath = locale === "en" ? "/guide/third-party/" : `/${locale}/guide/third-party/`;
 const docsPath = locale === "en" ? "/guide/getting-started/" : `/${locale}/guide/getting-started/`;
 const alternates = Astro.site
   ? Object.keys(home).map((l) => ({ l, href: new URL(path(l), Astro.site).href }))
@@ -153,6 +154,7 @@ const alternates = Astro.site
       <a href={docsPath}>{t.nav.docs}</a>
       <a href={REPO}>{t.nav.github}</a>
       <a href={`${REPO}/releases`}>{t.footerReleases}</a>
+      <a href={creditsPath}>{t.footerCredits}</a>
     </div>
   </footer>
 </div>
