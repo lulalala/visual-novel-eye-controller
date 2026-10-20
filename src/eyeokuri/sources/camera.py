@@ -72,7 +72,7 @@ def _open_capture(cam: CameraConfig) -> cv2.VideoCapture:
 
 class CameraScanner:
     """Opens every camera it finds and keeps each one's latest frame in memory
-    (never saved), so the settings window can show them side by side."""
+    (never saved), so the config window can show them side by side."""
 
     def __init__(self, skip: int | None = None, max_index: int = 8, width_px: int = 320) -> None:
         self._skip = skip

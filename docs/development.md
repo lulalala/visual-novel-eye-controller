@@ -52,10 +52,11 @@ src/eyeokuri/
   app.py          command line: main loop and flags
   gui/            window (Tkinter); eyeokuri-gui runs gui:main
     launch.py       parses the flags and starts the main window
-    main_window.py  the log, and the buttons for pause, camera view, settings and the wizard
+    main_window.py  the gesture list with on/off and pause toggles, the log, and the menu bar
     worker.py       runs the Engine on a background thread
-    settings.py     settings window: gesture list, plot, steps table, General and Advanced tabs
-    wizard.py       gesture wizard
+    gesture_window.py  one gesture's window: output, plot, steps table, head limits
+    config_window.py   config window: General and Advanced tabs
+    wizard.py       gesture wizard for the gesture window's gesture
     plot.py         the plot with one draggable box per step
     camera.py       camera view window and the camera picker
     model.py        gesture settings as the editor's dicts, and the plot ranges (no Tk, unit-tested)

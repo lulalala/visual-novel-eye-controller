@@ -92,3 +92,8 @@ def new_step(kind: str) -> dict[str, Any]:
     above, below = {"eyes": (None, 0.55), "pitch": (12.0, None), "yaw": (15.0, None)}.get(kind, (None, None))
     return {"kind": kind, "gesture": "", "above": above, "below": below,
             "after_min_s": 0.0, "after_max_s": 1.0, "hold_s": 0.0}
+
+
+def users_of(gestures: dict[str, GestureConfig], name: str) -> list[str]:
+    """The gestures that have ``name`` as one of their steps, so deleting it would break them."""
+    return [n for n, g in gestures.items() if n != name and any(s.gesture == name for s in g.steps)]

@@ -6,7 +6,7 @@ import math
 import time
 import tkinter as tk
 from dataclasses import replace
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import TYPE_CHECKING
 
 from eyeokuri import theme
@@ -17,11 +17,11 @@ from eyeokuri.gui.plot import PlotEditor, tint
 from eyeokuri.gui.tkutil import place_over, scaled_font
 from eyeokuri.gui.worker import MAX_TAKE_S
 from eyeokuri.triggers import Replay, signal_value
-from eyeokuri.tuning import DO, KIND_LABELS, TOO_QUICK, TOO_SLOW, Fit, Take, can_tune, fit, script, trim
+from eyeokuri.tuning import DO, KIND_LABELS, TOO_QUICK, TOO_SLOW, Fit, Take, fit, script, trim
 
 if TYPE_CHECKING:
+    from eyeokuri.gui.gesture_window import GestureWindow
     from eyeokuri.gui.main_window import MainWindow
-    from eyeokuri.gui.settings import SettingsWindow
 
 
 # Near misses you might still want to count, so the wizard asks instead of assuming.
@@ -34,21 +34,19 @@ def _outcome(kind: str) -> str:
 
 
 class WizardWindow:
-    """Sets up one gesture step by step: one page per take, each with one
-    thing to do, then a review of the gesture fitted to all the takes."""
+    """Sets up the gesture window's gesture step by step: one page per take,
+    each with one thing to do, then a review of the gesture fitted to all the
+    takes. The result goes back to the gesture window, whose OK saves it.
 
-    def __init__(self, app: MainWindow, settings: SettingsWindow | None, name: str) -> None:
+    The gesture window only offers the wizard when its edits are valid and
+    every step has a box (``can_tune``)."""
+
+    def __init__(self, app: MainWindow, owner: GestureWindow) -> None:
         self.app = app
-        self.settings = settings
+        self.owner = owner
         self.worker = app.worker
-        self.base = app.config
-        if settings is not None:
-            try:
-                self.base = settings.build_config()
-            except ValueError:
-                pass
-        self.names = [n for n, g in self.base.gestures.items() if can_tune(g)]
-        self.name = name if name in self.names else self.names[0]
+        self.base = owner.build_config()
+        self.name = owner.name
         self.script = script(self.name)
         self.takes: list[Take | None] = [None] * len(self.script)
         self.answers: dict[int, str] = {}
@@ -56,22 +54,22 @@ class WizardWindow:
         self.fitted: Fit | None = None
         self.results: dict[int, Replay] = {}
         """The fitted gesture replayed over each recorded take, by page."""
-        self.page = -1
-        """-1 is the first page, then one page per take, then the review."""
+        self.page = 0
+        """One page per take, then the review."""
         self.enable = tk.BooleanVar(value=True)
         self._started: float | None = None
         self._poll_id: str | None = None
 
-        parent = settings.win if settings is not None else app.root
+        parent = owner.win
         self.win = tk.Toplevel(parent)
         self.win.withdraw()
-        self.win.title("Gesture wizard")
+        self.win.title(f"Gesture wizard – {self.name}")
         self.win.transient(parent)
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         # Gestures are off while you record, so your takes send nothing to other windows.
         self.worker.set_suspended(True)
         self._build()
-        self._show(-1)
+        self._show(0)
         place_over(self.win, app.root)
         self.win.grab_set()
         self._poll()
@@ -128,10 +126,7 @@ class WizardWindow:
         self.content = ttk.Frame(self.body)
         self.content.grid(row=3, column=0, sticky="nsew", pady=(14, 0))
         self.page = page
-        self.counter.grid()
-        if page < 0:
-            self._first_page()
-        elif self._on_take():
+        if self._on_take():
             self._take_page()
         else:
             self._review_page()
@@ -142,42 +137,14 @@ class WizardWindow:
         else:
             self._show(self.page + 1)
 
-    def _first_page(self) -> None:
-        # An empty label would still leave a blank line above the heading.
-        self.counter.grid_remove()
-        self.heading.configure(text="Set up a gesture")
-        self.subheading.configure(text="Record a few takes, and the wizard fits the gesture to them.")
-        row = ttk.Frame(self.content)
-        row.pack(anchor="w")
-        ttk.Label(row, text="Gesture", style="Wizard.TLabel").pack(side="left")
-        box = ttk.Combobox(row, state="readonly", width=18, values=self.names, font=self._text)
-        box.set(self.name)
-        box.bind("<<ComboboxSelected>>", lambda _e: self._on_gesture(box))
-        box.pack(side="left", padx=(6, 0))
-        self.back_button.configure(state="disabled")
-        self.next_button.configure(text="Start", state="normal", style="Wizard.Accent.TButton")
-        self.next_button.focus_set()
-
-    def _on_gesture(self, box: ttk.Combobox) -> None:
-        name = box.get()
-        if name == self.name:
-            return
-        recorded = sum(t is not None for t in self.takes)
-        if recorded and not messagebox.askyesno(
-                "Gesture wizard", f"Discard your {recorded} takes of {self.name}?", parent=self.win):
-            box.set(self.name)
-            return
-        self.name = name
-        self.script = script(name)
-        self.takes = [None] * len(self.script)
-        self.answers = {}
-        self._refit()
-
     def _take_page(self) -> None:
         kind, what = self.script[self.page]
         self.counter.configure(text=f"Take {self.page + 1} of {len(self.script)}")
         self.heading.configure(text=f"{what[0].upper()}{what[1:]}.")
-        self.subheading.configure(text="" if kind in _ASK_KINDS else _outcome(kind).capitalize() + ".")
+        outcome = "" if kind in _ASK_KINDS else _outcome(kind).capitalize() + "."
+        # The first page also says what the wizard does, since it has no page of its own.
+        intro = f"Record a few takes, and the wizard fits {self.name} to them. " if self.page == 0 else ""
+        self.subheading.configure(text=intro + outcome)
         row = ttk.Frame(self.content)
         row.pack(fill="x")
         self.record_button = ttk.Button(row, width=12, style="Wizard.TButton", command=self._toggle_record)
@@ -196,7 +163,6 @@ class WizardWindow:
         self.plot.canvas.pack(fill="both", expand=True, pady=(12, 0))
         self.result = ttk.Label(self.content, style="Wizard.TLabel", wraplength=_WIZARD_WRAP, justify="left")
         self.result.pack(anchor="w", pady=(8, 0))
-        self.back_button.configure(state="normal")
         # The focused button takes Space, so you can record without the mouse.
         self.record_button.focus_set()
         self._refresh_take()
@@ -218,7 +184,7 @@ class WizardWindow:
         self.record_button.configure(text="■ Stop" if recording else "● Redo" if take else "● Record",
                                      style="Wizard.TButton" if take else "Wizard.Accent.TButton")
         state = "disabled" if recording else "normal"
-        self.back_button.configure(state=state)
+        self.back_button.configure(state="disabled" if recording or self.page == 0 else "normal")
         answered = planned not in _ASK_KINDS or self.page in self.answers
         if take is None and planned != DO:
             self.next_button.configure(text="Skip", state=state, style="Wizard.TButton")
@@ -279,7 +245,7 @@ class WizardWindow:
         if self.fitted is not None:
             notes = self.fitted.notes or ["Your takes fit the current settings. Nothing changed."]
             summary = ("Every take does what it should." if not wrong else
-                       f"{wrong} take(s) don't do what they should. Redo them, or fine-tune in Settings later.")
+                       f"{wrong} take(s) don't do what they should. Redo them, or fine-tune the boxes afterward.")
             ttk.Label(self.content, style="Wizard.TLabel", wraplength=_WIZARD_WRAP, justify="left",
                       text="\n".join(f"• {n}" for n in notes) + "\n" + summary,
                       foreground=theme.OK if not wrong else theme.BAD,
@@ -388,13 +354,10 @@ class WizardWindow:
     def _use(self) -> None:
         assert self.fitted is not None
         gesture = replace(self.fitted.gesture, enabled=self.fitted.gesture.enabled or self.enable.get())
-        app, settings, name = self.app, self.settings, self.name
+        owner = self.owner
         takes = [t for t in self.takes if t is not None]
         self.close()
-        if settings is not None:
-            settings.use_fit(name, gesture, takes)
-        else:
-            app.use_fit(name, gesture, takes)
+        owner.use_fit(gesture, takes)
 
     def close(self) -> None:
         if self._poll_id is not None:

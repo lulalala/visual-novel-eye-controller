@@ -3,7 +3,7 @@ import pytest
 from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    GESTURE_NAME, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step,
+    GESTURE_NAME, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step, users_of,
 )
 from eyeokuri.gui.worker import state_text
 
@@ -65,3 +65,14 @@ def test_state_text_names_the_most_important_state():
     assert state_text(Observation(0.0, face_present=True), False, False, 30.0).startswith("Calibrating")
     closed = Observation(0.0, face_present=True, ready=True, closed=True)
     assert state_text(closed, False, False, 30.0).startswith("Eyes closed")
+
+
+def test_users_of_lists_the_gestures_that_use_one_as_a_step():
+    gestures = {
+        **Config().gestures,
+        "blink_then_nod": GestureConfig(steps=[StepConfig(gesture="blink"), StepConfig(gesture="nod_down")]),
+        "double_blink": GestureConfig(steps=[StepConfig(gesture="blink"), StepConfig(gesture="blink")]),
+    }
+    assert users_of(gestures, "blink") == ["blink_then_nod", "double_blink"]
+    assert users_of(gestures, "nod_down") == ["blink_then_nod"]
+    assert users_of(gestures, "head_shake") == []

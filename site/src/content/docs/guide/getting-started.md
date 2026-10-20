@@ -21,6 +21,6 @@ Windows might warn about an unknown publisher because the app is not signed. Sel
 
 - **Blink** (both eyes closed for at least 0.15 s): sends `Enter` when you reopen your eyes. Closing your eyes for more than 2 s cancels the blink.
 - **Shake your head** to pause or resume: turn past about 15° to one side, then past about 15° to the other side, within 1 s.
-- **Nod up or down** sends the `up` or `down` arrow key. It is off by default. You can turn it on in the settings window.
+- **Nod up or down** sends the `up` or `down` arrow key. It is off by default. You can turn it on with its checkbox in the main window.
 
-For the gesture wizard and the settings window, see the [README](https://github.com/lulalala/visual-novel-eye-controller#readme).
+For the gesture window and the gesture wizard, see the [README](https://github.com/lulalala/visual-novel-eye-controller#readme).
