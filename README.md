@@ -53,7 +53,7 @@ The main window shows the log: gestures that fired, gestures that didn't and why
 3. The wizard fits the gesture to all your takes. It moves each step's edge to 60% of the way to your weakest take, and fits the time limits the gesture already has between your takes and the near misses. Limits that are off stay off. The review page lists whether each take fires with the new settings and what changed. Select a take to see it on the plot, and select **Redo take** to record one again.
 4. Select **Use these settings**. The gesture uses the new values right away, and the wizard asks whether to save them to the config file. You can fine-tune the result in the settings window.
 
-**Set up with wizard…** on the settings window's **Gestures** tab opens the same wizard. It starts from your unapplied edits there, and **Use these settings** puts the result back in the settings window and applies it. Select **Save** there to keep it.
+**Set up with wizard…** on the settings window's **Gestures** tab opens the same wizard. It starts from your edits there, and **Use these settings** puts the result back in the settings window. Select **OK** there to keep it.
 
 Gestures whose steps are other gestures can't use the wizard. Set up the gestures they're made of instead.
 
@@ -63,7 +63,7 @@ Gestures whose steps are other gestures can't use the wizard. Set up the gesture
 
 To check your settings against your own movement, do the gesture and then select **Save last 4 s as a test**. The list shows, for every test, whether the gesture fires and, if not, why. It updates as you change the settings. Tests keep only the eye and head numbers, in memory, never images.
 
-**Apply** uses the settings right away. **Save** also writes them to the config file. Saving rewrites the file with only the values that differ from the defaults, so comments in it are not kept.
+eyeokuri uses your changes as soon as you make them, but gestures stay off and the main window's buttons are disabled while the settings window is open. **OK** saves the settings to the config file and closes the window. **Cancel** goes back to the settings you had when you opened the window and closes it. Closing the window any other way works like **Cancel**, but asks first if you changed something. Saving rewrites the file with only the values that differ from the defaults, so comments in it are not kept.
 
 If the camera stops sending frames (for example, it briefly disconnects), eyeokuri reopens it every second until frames come back. Gestures are not detected during the gap. Set `log_rejected = false` under `[feedback]` in your config file to stop logging gestures that don't fire.
 

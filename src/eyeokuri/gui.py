@@ -36,6 +36,8 @@ _HISTORY_FRAMES = 900
 _VIDEO_MAX_WIDTH = 640
 _POLL_MS = 15
 _LIVE_REFRESH_MS = 250
+# Edits apply once they stop for this long, so typing "12" doesn't open camera 1 first.
+_APPLY_DELAY_MS = 400
 # A wizard take stops by itself after this long; the history keeps a bit more.
 MAX_TAKE_S = 20.0
 
@@ -322,8 +324,12 @@ class MainWindow:
         self.pause_button = ttk.Button(bar, text="Pause", style="Accent.TButton", command=self.worker.toggle_pause)
         self.pause_button.pack(side="left")
         ttk.Button(bar, text="Camera view…", command=self.open_camera).pack(side="left", padx=(6, 0))
-        ttk.Button(bar, text="Settings…", command=self.open_settings).pack(side="left", padx=(6, 0))
-        ttk.Button(bar, text="Gesture wizard…", command=self.open_wizard).pack(side="left", padx=(6, 0))
+        settings_button = ttk.Button(bar, text="Settings…", command=self.open_settings)
+        settings_button.pack(side="left", padx=(6, 0))
+        wizard_button = ttk.Button(bar, text="Gesture wizard…", command=self.open_wizard)
+        wizard_button.pack(side="left", padx=(6, 0))
+        # Off while the settings or wizard window is open, which owns the settings in use then.
+        self._editing_controls = (self.pause_button, settings_button, wizard_button)
         # The status is what you check most, so it is larger than the rest.
         self._status_font = _scaled_font("TkDefaultFont", 1.6)
         self.status = ttk.Label(bar, text="Starting…", foreground=_MUTED, font=self._status_font)
@@ -344,7 +350,7 @@ class MainWindow:
         self.log_text.tag_configure("reject", foreground=_MUTED)
         self.log_text.tag_configure("time", foreground=_MUTED)
 
-        root.bind("p", lambda _e: self.worker.toggle_pause())
+        root.bind("p", lambda _e: self._editing or self.worker.toggle_pause())
         root.protocol("WM_DELETE_WINDOW", self.close)
         self._poll()
 
@@ -383,11 +389,17 @@ class MainWindow:
         self.config = config
         self.push_config()
 
+    @property
+    def _editing(self) -> bool:
+        return self.settings is not None or self.wizard is not None
+
     def push_config(self) -> None:
         """Sends the settings in use to the engine. Gestures are off while the settings
         or wizard window is open, so editing and recording send nothing to other windows."""
         self.worker.set_config(self.config)
-        self.worker.set_suspended(self.settings is not None or self.wizard is not None)
+        self.worker.set_suspended(self._editing)
+        for button in self._editing_controls:
+            button.configure(state="disabled" if self._editing else "normal")
 
     def save_config(self, config: Config) -> None:
         self.apply_config(config)
@@ -416,6 +428,7 @@ class MainWindow:
             return
         name = settings.current if settings is not None else next(iter(self.config.gestures))
         self.wizard = WizardWindow(self, settings, name)
+        self.push_config()
 
     def use_fit(self, name: str, gesture: GestureConfig, takes: list[Take]) -> None:
         """Applies the wizard's result and offers to save."""
@@ -423,10 +436,6 @@ class MainWindow:
         check_config(config)
         self.apply_config(config)
         self.worker.log(f"{name}: wizard settings applied")
-        if self.settings is not None:
-            # Other unapplied edits in the open settings window stay as they are.
-            self.settings.gestures[name] = _gesture_model(gesture)
-            self.settings._select(name)
         if messagebox.askyesno("Gesture wizard", f"{name} is using the new settings.\n\n"
                                f"Save them to {self.path}?", parent=self.root):
             try:
@@ -706,11 +715,14 @@ class SettingsWindow:
         self.app = app
         self.win = tk.Toplevel(app.root)
         self.win.title("eyeokuri settings")
-        self.win.protocol("WM_DELETE_WINDOW", self.close)
+        self.win.protocol("WM_DELETE_WINDOW", self._close_box)
         self.builtin = set(Config().gestures)
         self._suppress = False
         self._field_errors: dict[str, str] = {}
         self.camera_picker: CameraPicker | None = None
+        # Cancel goes back to these.
+        self._opened_with = app.config
+        self._apply_id: str | None = None
         self._load(app.config)
 
         self.win.columnconfigure(0, weight=1)
@@ -730,11 +742,9 @@ class SettingsWindow:
         bottom.grid(row=1, column=0, sticky="ew")
         self.message = ttk.Label(bottom, text="", foreground=_BAD, wraplength=640)
         self.message.pack(side="left", fill="x", expand=True)
-        self.save_button = ttk.Button(bottom, text="Save", style="Accent.TButton", command=self.save)
-        self.save_button.pack(side="right")
-        self.apply_button = ttk.Button(bottom, text="Apply", command=self.apply)
-        self.apply_button.pack(side="right", padx=6)
-        ttk.Button(bottom, text="Revert", command=self.revert).pack(side="right")
+        ttk.Button(bottom, text="Cancel", command=self.cancel).pack(side="right")
+        self.ok_button = ttk.Button(bottom, text="OK", style="Accent.TButton", command=self.ok)
+        self.ok_button.pack(side="right", padx=6)
 
         self._select(next(iter(self.gestures)))
         self._live_loop()
@@ -867,7 +877,7 @@ class SettingsWindow:
         m = self.gestures[self.current]
         m["enabled"] = self.enabled.get()
         output = self.output_var.get().strip().lower()
-        # Invalid text is stored too; build_config() reports it and blocks Apply.
+        # Invalid text is stored too; build_config() reports it, and nothing applies until it's fixed.
         m["output"] = "" if output in ("", "(none)") else output
         if m["any_order"] != self.any_order.get():
             m["any_order"] = self.any_order.get()
@@ -1094,17 +1104,20 @@ class SettingsWindow:
             return None
 
     def _refresh(self) -> None:
-        """Validates the edits, then re-runs the gesture on the live signal and redraws."""
+        """Validates the edits, re-runs the gesture on the live signal and redraws,
+        then applies the edits once they stop changing."""
+        if self._apply_id is not None:
+            self.win.after_cancel(self._apply_id)
+            self._apply_id = None
         try:
             config: Config | None = self.build_config()
             self.message.configure(text="")
-            state = "normal"
+            self.ok_button.configure(state="normal")
+            self._apply_id = self.win.after(_APPLY_DELAY_MS, self._apply)
         except ValueError as e:
             config = None
             self.message.configure(text=str(e), foreground=_BAD)
-            state = "disabled"
-        self.apply_button.configure(state=state)
-        self.save_button.configure(state=state)
+            self.ok_button.configure(state="disabled")
 
         self._draw_plot(config)
 
@@ -1195,44 +1208,54 @@ class SettingsWindow:
 
     # Buttons
 
-    def apply(self) -> None:
+    def _apply(self) -> None:
+        """Puts valid edits in use; invalid ones wait until you fix them."""
+        if self._apply_id is not None:
+            self.win.after_cancel(self._apply_id)
+            self._apply_id = None
         try:
             config = self.build_config()
-        except ValueError as e:
-            self.message.configure(text=str(e), foreground=_BAD)
+        except ValueError:
             return
-        self.app.apply_config(config)
-        self.message.configure(text="Applied. Not saved yet.", foreground=_MUTED)
+        if config != self.app.config:
+            self.app.apply_config(config)
 
-    def save(self) -> None:
+    def ok(self) -> None:
+        """Saves and closes; if saving fails, the window stays open with your edits."""
         try:
             config = self.build_config()
             self.app.save_config(config)
         except (ValueError, OSError) as e:
             self.message.configure(text=str(e), foreground=_BAD)
             return
-        self.message.configure(text=f"Applied and saved to {self.app.path}.", foreground=_MUTED)
+        self._close()
 
-    def revert(self) -> None:
-        self._load(self.app.config)
-        self._field_errors = {}
-        name = self.current if self.current in self.gestures else next(iter(self.gestures))
-        for child in self.win.winfo_children():
-            if isinstance(child, ttk.Notebook):
-                general, advanced = (child.nametowidget(name) for name in child.tabs()[1:3])
-                for widget in (*general.winfo_children(), *advanced.winfo_children()):
-                    widget.destroy()
-                self._build_general_tabs(general, advanced)
-        self._select(name)
-        self.message.configure(text="Reverted to the settings in use.", foreground=_MUTED)
+    def cancel(self) -> None:
+        """Goes back to the settings in use when the window opened, and closes."""
+        if self.app.config != self._opened_with:
+            self.app.apply_config(self._opened_with)
+        self._close()
+
+    def _close_box(self) -> None:
+        """The window's close button cancels, but asks first so one click can't undo your tuning."""
+        try:
+            changed = self.build_config() != self._opened_with
+        except ValueError:
+            changed = True
+        if changed and not messagebox.askyesno(
+                "eyeokuri settings", "Discard your changes?", icon="warning", parent=self.win):
+            return
+        self.cancel()
 
     def use_fit(self, name: str, gesture: GestureConfig, takes: list[Take]) -> None:
         """Puts the wizard's result in the editor and applies it."""
         self.gestures[name] = _gesture_model(gesture)
         self._select(name)
-        self.apply()
+        self._apply()
 
-    def close(self) -> None:
+    def _close(self) -> None:
+        if self._apply_id is not None:
+            self.win.after_cancel(self._apply_id)
         if self.app.wizard is not None and self.app.wizard.settings is self:
             self.app.wizard.close()
         if self.camera_picker is not None and self.camera_picker.win.winfo_exists():
