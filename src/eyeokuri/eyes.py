@@ -51,10 +51,6 @@ class EyeStateTracker:
         self._history: deque[tuple[float, float]] = deque()
         self._closed = False
 
-    def reset(self) -> None:
-        self._history.clear()
-        self._closed = False
-
     def update(self, signals: Signals) -> Observation:
         t = signals.timestamp
         if not signals.face_present:

@@ -1,7 +1,7 @@
 import pytest
 
 from eyeokuri.keys import KEY_VK, KeyCombo, from_tk_event, parse_key, press_order
-from eyeokuri.outputs import MOUSE_OUTPUTS, OUTPUT_NAMES, is_output_name
+from eyeokuri.outputs import MOUSE_OUTPUTS, OUTPUT_NAMES, check_output_name
 
 
 def test_single_key_parses():
@@ -46,9 +46,10 @@ def test_press_order_wraps_key_in_modifiers():
 def test_common_outputs_are_all_valid():
     for name in OUTPUT_NAMES:
         assert name in MOUSE_OUTPUTS or name in KEY_VK
-        assert is_output_name(name)
-    assert not is_output_name("app:toggle_pause")
-    assert not is_output_name("")
+        check_output_name(name)
+    for bad in ("app:toggle_pause", ""):
+        with pytest.raises(ValueError):
+            check_output_name(bad)
 
 
 def test_letter_and_digit_codes_are_windows_virtual_keys():

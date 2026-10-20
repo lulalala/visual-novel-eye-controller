@@ -40,14 +40,6 @@ def check_output_name(name: str) -> None:
         parse_key(name)
 
 
-def is_output_name(name: str) -> bool:
-    try:
-        check_output_name(name)
-    except ValueError:
-        return False
-    return True
-
-
 class Win32Output:
     def __init__(self, log: Callable[[str], None] = _print_stderr) -> None:
         self._log = log
