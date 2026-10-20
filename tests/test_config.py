@@ -182,3 +182,10 @@ def test_tiny_camera_size_is_rejected():
         build_config(parse_args(["--set", "camera.width=1"]))
     with pytest.raises(ValueError, match="camera.height"):
         build_config(parse_args(["--set", "camera.height=1"]))
+
+
+def test_step_unit_and_bounds_follow_the_signal():
+    eyes = StepConfig(signal="eyes", above_ratio=0.75)
+    head = StepConfig(signal="yaw", above_deg=-5.0, below_deg=5.0)
+    assert (eyes.unit, eyes.bounds) == ("ratio", (0.75, None))
+    assert (head.unit, head.bounds) == ("deg", (-5.0, 5.0))

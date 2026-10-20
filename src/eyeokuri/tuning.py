@@ -103,16 +103,12 @@ def trim(observations: list[Observation], signals: set[str], pad_s: float = 0.2)
     return start, [replace(o, timestamp=o.timestamp - start) for o in observations if start <= o.timestamp <= end]
 
 
-def _unit(step: StepConfig) -> str:
-    return "ratio" if step.signal == "eyes" else "deg"
-
-
 def _excursion(step: StepConfig) -> tuple[str, int] | None:
     """(field, direction) of the edge you cross moving away from rest, or
     None for a box around rest (the "eyes open again" or "back to center" steps)."""
-    unit = _unit(step)
+    unit = step.unit
     rest = _REST[step.signal]
-    above, below = getattr(step, f"above_{unit}"), getattr(step, f"below_{unit}")
+    above, below = step.bounds
     if above is not None and above >= rest:
         return f"above_{unit}", 1
     if below is not None and below <= rest:
@@ -153,10 +149,10 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: lis
         # edge can't complete the gesture.
         for other in gesture.steps:
             if other.signal == signal and _excursion(other) is None:
-                inner = getattr(other, f"{'below' if d > 0 else 'above'}_{_unit(other)}")
+                inner = getattr(other, f"{'below' if d > 0 else 'above'}_{other.unit}")
                 if inner is not None:
                     reach = max(reach, d * (inner - rest) + _GAP[signal])
-        far = getattr(step, f"{'below' if d > 0 else 'above'}_{_unit(step)}")
+        far = getattr(step, f"{'below' if d > 0 else 'above'}_{step.unit}")
         if far is not None:
             reach = min(reach, d * (far - rest) - _GAP[signal])
         value = round(rest + d * reach, 2) if signal == "eyes" else float(round(rest + d * reach))

@@ -75,6 +75,18 @@ class StepConfig:
     # Stay inside the box this long before the step counts.
     hold_s: float = 0.0
 
+    @property
+    def unit(self) -> str:
+        """The suffix of this step's bound fields: ratio for eyes, deg for the head."""
+        return "ratio" if self.signal == "eyes" else "deg"
+
+    @property
+    def bounds(self) -> tuple[float | None, float | None]:
+        """(above, below) of the box, from the fields its signal uses."""
+        if self.signal == "eyes":
+            return self.above_ratio, self.below_ratio
+        return self.above_deg, self.below_deg
+
 
 @dataclass(frozen=True)
 class GestureConfig:

@@ -521,10 +521,8 @@ def _gesture_model(gesture: GestureConfig) -> dict[str, Any]:
     for s in gesture.steps:
         if s.gesture:
             above = below = None
-        elif s.signal == "eyes":
-            above, below = s.above_ratio, s.below_ratio
         else:
-            above, below = s.above_deg, s.below_deg
+            above, below = s.bounds
         steps.append({
             "kind": "gesture" if s.gesture else s.signal, "gesture": s.gesture,
             "above": above, "below": below,

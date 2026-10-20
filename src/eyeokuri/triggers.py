@@ -51,18 +51,12 @@ def signal_value(signal: str, obs: Observation) -> float | None:
     return obs.head_pitch if signal == "pitch" else obs.head_yaw
 
 
-def _bounds(step: StepConfig) -> tuple[float | None, float | None]:
-    if step.signal == "eyes":
-        return step.above_ratio, step.below_ratio
-    return step.above_deg, step.below_deg
-
-
 class StepWatcher:
     """Reports the frame the signal enters one step's box, or has stayed in it for hold_s."""
 
     def __init__(self, step: StepConfig) -> None:
         self.step = step
-        self._above, self._below = _bounds(step)
+        self._above, self._below = step.bounds
         self._was_inside: bool | None = None
         self._entered_at: float | None = None
 
@@ -171,7 +165,7 @@ class GestureTrigger:
             if value is None:
                 # A source without head pose still blinks; it just can't tell where you look.
                 continue
-            above, below = _bounds(guard)
+            above, below = guard.bounds
             if (above is not None and value <= above) or (below is not None and value >= below):
                 return f"head {guard.signal} {value:+.0f}° outside its limit"
         return ""
@@ -325,12 +319,13 @@ def _validate(name: str, config: GestureConfig) -> None:
         elif step.signal not in SIGNALS:
             raise ValueError(f"{sk}.signal must be one of {', '.join(SIGNALS)}, not {step.signal!r}")
         else:
-            unit, other = ("ratio", "deg") if step.signal == "eyes" else ("deg", "ratio")
+            unit = step.unit
+            other = "deg" if unit == "ratio" else "ratio"
             if bounds[f"above_{other}"] is not None or bounds[f"below_{other}"] is not None:
                 raise ValueError(
                     f"{sk}: {step.signal} uses above_{unit}/below_{unit}, not above_{other}/below_{other}"
                 )
-            above, below = _bounds(step)
+            above, below = step.bounds
             if above is None and below is None:
                 raise ValueError(f"{sk} needs above_{unit}, below_{unit} or both")
             if above is not None and below is not None and above >= below:
@@ -354,7 +349,7 @@ def _validate(name: str, config: GestureConfig) -> None:
             raise ValueError(f"{gk}: a guard uses only signal, above_deg and below_deg")
         if guard.after_min_s or guard.after_max_s or guard.hold_s:
             raise ValueError(f"{gk}: a guard has no timing, so remove after_min_s, after_max_s and hold_s")
-        above, below = _bounds(guard)
+        above, below = guard.bounds
         if above is None and below is None:
             raise ValueError(f"{gk} needs above_deg, below_deg or both")
         if above is not None and below is not None and above >= below:
