@@ -286,7 +286,7 @@ def load_config(path: Path | None) -> Config:
 
 
 def apply_overrides(config: Config, overrides: dict[str, Any]) -> Config:
-    """Apply nested overrides, e.g. {"blink": {"min_duration_s": 0.5}}."""
+    """Apply nested overrides, e.g. {"eyes": {"open_ratio": 0.8}}."""
     return _merge(config, overrides, "")
 
 
@@ -294,7 +294,7 @@ def parse_override(text: str) -> dict[str, Any]:
     """Turn ``section.key=value`` into a nested dict.
 
     The value is read as TOML (``0.5``, ``true``, ``"enter"``); anything that
-    isn't valid TOML is taken as a plain string, so ``actions.blink=space`` works.
+    isn't valid TOML is taken as a plain string, so ``gestures.blink.output=space`` works.
     """
     key, sep, raw = text.partition("=")
     if not sep or not key.strip():
