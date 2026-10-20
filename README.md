@@ -139,3 +139,7 @@ Config files must start with `version = 1`. A file without it uses an older layo
 ## Windows notes
 
 Keys are sent with `SendInput` using hardware scan codes, so DirectInput games receive them too. If the game runs as administrator, run `eyeokuri` as administrator as well, or Windows will block the input.
+
+## License
+
+eyeokuri is licensed under the [Apache License 2.0](LICENSE). The third-party material that the Windows build includes is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
