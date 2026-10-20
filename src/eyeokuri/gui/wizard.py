@@ -128,6 +128,7 @@ class WizardWindow:
         self.content = ttk.Frame(self.body)
         self.content.grid(row=3, column=0, sticky="nsew", pady=(14, 0))
         self.page = page
+        self.counter.grid()
         if page < 0:
             self._first_page()
         elif self._on_take():
@@ -142,7 +143,8 @@ class WizardWindow:
             self._show(self.page + 1)
 
     def _first_page(self) -> None:
-        self.counter.configure(text="")
+        # An empty label would still leave a blank line above the heading.
+        self.counter.grid_remove()
         self.heading.configure(text="Set up a gesture")
         self.subheading.configure(text="Record a few takes, and the wizard fits the gesture to them.")
         row = ttk.Frame(self.content)
