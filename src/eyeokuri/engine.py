@@ -99,7 +99,7 @@ class Engine:
             create_triggers(config, log_rejected), self.source, self._log
         )
         if self._own_output and self._output is None:
-            self._output = create_output()
+            self._output = create_output(self._log)
         self._outputs = {name: g.output for name, g in config.gestures.items()}
         # App-level outputs (app:*) are handled in step(); only keystroke and
         # mouse outputs go to ActionDispatcher.

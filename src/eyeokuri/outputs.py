@@ -23,6 +23,10 @@ OUTPUT_NAMES = ("enter", "space", "left_click", "right_click", "wheel_down", "up
 _PRESS_DURATION_S = 0.03
 
 
+def _print_stderr(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
 class Output(Protocol):
     def send(self, name: str) -> None: ...
 
@@ -42,7 +46,8 @@ def is_output_name(name: str) -> bool:
 
 
 class Win32Output:
-    def __init__(self) -> None:
+    def __init__(self, log: Callable[[str], None] = _print_stderr) -> None:
+        self._log = log
         import ctypes
         from ctypes import wintypes
 
@@ -131,11 +136,9 @@ class Win32Output:
         if sent != 1:
             err = self._ctypes.get_last_error()
             # Usually UIPI: the game runs as administrator and we don't.
-            print(
+            self._log(
                 f"SendInput failed (error {err}). If the game runs as administrator, "
-                "run eyeokuri as administrator too.",
-                file=sys.stderr,
-                flush=True,
+                "run eyeokuri as administrator too."
             )
 
 
@@ -143,7 +146,8 @@ _PYNPUT_NAMES = {"escape": "esc", "win": "cmd"}
 
 
 class PynputOutput:
-    def __init__(self) -> None:
+    def __init__(self, log: Callable[[str], None] = _print_stderr) -> None:
+        self._log = log
         from pynput import keyboard, mouse
 
         self._keyboard_module = keyboard
@@ -166,8 +170,7 @@ class PynputOutput:
         keys = {k: self._pynput_key(k) for k in (*combo.modifiers, combo.key)}
         missing = [k for k, v in keys.items() if v is None]
         if missing:
-            print(f"Can't send {combo}: {', '.join(missing)} is not available on this system.",
-                  file=sys.stderr, flush=True)
+            self._log(f"Can't send {combo}: {', '.join(missing)} is not available on this system.")
             return
         for key, down in press_order(combo):
             if down:
@@ -194,19 +197,17 @@ def macos_accessibility_trusted() -> bool:
     return bool(lib.AXIsProcessTrusted())
 
 
-def create_output() -> Output:
+def create_output(log: Callable[[str], None] = _print_stderr) -> Output:
     if sys.platform == "win32":
-        return Win32Output()
+        return Win32Output(log)
     if sys.platform == "darwin" and not macos_accessibility_trusted():
         # Without this permission macOS silently drops injected events.
-        print(
+        log(
             "WARNING: no Accessibility permission, so key presses will be ignored by macOS.\n"
             "Add your terminal app in System Settings → Privacy & Security → Accessibility,\n"
-            "then quit and reopen the terminal.",
-            file=sys.stderr,
-            flush=True,
+            "then quit and reopen the terminal."
         )
-    return PynputOutput()
+    return PynputOutput(log)
 
 
 class ActionDispatcher:
