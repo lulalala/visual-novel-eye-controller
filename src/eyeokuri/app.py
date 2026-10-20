@@ -7,11 +7,11 @@ import csv
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from eyeokuri import preview
 from eyeokuri.config import Config, apply_overrides, load_config, nested, parse_override
-from eyeokuri.engine import Engine, check_config
+from eyeokuri.engine import Engine, Frame, check_config
 from eyeokuri.outputs import OUTPUT_NAMES, check_output_name
 
 
@@ -76,13 +76,42 @@ def _log(message: str) -> None:
     print(message, flush=True)
 
 
+def _number(value: float | None, spec: str) -> str:
+    return "" if value is None else format(value, spec)
+
+
+# The --log columns: a name, and the value from a frame and the start time.
+# Numbers only, never images.
+_CSV_COLUMNS: list[tuple[str, Callable[[Frame, float], str]]] = [
+    ("t", lambda f, start: f"{f.obs.timestamp - start:.3f}"),
+    ("face", lambda f, _: str(int(f.obs.face_present))),
+    ("left", lambda f, _: _number(f.obs.left, ".4f")),
+    ("right", lambda f, _: _number(f.obs.right, ".4f")),
+    ("combined", lambda f, _: _number(f.obs.combined, ".4f")),
+    ("baseline", lambda f, _: _number(f.obs.baseline, ".4f")),
+    ("ready", lambda f, _: str(int(f.obs.ready))),
+    ("closed", lambda f, _: str(int(f.obs.closed))),
+    ("head_yaw", lambda f, _: _number(f.obs.head_yaw, ".1f")),
+    ("head_pitch", lambda f, _: _number(f.obs.head_pitch, ".1f")),
+    ("fired", lambda f, _: str(int(f.fired))),
+]
+
+
+def csv_header() -> list[str]:
+    return [name for name, _ in _CSV_COLUMNS]
+
+
+def csv_row(frame: Frame, start: float) -> list[str]:
+    return [value(frame, start) for _, value in _CSV_COLUMNS]
+
+
 def run(config: Config, args: argparse.Namespace) -> int:
     engine = Engine(config, _log)
 
     log_file = args.log.open("w", newline="") if args.log else None
     log = csv.writer(log_file) if log_file else None
     if log:
-        log.writerow(["t", "face", "left", "right", "combined", "baseline", "ready", "closed", "head_yaw", "head_pitch", "fired"])
+        log.writerow(csv_header())
 
     print("Running. Keep your eyes open normally for a couple of seconds to calibrate.", flush=True)
     start = time.monotonic()
@@ -93,14 +122,7 @@ def run(config: Config, args: argparse.Namespace) -> int:
             now = obs.timestamp
 
             if log:
-                log.writerow([
-                    f"{now - start:.3f}", int(obs.face_present),
-                    *(f"{v:.4f}" if v is not None else "" for v in
-                      (obs.left, obs.right, obs.combined, obs.baseline)),
-                    int(obs.ready), int(obs.closed),
-                    f"{obs.head_yaw:.1f}" if obs.head_yaw is not None else "",
-                    f"{obs.head_pitch:.1f}" if obs.head_pitch is not None else "", int(frame.fired),
-                ])
+                log.writerow(csv_row(frame, start))
 
             if args.preview:
                 key = preview.show(
