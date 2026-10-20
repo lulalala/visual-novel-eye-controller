@@ -1,5 +1,7 @@
 from dataclasses import replace
 
+import pytest
+
 from eyeokuri.config import Config, apply_overrides
 from eyeokuri.engine import Engine
 from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
@@ -68,6 +70,12 @@ def test_blink_sends_its_output_and_beeps():
     assert sum(f.fired for f in frames) == 1
     assert any(m.startswith("blink: ") and m.endswith("-> enter") for m in messages)
     assert sounds == ["trigger"]
+
+
+def test_unknown_output_is_rejected_when_the_config_is_applied():
+    config = apply_overrides(Config(), {"gestures": {"blink": {"output": "nonsense"}}})
+    with pytest.raises(ValueError, match="gestures.blink.output"):
+        make(calibrate(), config)
 
 
 def test_head_shake_pauses_and_blinks_are_then_ignored():

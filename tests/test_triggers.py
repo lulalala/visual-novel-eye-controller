@@ -5,9 +5,8 @@ import pytest
 from eyeokuri.config import Config, GestureConfig, HeadConfig, StepConfig, apply_overrides
 from eyeokuri.eyes import Observation
 from eyeokuri.head import HeadTracker
-from eyeokuri.outputs import ActionDispatcher
 from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
-from eyeokuri.triggers import GestureTrigger, TriggerEvent, create_triggers, replay, supported_triggers
+from eyeokuri.triggers import GestureTrigger, create_triggers, replay, supported_triggers
 
 FPS = 30
 DEFAULTS = Config().gestures
@@ -408,23 +407,6 @@ def test_invalid_gestures_are_rejected(gestures, message):
 
 
 # Dispatching and sources
-
-
-class RecordingOutput:
-    def __init__(self):
-        self.sent = []
-
-    def send(self, name):
-        self.sent.append(name)
-
-
-def test_dispatcher_maps_actions_without_its_own_cooldown():
-    out = RecordingOutput()
-    dispatcher = ActionDispatcher(out, {"blink": "enter", "nod_down": "down"})
-    assert dispatcher.dispatch(TriggerEvent("blink", "blink", 0.0))
-    assert dispatcher.dispatch(TriggerEvent("nod_down", "nod_down", 0.1))
-    assert not dispatcher.dispatch(TriggerEvent("nod_up", "nod_up", 0.2))
-    assert out.sent == ["enter", "down"]
 
 
 def test_head_tracker_is_relative_to_usual_pose():

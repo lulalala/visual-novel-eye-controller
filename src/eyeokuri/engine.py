@@ -10,7 +10,7 @@ from eyeokuri.eyes import EyeStateTracker, Observation
 from eyeokuri.feedback import play_sound
 from eyeokuri.head import HeadTracker
 from eyeokuri.outputs import (
-    APP_OUTPUTS, APP_PREFIX, ActionDispatcher, Output, check_output_name, create_output,
+    APP_OUTPUTS, APP_PREFIX, Output, check_output_name, create_output,
 )
 from eyeokuri.pause import PauseSwitch
 from eyeokuri.sources import Source
@@ -131,12 +131,8 @@ class Engine:
         )
         if self._own_output and self._output is None:
             self._output = create_output(self._log)
+        validate_outputs(config)
         self._outputs = {name: g.output for name, g in config.gestures.items()}
-        # App-level outputs (app:*) are handled in step(); only keystroke and
-        # mouse outputs go to ActionDispatcher.
-        key_actions = {k: v for k, v in self._outputs.items() if v and not v.startswith(APP_PREFIX)}
-        assert self._output is not None
-        self.dispatcher = ActionDispatcher(self._output, key_actions, self._on_fire)
 
     def _on_fire(self, event: TriggerEvent, output_name: str) -> None:
         self.last_fire_at = event.timestamp
@@ -194,7 +190,10 @@ class Engine:
                 # Log what would have been sent, so you can try gestures while paused.
                 self._log(f"{event.trigger}: {event.detail} -> {mapped} (paused, not sent)")
                 continue
-            fired = self.dispatcher.dispatch(event) or fired
+            assert self._output is not None
+            self._output.send(mapped)
+            self._on_fire(event, mapped)
+            fired = True
         return Frame(obs, fired)
 
     def close(self) -> None:

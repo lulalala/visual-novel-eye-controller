@@ -30,5 +30,5 @@ Pitch is positive when the head tilts down, because image y grows downward.
 
 Each gesture's `output` (in `[gestures.NAME]`) is empty, which sends nothing, or one of two kinds:
 
-- Keystroke and mouse outputs, listed in `OUTPUT_NAMES` in `outputs.py`: `enter`, `space`, `left_click`, `right_click`, `wheel_down`, `up`, `down`. `ActionDispatcher` sends these to the foreground window.
-- App-level outputs, which start with `app:`: currently only `app:toggle_pause`. The event loop in `app.py` handles these before `ActionDispatcher` sees them.
+- Keystroke and mouse outputs, listed in `OUTPUT_NAMES` in `outputs.py`: `enter`, `space`, `left_click`, `right_click`, `wheel_down`, `up`, `down`. `Engine` sends these to the foreground window.
+- App-level outputs, which start with `app:`: currently only `app:toggle_pause`. `Engine.step()` handles these itself.

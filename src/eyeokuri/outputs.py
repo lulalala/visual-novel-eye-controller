@@ -12,7 +12,6 @@ import time
 from typing import Callable, Protocol
 
 from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, KeyCombo, parse_key, press_order
-from eyeokuri.triggers import TriggerEvent
 
 MOUSE_OUTPUTS = ("left_click", "right_click", "wheel_down")
 # Outputs the app handles itself instead of sending input.
@@ -203,32 +202,3 @@ def create_output(log: Callable[[str], None] = _print_stderr) -> Output:
             "then quit and reopen the terminal."
         )
     return PynputOutput(log)
-
-
-class ActionDispatcher:
-    """Maps trigger actions to outputs. Each trigger enforces its own cooldown."""
-
-    def __init__(
-        self,
-        output: Output,
-        actions: dict[str, str],
-        on_fire: Callable[[TriggerEvent, str], None] | None = None,
-    ) -> None:
-        for action, name in actions.items():
-            try:
-                check_output_name(name)
-            except ValueError as e:
-                raise ValueError(f"Action {action!r}: {e}") from None
-        self._output = output
-        self._actions = actions
-        self._on_fire = on_fire
-
-    def dispatch(self, event: TriggerEvent) -> bool:
-        name = self._actions.get(event.action)
-        if name is None:
-            print(f"No output configured for action {event.action!r}", file=sys.stderr)
-            return False
-        self._output.send(name)
-        if self._on_fire:
-            self._on_fire(event, name)
-        return True

@@ -31,7 +31,7 @@ sources/          Source.read()      → Signals (raw eye openness, head pose; f
   → triggers.py   StepWatcher        (the frame a signal enters one step's box)
                   GestureTrigger     → TriggerEvent (named after the gesture: steps matched in order)
   → engine.py     app:* events handled here (e.g. app:toggle_pause)
-  → outputs.py    ActionDispatcher   → key/mouse output (each trigger has its own cooldown)
+  → outputs.py    Output.send()      → key/mouse output (each trigger has its own cooldown)
 ```
 
 The design and the planned plugin loading are in `docs/design/sources.md`.
@@ -56,7 +56,7 @@ Other modules: `config.py` (dataclasses, TOML loading and `dump_config` for savi
    - Every setting belongs to one step, so changing it never affects another step or gesture. Hysteresis is two boxes: a nod enters past 12° and returns inside ±8°. The eye openness signal is relative to the open-eye baseline; `[eyes] close_ratio`/`open_ratio` only decide what that baseline learns from and what the preview shows.
    - When the same movement matches several gestures, each one fires. There is no arbitration.
    - The config shape is meant for a plot-based editor: each step maps to one box, and each limit to one draggable edge. Keep new step fields drawable that way.
-2. Outputs come in two kinds. Keystroke/mouse outputs are a key name from `KEY_VK` in `keys.py`, optionally after modifiers (`ctrl+s`), or one of `MOUSE_OUTPUTS` in `outputs.py` (`left_click`, `right_click`, `wheel_down`). `check_output_name` validates them; `OUTPUT_NAMES` is only the list of common ones the GUI offers. App-level outputs start with `app:` (currently only `app:toggle_pause`). The event loop in `app.py` handles `app:` outputs before `ActionDispatcher` sees them.
+2. Outputs come in two kinds. Keystroke/mouse outputs are a key name from `KEY_VK` in `keys.py`, optionally after modifiers (`ctrl+s`), or one of `MOUSE_OUTPUTS` in `outputs.py` (`left_click`, `right_click`, `wheel_down`). `check_output_name` validates them; `OUTPUT_NAMES` is only the list of common ones the GUI offers. App-level outputs start with `app:` (currently only `app:toggle_pause`). `Engine.step()` handles `app:` outputs itself and sends the rest to the `Output`.
 3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, the face model, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
 4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.
 5. Head signs: **positive pitch = head tilted down** (image y grows downward), and **positive yaw = your left** (the face turns toward the unmirrored camera image's right). `signal_value` in `triggers.py` reads each signal.
