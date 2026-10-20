@@ -3,7 +3,7 @@ import pytest
 from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    GESTURE_NAME, LANE_HINTS, PLOT_RANGES, fmt, gesture_config, gesture_model, new_step,
+    GESTURE_NAME, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step,
 )
 from eyeokuri.gui.worker import state_text
 
@@ -22,10 +22,18 @@ def test_gesture_steps_survive_the_editor_round_trip():
     assert gesture_config(gesture_model(gesture)) == gesture
 
 
-def test_plot_tables_cover_every_signal():
-    # Adding a signal to config.SIGNALS needs a plot range and a lane hint too.
-    assert set(PLOT_RANGES) == set(SIGNALS)
-    assert set(LANE_HINTS) == set(SIGNALS)
+def test_plot_table_covers_every_signal():
+    # Adding a signal to config.SIGNALS needs a plot lane too.
+    assert set(SIGNAL_PLOTS) == set(SIGNALS)
+
+
+def test_plot_highlights_the_same_rest_value_that_tuning_uses():
+    from eyeokuri import tuning
+
+    for signal, plot in SIGNAL_PLOTS.items():
+        assert plot.zero == tuning._REST[signal]
+        assert plot.lo < plot.zero < plot.hi
+        assert plot.zero in plot.grid
 
 
 def test_new_step_has_a_box_for_each_signal():

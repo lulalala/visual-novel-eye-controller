@@ -14,7 +14,7 @@ from eyeokuri.engine import check_config
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.camera import CameraPicker
 from eyeokuri.gui.model import (
-    GESTURE_NAME, PLOT_RANGES, RECORD_S, fmt, gesture_config, gesture_model, new_step,
+    GESTURE_NAME, RECORD_S, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step,
 )
 from eyeokuri.gui.plot import PlotEditor
 from eyeokuri.gui.tkutil import place_over
@@ -321,7 +321,7 @@ class SettingsWindow:
             kind.bind("<<ComboboxSelected>>", lambda _e, i=i, w=kind: self._on_kind(i, w.get()))
             kind.grid(row=r, column=1, padx=3)
             is_signal = step["kind"] in SIGNALS
-            unit = PLOT_RANGES[step["kind"]][3] if is_signal else ""
+            unit = SIGNAL_PLOTS[step["kind"]].unit if is_signal else ""
             first = i == 0 and not m["any_order"]
             cells = (("above", 2, True, is_signal), ("below", 4, True, is_signal),
                      ("after_min_s", 6, False, not first), ("after_max_s", 7, False, not first),
@@ -423,7 +423,7 @@ class SettingsWindow:
 
     def _on_drag(self, i: int, key: str, value: float) -> None:
         step = self.gestures[self.current]["steps"][i]
-        gap = PLOT_RANGES[step["kind"]][4] * 2
+        gap = SIGNAL_PLOTS[step["kind"]].snap * 2
         if key == "above" and step["below"] is not None:
             value = min(value, step["below"] - gap)
         if key == "below" and step["above"] is not None:

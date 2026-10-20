@@ -8,7 +8,7 @@ from typing import Any, Callable
 from eyeokuri import theme
 from eyeokuri.config import SIGNALS
 from eyeokuri.eyes import Observation
-from eyeokuri.gui.model import LANE_HINTS, PLOT_RANGES, RECORD_S
+from eyeokuri.gui.model import RECORD_S, SIGNAL_PLOTS
 from eyeokuri.triggers import Replay, signal_value
 
 
@@ -70,9 +70,9 @@ class PlotEditor:
             return self.TOP + li * (self.LANE_H + self.GAP)
 
         def y(v: float, li: int) -> float:
-            lo, hi = PLOT_RANGES[lanes[li]][:2]
-            v = max(lo, min(hi, v))
-            return lane_top(li) + (1 - (v - lo) / (hi - lo)) * self.LANE_H
+            axis = SIGNAL_PLOTS[lanes[li]]
+            v = max(axis.lo, min(axis.hi, v))
+            return lane_top(li) + (1 - (v - axis.lo) / (axis.hi - axis.lo)) * self.LANE_H
 
         bottom = height - self.AXIS
         tick = 0.5
@@ -82,13 +82,13 @@ class PlotEditor:
             c.create_text(x(t), bottom + 13, text=f"{t:g} s", fill=theme.MUTED, font="TkSmallCaptionFont")
             t += tick
         for li, sig in enumerate(lanes):
-            lo, hi, grid, unit, _ = PLOT_RANGES[sig]
-            c.create_text(self.L, lane_top(li) - 10, anchor="w", text=LANE_HINTS[sig], fill=theme.MUTED,
+            axis = SIGNAL_PLOTS[sig]
+            c.create_text(self.L, lane_top(li) - 10, anchor="w", text=axis.hint, fill=theme.MUTED,
                           font="TkSmallCaptionFont")
-            for v in grid:
-                zero = (v == 0 and sig != "eyes") or (v == 1.0 and sig == "eyes")
-                c.create_line(self.L, y(v, li), width - self.R, y(v, li), fill=theme.ZERO if zero else theme.GRID)
-                label = f"{v:.2f}" if sig == "eyes" else f"{v:g}{unit}"
+            for v in axis.grid:
+                c.create_line(self.L, y(v, li), width - self.R, y(v, li),
+                              fill=theme.ZERO if v == axis.zero else theme.GRID)
+                label = f"{v:.2f}" if sig == "eyes" else f"{v:g}{axis.unit}"
                 c.create_text(self.L - 6, y(v, li), anchor="e", text=label, fill=theme.MUTED, font="TkSmallCaptionFont")
 
         # Each step's box. A box after the first starts at the moment the
@@ -124,7 +124,7 @@ class PlotEditor:
                                dash="" if anchored else (4, 3), fill=tint(color, 0.86 if anchored else 0.94))
             c.create_rectangle(bx + 3, y_top + 3, bx + 19, y_top + 19, fill=color, outline="")
             c.create_text(bx + 11, y_top + 11, text=str(i + 1), fill="white", font="TkSmallCaptionFont")
-            unit = PLOT_RANGES[step["kind"]][3]
+            unit = SIGNAL_PLOTS[step["kind"]].unit
             if step["above"] is not None:
                 self._edge(bx, y_bot, bx + bw, y_bot, color, "above", i, None)
                 c.create_text(bx + bw - 4, y_bot + 9, anchor="e", fill=color, font="TkSmallCaptionFont",
@@ -206,10 +206,10 @@ class PlotEditor:
         width, duration, lanes = self._geo
         if kind in ("above", "below"):
             li = lanes.index(signal)
-            lo, hi, _, _, snap = PLOT_RANGES[signal]
+            axis = SIGNAL_PLOTS[signal]
             top = self.TOP + li * (self.LANE_H + self.GAP)
-            v = lo + (1 - (event.y - top) / self.LANE_H) * (hi - lo)
-            v = round(max(lo, min(hi, v)) / snap) * snap
+            v = axis.lo + (1 - (event.y - top) / self.LANE_H) * (axis.hi - axis.lo)
+            v = round(max(axis.lo, min(axis.hi, v)) / axis.snap) * axis.snap
             self._on_drag(step, kind, round(v, 2))
         elif prev is not None:
             t = (event.x - self.L) / (width - self.L - self.R) * duration

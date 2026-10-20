@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from eyeokuri.config import GestureConfig, StepConfig
@@ -11,16 +12,30 @@ from eyeokuri.config import GestureConfig, StepConfig
 # Seconds of signal kept for "Live" and for saving a test recording.
 RECORD_S = 4.0
 
-# Plot ranges per signal: (min, max, grid lines, unit, value snap when dragging).
-PLOT_RANGES: dict[str, tuple[float, float, tuple[float, ...], str, float]] = {
-    "eyes": (0.0, 1.3, (0.0, 0.25, 0.5, 0.75, 1.0, 1.25), "", 0.01),
-    "pitch": (-40.0, 50.0, (-40, -20, 0, 20, 40, 50), "°", 0.5),
-    "yaw": (-60.0, 60.0, (-60, -40, -20, 0, 20, 40, 60), "°", 0.5),
-}
-LANE_HINTS = {
-    "eyes": "Eyes: openness, 1.0 = your usual open level",
-    "pitch": "Head pitch: + = tilted down",
-    "yaw": "Head yaw: + = turned to your left",
+@dataclass(frozen=True)
+class SignalPlot:
+    """How the plot draws one signal's lane."""
+
+    lo: float
+    hi: float
+    grid: tuple[float, ...]
+    """Values that get a grid line."""
+    zero: float
+    """The value drawn as the highlighted line: where the signal sits at rest."""
+    unit: str
+    """Shown after a value."""
+    snap: float
+    """A dragged edge snaps to a multiple of this."""
+    hint: str
+
+
+SIGNAL_PLOTS = {
+    "eyes": SignalPlot(0.0, 1.3, (0.0, 0.25, 0.5, 0.75, 1.0, 1.25), 1.0, "", 0.01,
+                       "Eyes: openness, 1.0 = your usual open level"),
+    "pitch": SignalPlot(-40.0, 50.0, (-40, -20, 0, 20, 40, 50), 0.0, "°", 0.5,
+                        "Head pitch: + = tilted down"),
+    "yaw": SignalPlot(-60.0, 60.0, (-60, -40, -20, 0, 20, 40, 60), 0.0, "°", 0.5,
+                      "Head yaw: + = turned to your left"),
 }
 GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 
