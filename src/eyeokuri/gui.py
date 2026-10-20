@@ -330,10 +330,13 @@ class MainWindow:
         wizard_button.pack(side="left", padx=(6, 0))
         # Off while the settings or wizard window is open, which owns the settings in use then.
         self._editing_controls = (self.pause_button, settings_button, wizard_button)
-        # The status is what you check most, so it is larger than the rest.
-        self._status_font = _scaled_font("TkDefaultFont", 1.6)
-        self.status = ttk.Label(bar, text="Starting…", foreground=_MUTED, font=self._status_font)
-        self.status.pack(side="right")
+
+        # The status bar sits at the bottom of the window, with a size grip in its corner.
+        status_bar = ttk.Frame(root, padding=(10, 0, 10, 10))
+        status_bar.grid(row=3, column=0, sticky="ew")
+        self.status = ttk.Label(status_bar, text="Starting…", foreground=_MUTED)
+        self.status.pack(side="left")
+        ttk.Sizegrip(status_bar).pack(side="right", anchor="se")
 
         side = ttk.Frame(root)
         side.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
