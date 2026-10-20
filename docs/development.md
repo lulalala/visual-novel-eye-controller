@@ -51,6 +51,7 @@ src/eyeokuri/
   app.py          command line: main loop and flags
   gui.py          window: log, optional camera view, settings with the gesture plot, and the gesture wizard
   theme.py        the window's colors and ttk styles, taken from the site's palette
+  icons/          the logo as PNG window icons (Tk 8.6 can't read SVG)
   tuning.py       fits a gesture's limits to takes recorded in the wizard
 site/             static site (Astro with Starlight)
   astro.config.mjs  site settings, languages and docs sidebar
@@ -60,6 +61,19 @@ site/             static site (Astro with Starlight)
   src/scripts/    home.js, the homepage demo
   src/styles/     home.css (homepage) and docs.css (docs theme)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
+```
+
+## Update the window icons
+
+The GUI's window icons in `src/eyeokuri/icons/` are PNG copies of `logo/eye-static.svg`. When you change the logo, regenerate them with a Python whose Tk is 9.0 or later (`python -c "import tkinter; print(tkinter.TkVersion)"`), since Tk 9 can read SVG:
+
+```sh
+python -c "
+import tkinter as tk
+tk.Tk().withdraw()
+for n in (16, 32, 48, 64, 128):
+    tk.PhotoImage(file='logo/eye-static.svg', format=f'svg -scale {n / 352}').write(f'src/eyeokuri/icons/eyeokuri-{n}.png', format='png')
+"
 ```
 
 ## Build the site

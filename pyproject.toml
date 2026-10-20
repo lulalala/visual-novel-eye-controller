@@ -26,5 +26,8 @@ eyeokuri-gui = "eyeokuri.gui:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+eyeokuri = ["icons/*.png"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

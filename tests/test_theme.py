@@ -1,8 +1,11 @@
-"""Tests for the GUI theme's font choice and drawn check box."""
+"""Tests for the GUI theme's font choice, drawn check box and window icons."""
 
 from __future__ import annotations
 
-from eyeokuri.theme import ACCENT, LINE, SURFACE, check_pixels, pick_family
+import struct
+from importlib import resources
+
+from eyeokuri.theme import _ICON_SIZES, ACCENT, LINE, SURFACE, check_pixels, pick_family
 
 
 def test_pick_family_takes_first_installed_ignoring_case() -> None:
@@ -26,3 +29,11 @@ def test_checked_box_draws_mark_inside_border() -> None:
     assert rows[11][7] == "#ffffff"
     assert rows[2][2] == ACCENT
     assert all(c == ACCENT for c in rows[0] + rows[-1])
+
+
+def test_every_icon_size_ships_as_a_square_png() -> None:
+    icons = resources.files("eyeokuri") / "icons"
+    for size in _ICON_SIZES:
+        data = (icons / f"eyeokuri-{size}.png").read_bytes()
+        assert data[:8] == b"\x89PNG\r\n\x1a\n"
+        assert struct.unpack(">II", data[16:24]) == (size, size)

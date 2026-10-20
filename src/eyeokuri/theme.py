@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from importlib import resources
 import tkinter as tk
 from collections.abc import Iterable
 from tkinter import font as tkfont
@@ -39,6 +40,9 @@ STEP_COLORS = ("#2f7dd1", ACCENT, "#1d9a6a", "#7656d4", "#b7790a")
 # Monospace fonts that ship with the OS, for the log. The UI font stays the
 # system's, which already suits the user's language.
 _MONO = ("Cascadia Mono", "Consolas", "SF Mono", "Menlo", "DejaVu Sans Mono")
+# The logo (logo/eye-static.svg) as PNGs, since Tk 8.6 can't read SVG. The OS
+# picks the size it needs for the title bar, task bar or Dock.
+_ICON_SIZES = (16, 32, 48, 64, 128)
 
 
 def pick_family(available: Iterable[str], preferred: Iterable[str]) -> str | None:
@@ -109,6 +113,12 @@ def apply(root: tk.Tk) -> None:
     if mono is not None:
         tkfont.nametofont("TkFixedFont").configure(family=mono)
     tkfont.nametofont("TkHeadingFont").configure(weight="bold")
+
+    icons = resources.files("eyeokuri") / "icons"
+    images = [tk.PhotoImage(master=root, data=(icons / f"eyeokuri-{n}.png").read_bytes()) for n in _ICON_SIZES]
+    root.eyeokuri_icons = images  # type: ignore[attr-defined]
+    # True: windows opened later get the icon too.
+    root.iconphoto(True, *images)
 
     root.configure(background=PAPER)
     for pattern, value in (
