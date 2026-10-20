@@ -992,8 +992,8 @@ class SettingsWindow:
             messagebox.showerror("New gesture", f"{name!r} is taken or has other characters than "
                                  "letters, digits, _ and -.", parent=self.win)
             return
-        self.gestures[name] = {"enabled": True, "output": "", "any_order": False, "within_s": 0.0,
-                               "cooldown_s": 1.0, "guards": [], "steps": [{**_new_step("eyes"), "after_max_s": 0.0}]}
+        first = StepConfig(signal="eyes", below_ratio=0.55)
+        self.gestures[name] = _gesture_model(GestureConfig(steps=[first]))
         self._select(name)
 
     def _delete_gesture(self) -> None:
