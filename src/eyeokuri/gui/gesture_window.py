@@ -253,6 +253,8 @@ class GestureWindow:
                        state="normal" if len(m["steps"]) > 1 else "disabled").grid(row=r, column=9, padx=3)
         ttk.Button(frame, text="+ Add step", command=self._add_step).grid(
             row=len(m["steps"]) + 1, column=1, sticky="w", padx=3, pady=(4, 0))
+        ttk.Label(frame, foreground=theme.MUTED, text="Leave a number empty for no limit.").grid(
+            row=len(m["steps"]) + 1, column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
         self._add_guard_rows(frame, len(m["steps"]) + 2)
 
     def _build_guards(self) -> None:
@@ -262,14 +264,6 @@ class GestureWindow:
     def _add_guard_rows(self, frame: ttk.Frame, row: int) -> None:
         self.guard_vars: dict[tuple[int, str], tk.StringVar] = {}
         guards = self.model["guards"]
-        end = row + (1 + len(guards) if guards else 0)
-        # Lined up with "+ Add step" above, in the Signal column.
-        ttk.Button(frame, text="+ Add head limit", command=self._add_guard).grid(
-            row=end, column=1, sticky="w", padx=3, pady=(4, 0))
-        ttk.Label(frame, foreground=theme.MUTED, text="Leave a number empty for no limit.").grid(
-            row=end, column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
-        if not guards:
-            return
         ttk.Label(frame, text="Only while the head stays within", foreground=theme.MUTED).grid(
             row=row, column=0, columnspan=10, sticky="w", padx=3, pady=(10, 0))
         for i, guard in enumerate(guards):
@@ -287,6 +281,11 @@ class GestureWindow:
                 self.guard_vars[(i, key)] = var
             ttk.Button(frame, text="✕", width=3, command=lambda i=i: self._delete_guard(i)).grid(
                 row=r, column=9, padx=3)
+        # Lined up with "+ Add step" above, in the Signal column.
+        ttk.Button(frame, text="+ Add head limit", command=self._add_guard).grid(
+            row=row + 1 + len(guards), column=1, sticky="w", padx=3, pady=(4, 0))
+        ttk.Label(frame, foreground=theme.MUTED, text="Leave a number empty for no limit.").grid(
+            row=row + 1 + len(guards), column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
 
     def _on_guard_kind(self, i: int, value: str) -> None:
         self.model["guards"][i]["kind"] = value
