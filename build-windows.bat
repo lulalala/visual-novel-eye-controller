@@ -14,9 +14,15 @@ rem Reinstall so the bundle picks up the current source.
 build\venv\Scripts\python -m pip install -q --force-reinstall --no-deps . || goto :fail
 build\venv\Scripts\python -m pip install -q . || goto :fail
 
+rem Fetch the face model now so the finished bundle works offline.
+build\venv\Scripts\python -c "from pathlib import Path; from eyeokuri.sources.face_mesh import ensure_model; ensure_model(Path(r'%~dp0build\model\face_landmarker.task'))" || goto :fail
+
 build\venv\Scripts\pyinstaller --noconfirm --clean --log-level WARN --name eyeokuri ^
+    --add-data "%~dp0build\model\face_landmarker.task;model" ^
     --exclude-module pynput --distpath build\dist --workpath build\work --specpath build ^
     src\eyeokuri\__main__.py || goto :fail
+
+copy /y THIRD_PARTY_NOTICES.md build\dist\eyeokuri\ >nul || goto :fail
 
 powershell -NoProfile -Command "Compress-Archive -Force build\dist\eyeokuri build\eyeokuri-windows.zip" || goto :fail
 

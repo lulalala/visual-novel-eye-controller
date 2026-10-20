@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import math
 import os
+import shutil
 import sys
 import urllib.request
 import zipfile
@@ -37,13 +38,28 @@ def _sha256(path: Path) -> str:
         return hashlib.file_digest(f, "sha256").hexdigest()
 
 
+def _bundled_model() -> Path | None:
+    """The model that build-windows.bat packs into the executable, if this is that build."""
+    root = getattr(sys, "_MEIPASS", None)
+    if root is None:
+        return None
+    bundled = Path(root) / "model" / "face_landmarker.task"
+    return bundled if bundled.exists() and _sha256(bundled) == MODEL_SHA256 else None
+
+
 def ensure_model(path: Path | None = None) -> Path:
+    use_bundled = path is None
     path = path or cache_dir() / "face_landmarker.task"
     if path.exists() and _sha256(path) == MODEL_SHA256:
         return path
     if path.exists():
-        print(f"Cached face landmark model at {path} is not the pinned version; downloading it again.")
+        print(f"Cached face landmark model at {path} is not the pinned version; replacing it.")
     path.parent.mkdir(parents=True, exist_ok=True)
+    # The bundle's folder can be read-only or temporary, so the unpacked models go in the cache.
+    bundled = _bundled_model() if use_bundled else None
+    if bundled is not None:
+        shutil.copyfile(bundled, path)
+        return path
     print(f"Downloading face landmark model to {path} ...", flush=True)
     tmp = path.with_suffix(".part")
     urllib.request.urlretrieve(MODEL_URL, tmp)

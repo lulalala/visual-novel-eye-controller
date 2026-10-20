@@ -62,3 +62,15 @@ def test_download_with_wrong_hash_is_rejected_and_discarded(tmp_path, pinned):
     with pytest.raises(SystemExit, match="SHA-256"):
         face_mesh.ensure_model(path)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_bundled_model_is_copied_to_the_cache_without_downloading(tmp_path, pinned, monkeypatch):
+    downloads, _ = pinned
+    (tmp_path / "app" / "model").mkdir(parents=True)
+    (tmp_path / "app" / "model" / "face_landmarker.task").write_bytes(GOOD)
+    monkeypatch.setattr(face_mesh.sys, "_MEIPASS", str(tmp_path / "app"), raising=False)
+    monkeypatch.setattr(face_mesh, "cache_dir", lambda: tmp_path / "cache")
+    path = face_mesh.ensure_model()
+    assert path == tmp_path / "cache" / "face_landmarker.task"
+    assert path.read_bytes() == GOOD
+    assert downloads == []

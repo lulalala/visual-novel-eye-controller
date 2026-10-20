@@ -19,7 +19,7 @@ python -m venv .venv
 pip install -e .
 ```
 
-The face landmark model (~4 MB) is downloaded on first run. To build a standalone Windows executable or work on the code, see [docs/development.md](docs/development.md).
+The face landmark model (~4 MB) is downloaded on first run. The prebuilt Windows zip includes it, so it works offline. To build a standalone Windows executable or work on the code, see [docs/development.md](docs/development.md).
 
 ## Run
 

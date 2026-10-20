@@ -17,7 +17,7 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-The face landmark model (~4 MB) is downloaded on first run.
+The face landmark model (~4 MB) is downloaded on first run. The Windows executable from `build-windows.bat` includes it.
 
 ## Run the tests
 
@@ -33,7 +33,7 @@ You can package `eyeokuri` so it runs on a Windows PC without Python. You need P
 2. Copy `build\eyeokuri-windows.zip` (~65 MB) to the other PC and unzip it.
 3. Run `eyeokuri.exe` in the unzipped folder. It opens a console window. Close the window or press `Ctrl+C` to stop it.
 
-The first run downloads the face model, so the PC must be online once. Windows might show an "unknown publisher" warning because the executable is not signed.
+The build downloads the face model and packs it into the zip, so the other PC does not need to be online. The zip also contains `THIRD_PARTY_NOTICES.md`, which carries the model's Apache 2.0 license. Windows might show an "unknown publisher" warning because the executable is not signed.
 
 ## Layout
 
