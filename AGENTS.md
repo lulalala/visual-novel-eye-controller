@@ -1,144 +1,81 @@
 # AGENTS.md
 
-Instructions for AI coding agents working in this repo. Read all of it before changing anything.
+`eyeokuri` lets someone reading a visual novel advance the text hands-free: it watches a webcam, detects face gestures (blink, head shake, nod) and sends a key or mouse input (`Enter` by default) to the foreground window. Users are visual novel readers on **Windows**, which is also where development and testing happen. Stage 2 (working prototype) is current; research is in `docs/research.md`, the file layout in `docs/development.md`.
 
-## Purpose
+## Hard rules
 
-`eyeokuri` lets someone reading a visual novel advance the text without touching the keyboard. It watches a webcam, detects face gestures (blink, head shake, head nod), and sends a key or mouse input (`Enter` by default) to the foreground window.
+- **Privacy.** Camera frames stay in memory and are never written to disk or sent anywhere. `--log` writes numbers only. Don't add features that save frames, upload data or make network calls; the one exception is the existing one-time face model download. This is the project's main promise to users.
+- Don't use the `mediapipe` package (it includes telemetry); the face model runs through OpenCV DNN.
+- No new runtime dependencies, and no linter, formatter or type checker, unless the user asks.
+- Only commit or push when the user asks. Don't build on or merge the `gui-wip` branch (an abandoned PySide6 GUI).
 
-- Stage 1 (research) is done: see `docs/research.md`.
-- Stage 2 (current): a working webcam prototype. Blink → `Enter` is the core feature. Head shake toggles pause.
-- Main target platform: **Windows**. Development and testing happen mostly on **macOS** (MacBook built-in camera).
+## Design rules
 
-## Stack
+1. **Gestures are config, not code.** Each `[gestures.NAME]` section lists steps and an `output`; the event is named after the gesture. Trigger code never chooses an output.
+   - A step is a box on a plot of one signal over time: a value range (`above_ratio`/`below_ratio` for eyes, `above_deg`/`below_deg` for head) plus time since the previous step (`after_min_s`/`after_max_s`) and an optional `hold_s`. It counts the frame the signal enters the box. A step can instead name another gesture; `create_triggers` builds gestures after the ones they use, and triggers must update in that order.
+   - Every setting belongs to one step, so changing it never affects another step or gesture. Hysteresis is two boxes (a nod enters past 12° and returns inside ±8°).
+   - When one movement matches several gestures, each fires. No arbitration.
+   - Each step maps to one box and each limit to one draggable edge in the GUI plot. Keep new step fields drawable that way.
+2. Outputs are a key name from `KEY_VK` (optionally with modifiers, `ctrl+s`), a `MOUSE_OUTPUTS` name, or an `app:` output (only `app:toggle_pause`), which `Engine.step()` handles itself.
+3. Triggers are pure state machines: `Observation` in, `TriggerEvent | None` out. No camera, OS or wall-clock access; use `obs.timestamp` only, so they stay testable.
+4. A trigger that loses the face (`not obs.face_present` or a `None` head value) must `reset()` and cancel any half-done gesture.
+5. Head signs: **positive pitch = head tilted down**, **positive yaw = your left**. Easy to get backwards; `signal_value` in `triggers.py` is the reference.
+6. Config precedence: defaults < `--config` file < shortcut flags < `--set SECTION.KEY=VALUE`. `--set` reaches one step by index (`gestures.blink.steps.1.after_min_s=0.4`).
+7. Config files must have `version = 1` (`CONFIG_VERSION`); others are rejected, not migrated. Bump it when a change would make old files mean something else.
+8. New pipeline behavior goes in `Engine`, not in `app.py` or `gui/`, because both front ends drive the same engine.
 
-- Python ≥ 3.11 (the local `.venv` uses 3.14). `src/` layout, package `eyeokuri`, installed with `pip install -e ".[dev]"`.
-- MediaPipe's Face Landmarker models (face detector + face mesh), run by OpenCV's DNN module. The `mediapipe` package is not used, because it includes telemetry. OpenCV also handles the camera and preview window. NumPy.
-- `pynput`: key output on macOS/Linux. On Windows, key output uses `SendInput` through `ctypes` with hardware scan codes.
-- Tests: `pytest` only. There is no linter, formatter or type checker set up. Don't add one unless asked.
-- Config: TOML (`tomllib`), loaded into frozen dataclasses.
+## GUI rules
 
-## Architecture
+- Only the main thread touches Tk widgets. The worker thread runs `Engine`; the main thread polls it for frames and log lines. `Engine.set_config()` and `toggle_pause()` are the only calls safe from the main thread.
+- Editor windows (gesture, config, wizard) edit a working copy and apply it live with `Engine.set_config()`; OK saves with `dump_config()`, Cancel restores what was in use when the window opened. Only one is open at a time, and gestures are suspended while it is.
+- `app.paused` is read only at startup; `set_config()` must not change the live paused state.
+- The gesture window gets match results from `triggers.replay()`, and the wizard fits limits with `tuning.fit()`. Don't reimplement matching or fitting in a window.
+- Logic that needs no widgets goes in `gui/model.py` or `tuning.py` (no Tk imports), so it is unit-tested. One window per module; windows import `MainWindow` only under `TYPE_CHECKING`.
+- **Layout: align to columns.** Rows that belong together share one grid so their entries line up (head limits use the steps table's columns). An add button sits directly under the column it extends. This is the most frequent correction in this repo.
 
-There is one pipeline. Each stage only talks to the next one:
+## Code conventions
 
-```
-sources/          Source.read()      → Signals (raw eye openness, head pose; frames stay inside the source)
-                  OpenCVSource       (webcam → face_mesh.py: MediaPipe's face model run with OpenCV)
-  → eyes.py       EyeStateTracker    (eye openness vs. a rolling open-eye baseline)
-    head.py       HeadTracker        (yaw/pitch relative to a rolling median pose)
-  → Observation                      (one per frame: timestamp, face_present, ready, closed, head_yaw, head_pitch)
-  → triggers.py   StepWatcher        (the frame a signal enters one step's box)
-                  GestureTrigger     → TriggerEvent (named after the gesture: steps matched in order)
-  → engine.py     app:* events handled here (e.g. app:toggle_pause)
-  → outputs.py    Output.send()      → key/mouse output (each trigger has its own cooldown)
-```
+- Units go in names: `_s` seconds, `_deg` degrees, `_ratio` eye openness relative to the baseline.
+- Validate config values in the constructor and raise `ValueError` naming the key and allowed values: `eyes.close_ratio must be above 0 and below eyes.open_ratio (0.75), not 0.9`.
+- When a gesture is detected but doesn't fire, tell the user why through the trigger's `log` callback, shaped `"{name}: <what happened> (<reason>, <limit>)"`, e.g. `blink: step 2 came 0.12s after step 1 (too short, min 0.15s)`. Durations `.2f` s, angles whole degrees with `°`. Use `print` via `log`, never the `logging` module.
+- Interfaces are `typing.Protocol`; concrete classes don't inherit from them.
+- Import platform-specific code lazily inside the class that needs it (see `Win32Output`, `PynputOutput`).
+- Use American English everywhere (code, comments, docs, commits).
 
-The design and the planned plugin loading are in `docs/design/sources.md`.
+## Checklists
 
-`Engine` (`engine.py`) owns the whole pipeline and advances it with `step()`, once per frame. Both front ends drive it: `app.py` (command line, OpenCV preview window, CSV log) and `gui/` (Tkinter window). Put new pipeline behavior in `Engine`, not in a front end.
+**Add a built-in gesture** (no new trigger code needed for existing signals), all in one change:
+1. An entry in `_default_gestures()` in `config.py`. Ask the user whether it starts enabled; there is no rule yet.
+2. A matching section in `config.example.toml` with identical values (`test_example_config_matches_defaults` checks this).
+3. Tests in `tests/test_triggers.py` driving synthetic 30 FPS `Observation` streams (`drive` helper): fires, each rejection reason, cooldown, face loss.
+4. The README, if users see the change.
 
-Other modules: `config.py` (dataclasses, TOML loading and `dump_config` for saving, overrides), `preview.py` (draws the state overlay on the source's `debug_view()`), `pause.py` (pause switch), `feedback.py` (sounds), `tuning.py` (fits a gesture's limits to labeled takes for the GUI wizard).
+**Add a signal:** `SIGNALS` in `config.py`, `signal_value` in `triggers.py`, bound fields with units in `StepConfig`, `SIGNAL_PLOTS` in `gui/model.py`, the tables at the top of `tuning.py`, and `GestureTrigger.needs`.
 
-### GUI
+**Add a key name:** its virtual-key code in `KEY_VK` (plus `EXTENDED_KEYS` if Windows sends it with `0xE0`); check `PynputOutput` finds it (rename in `_PYNPUT_NAMES` if needed) and `from_tk_event` maps its Tk keysym. **Add a mouse output:** `MOUSE_OUTPUTS`, implemented in both `Win32Output` and `PynputOutput`.
 
-- `gui/` (a package; `launch.py` has `main`) uses Tkinter only (no extra dependency). `worker.py` runs `Engine` on a worker thread. Only the main thread touches Tk widgets: it polls the worker for the latest frame (as PPM bytes) and for log lines. `Engine.set_config()` and `toggle_pause()` are safe to call from the main thread; they apply at the next `step()`.
-- The main window (`main_window.py`) lists the gestures, one row each: name, output, an enabled checkbox and **Configure…**. The log is on the right. The enabled checkbox saves the config file at once. The **All gestures** row above them is the pause switch. It persists as `app.paused`: the engine reads it only at startup, `Engine.set_config()` leaves the live state alone, and the main window saves it whenever the engine's paused state changes (checkbox, `p` or head shake), and never while another window has unsaved edits in use. **New gesture…** asks for a name and opens a gesture window for it. The menu bar has **File > Config…** (General and Advanced settings) and **View > Camera view…**.
-- The gesture window (`gesture_window.py`, `GestureWindow`) and the config window (`config_window.py`, `ConfigWindow`) each edit a working copy and apply it with `Engine.set_config()` shortly after each valid edit (there is no Apply button). OK writes `dump_config()` and closes; Cancel (and the window's close button, after asking if anything changed) goes back to the settings in use when the window opened and closes. A new gesture isn't kept unless you press OK. Only one of these windows (or the wizard) is open at a time. While one is open, gestures are suspended and the main window's toggles, buttons and Config… entry are disabled.
-- The gesture window edits one gesture. It has no enabled checkbox: the main window's row owns that. **Delete** is for custom gestures only (built-ins come back from the code defaults on load), and is refused while another gesture uses it as a step (`users_of` in `gui/model.py`). **Reset to default** is for built-ins only and keeps `enabled`. Its plot shows the live signal and runs `triggers.replay()`, which runs the real matcher over the last few seconds of observations. Keep the editor's results coming from `replay()` instead of reimplementing the matching.
-- Recorded observations (numbers) stay in memory only.
-- The gesture wizard (`WizardWindow`) sets up the gesture of the gesture window that opened it. **Set up with wizard…** is enabled only when that window's edits are valid and `tuning.can_tune()` holds. The wizard is a sequence of pages: one per take from `tuning.script()` (the gesture `DO_TAKES` times, then each near miss), then a review. Each take's kind (`tuning.DO`, `TOO_QUICK`, `TOO_SLOW`, `OTHER`) comes from the script, except that for `TOO_QUICK` and `TOO_SLOW` takes the wizard asks whether they should fire (yes makes them `DO`), since you might want them to count. It refits all takes with `tuning.fit()` after each take. It starts from the gesture window's edits and hands the result back to it (`GestureWindow.use_fit`), whose OK saves it. It disables all gestures while open. `fit()` only moves limits a gesture already has (edges that leave rest, and nonzero time limits) and reports each take's result through `replay()`. Keep the fitting in `tuning.py`, which has no Tk code, so it stays unit-tested.
-- Keep each window in its own module, and logic that needs no widgets in `gui/model.py` (or `tuning.py`), where it is unit-tested. Windows refer to `MainWindow` only in annotations (under `TYPE_CHECKING`), so `main_window.py` can import them without a cycle.
-- The `gui-wip` branch (PySide6) is replaced by this; don't build on it.
+## Tests
 
-### Rules the design depends on
+Tests never use a real camera, face model, OS input or sound; build `Signals`/`Observation` objects or landmark arrays by hand. Plain `def test_*` functions with bare `assert`, named after behavior (`test_too_long_closure_is_canceled`). No test classes, no mocking framework.
 
-1. **Gestures are config, not code.** Each `[gestures.NAME]` section (`Config.gestures`, a dict of `GestureConfig`) lists its steps and `output`. A gesture's event is named after the gesture. Trigger code never chooses an output; the only place outputs are chosen is `gestures.*.output`. Built-in gestures: `blink`, `head_shake`, `nod_up`, `nod_down`.
-   - A step (`StepConfig`) is a box on a plot of one signal from `SIGNALS` over time: a value range (`above_ratio`/`below_ratio` for eyes, `above_deg`/`below_deg` for the head) and the time allowed since the previous step (`after_min_s`/`after_max_s`), plus an optional `hold_s`. It counts the frame the signal enters the box. A step can instead name another gesture (`gesture`), which counts when that gesture fires. `create_triggers` builds each gesture after the gestures it uses, and the app loop must update triggers in that order.
-   - Every setting belongs to one step, so changing it never affects another step or gesture. Hysteresis is two boxes: a nod enters past 12° and returns inside ±8°. The eye openness signal is relative to the open-eye baseline; `[eyes] close_ratio`/`open_ratio` only decide what that baseline learns from and what the preview shows.
-   - When the same movement matches several gestures, each one fires. There is no arbitration.
-   - The config shape is meant for a plot-based editor: each step maps to one box, and each limit to one draggable edge. Keep new step fields drawable that way.
-2. Outputs come in two kinds. Keystroke/mouse outputs are a key name from `KEY_VK` in `keys.py`, optionally after modifiers (`ctrl+s`), or one of `MOUSE_OUTPUTS` in `outputs.py` (`left_click`, `right_click`, `wheel_down`). `check_output_name` validates them; `OUTPUT_NAMES` is only the list of common ones the GUI offers. App-level outputs start with `app:` (currently only `app:toggle_pause`). `Engine.step()` handles `app:` outputs itself and sends the rest to the `Output`.
-3. Triggers are pure state machines. They take an `Observation` and return a `TriggerEvent` or `None`. They must not touch the camera, the face model, the OS or wall-clock time. Use `obs.timestamp` only. This is what makes them testable.
-4. A trigger that loses the face (`not obs.face_present`, or a `None` head value) must `reset()` and cancel any half-done gesture.
-5. Head signs: **positive pitch = head tilted down** (image y grows downward), and **positive yaw = your left** (the face turns toward the unmirrored camera image's right). `signal_value` in `triggers.py` reads each signal.
-6. Config precedence: defaults < `--config` file < shortcut flags (`--min-duration`, `--blink-key`, …) < `--set SECTION.KEY=VALUE`. `--set` reaches one step by index (`gestures.blink.steps.1.after_min_s=0.4`); a TOML list replaces all steps.
-7. Config files must have `version = 1` (`CONFIG_VERSION`). Files without it are rejected, not migrated. Bump the version when a change would make old files mean something else.
+## Docs
 
-## Privacy (hard rule)
+Follow the [developer documentation writing standard](https://github.com/NateBJones-Projects/developer-documentation-skill/blob/main/references/writing-standard.md). The rules agents most often miss:
+- Address the reader as `you`; active voice, present tense, imperative for instructions. No `please`.
+- `must` = requirement, `can` = available action, `might` = uncertain, `should` = clear recommendation only.
+- Sentence-case headings. Task sections start with a verb ("Install the package"); concept sections are noun phrases.
+- README is user-facing: concrete numbers ("turn past ~15° to one side"), flag examples in step with the code.
 
-Camera frames are processed in memory and are **never written to disk or sent anywhere**. `--log` writes numbers only (eye and head values per frame), never images. Do not add any feature that saves frames, uploads data or adds network calls. The one exception is the existing one-time download of the face landmark model.
+## Git
 
-## Conventions
-
-### Code
-
-- Every module starts with a one-line docstring saying what it does, then `from __future__ import annotations`.
-- Type hints on every function signature. Use `X | None` and built-in generics (`list[str]`), not `Optional`/`List`.
-- Config sections are `@dataclass(frozen=True)` with defaults in code. Each non-obvious field gets a comment above it that explains the behavior in user terms (for example `# Time allowed since the previous step. 0 means no limit.`).
-- Interfaces are `typing.Protocol` (`Trigger`, `Output`). Concrete classes don't inherit from them.
-- Units go in names: `_s` for seconds, `_deg` for degrees (`after_max_s`, `above_deg`), `_ratio` for eye openness relative to the baseline.
-- Private state uses a leading underscore. Comments explain *why* or describe the gesture, not what the line does. Match the existing comment density, which is sparse.
-- Validate config values that the type can't enforce in the constructor, and raise `ValueError` with a message that names the key and the allowed values. Example: `eyes.close_ratio must be above 0 and below eyes.open_ratio (0.75), not 0.9`.
-- No new runtime dependencies without asking. Platform-specific code is imported lazily inside the class or function that needs it (see `Win32Output`, `PynputOutput`).
-
-### User feedback and logging
-
-- When a gesture is detected but doesn't fire, the user should be told why. Pass the optional `log` callback into the trigger and call it with a message shaped like `"{name}: <what happened> (<reason>, <limit>)"`. Example: `blink: step 2 came 0.12s after step 1 (too short, min 0.15s)`. Format durations as `.2f` seconds and angles as whole degrees with `°`.
-- Use `print` through the `log` callback. Don't add the `logging` module.
-
-### Adding a built-in gesture (checklist)
-
-A gesture made of existing signals needs no new trigger code. Do all of these in the same change:
-
-1. An entry in `_default_gestures()` in `config.py`. There is no fixed rule yet for whether a new gesture starts on or off, so ask the user before choosing `enabled`.
-2. A matching `[gestures.NAME]` section in `config.example.toml`. The values there must equal the code defaults; `test_example_config_matches_defaults` checks this.
-3. Tests in `tests/test_triggers.py` that drive the gesture with synthetic `Observation` streams at 30 FPS (see the `drive` helper). Cover at least: it fires, it doesn't fire (each rejection reason), cooldown, and face loss.
-4. The README, if users can see the change (a new gesture, flag or default).
-
-Adding a new signal: add it to `SIGNALS` in `config.py`, read it in `signal_value` in `triggers.py`, and give it bound fields with its unit in `StepConfig`. Also give it an entry in `SIGNAL_PLOTS` (`gui/model.py`) and in the tables at the top of `tuning.py`; `test_plot_table_covers_every_signal` and `test_tuning_tables_cover_every_signal` fail until you do. Include it in `GestureTrigger.needs`, so that a gesture is skipped at startup with a notice when the source doesn't provide the signal.
-
-Adding a key name: add its Windows virtual-key code to `KEY_VK` in `keys.py` (and to `EXTENDED_KEYS` if Windows sends it with the `0xE0` prefix). Check that `PynputOutput` finds it (a single character, or a `Key` attribute, renamed in `_PYNPUT_NAMES` if needed) and that `from_tk_event` maps its Tk keysym. Adding a mouse output: add it to `MOUSE_OUTPUTS` and implement it in **both** `Win32Output` and `PynputOutput`.
-
-### Tests
-
-- Tests never use a real camera, face model, OS input or sound. Build `Signals`/`Observation` objects (or landmark arrays) by hand.
-- Use the plain `def test_*` function style with bare `assert`, and name tests after behavior (`test_too_long_closure_is_canceled`). No test classes and no mocking framework.
-
-### Docs
-
-Follow the [developer documentation writing standard](https://github.com/NateBJones-Projects/developer-documentation-skill/blob/main/references/writing-standard.md). Key rules:
-
-- Address the reader as `you`. Use active voice, present tense, and imperative verbs for instructions.
-- Use `must` for a requirement, `can` for an available action, and `might` for an uncertain outcome. Use `should` only for a clear recommendation.
-- Do not use `please` in instructions. Remove filler and promotional claims.
-- Use one term consistently for the same thing.
-- Headings: sentence case, no skipped levels. Task sections start with a base-form verb ("Install the package"). Concept sections use a noun phrase ("Configuration fields").
-- Use code font in prose for filenames, paths, commands, flags, code elements, and text the reader must enter. Use fenced code blocks for longer examples; add a language identifier and introduce the block with a sentence.
-- Write in standard American English (behavior, center, license, color) everywhere: code, comments, docs, and commit messages.
-- `README.md` is user-facing: plain sentences, second person, concrete numbers ("turn past ~15° to one side"). Keep the flag examples in step with the code. The **Layout** section is in `docs/development.md`.
-- Research and findings go in `docs/research.md`, not the README.
-
-### Git
-
-- Commit subject: imperative, capitalized, no trailing period, ≤ ~72 chars (`Add nod gesture trigger (cross threshold + return quickly)`).
-- Body: explain *why* and what the user notices, wrapped at ~72 columns. Use a bullet list when a change touches several areas. Mention behavior changes to defaults explicitly.
-- End with the `Co-Authored-By:` trailer for the model that wrote it.
-- One logical change per commit. Don't commit `config.toml`, `*.csv` logs, `.venv/`, or `*.egg-info/` (they are gitignored, so don't force-add them).
-- Only commit or push when asked.
-
-### Branches
-
-- Feature work happens on `claude/*` branches. `master` is the main branch.
-- `gui-wip` holds an older, unfinished PySide6 GUI that crashes on macOS 26. The Tkinter GUI in `gui/` replaces it, so don't merge it or build on it.
+- Subject: imperative, capitalized, no period, ≤ ~72 chars. Body: why, and what the user notices; bullets when several areas change; call out changed defaults.
+- End with a `Co-Authored-By:` trailer for the model that wrote it.
+- One logical change per commit.
 
 ## Definition of done
 
-A change is finished only when all of these are true:
-
-1. `.venv/bin/python -m pytest -q` passes, and new behavior has tests (per the trigger checklist above when relevant).
-2. `.venv/bin/eyeokuri --help` and `.venv/bin/eyeokuri-gui --help` run without error, which shows the CLI and config still load.
-3. Every new or changed config key exists in code defaults and `config.example.toml` with the same value, and works through `--set`.
-4. The README matches the change when users can see it (flags, gestures, defaults), and `docs/development.md` matches it (Layout).
-5. Nothing violates the privacy rule. No new dependency was added without approval.
-6. Your final message says what you **could not** test. Real-camera and real-key-output behavior can only be checked by a human running `eyeokuri --preview` paused (press `p`), then `eyeokuri` in a game. Never claim a gesture "works" from unit tests alone. Say it is unit-tested and needs a live check.
+1. `.venv\Scripts\python -m pytest -q` passes, and new behavior has tests.
+2. `.venv\Scripts\eyeokuri --help` and `.venv\Scripts\eyeokuri-gui --help` run without error.
+3. Every new or changed config key has the same value in code defaults and `config.example.toml`, and works through `--set`.
+4. README and the Layout section of `docs/development.md` match the change.
+5. The final message is 2–4 lines on what changed and what the user notices, then a list of what you could not test: real-camera behavior, real key output, and how GUI changes look. Never say a gesture "works" from unit tests; say it is unit-tested and needs a live check (`eyeokuri --preview` paused with `p`, then `eyeokuri` in a game).
