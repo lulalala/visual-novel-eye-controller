@@ -1,5 +1,7 @@
 ---
 title: Third-party software
+sidebar:
+  order: 99
 description: The models and libraries that eyeokuri includes, who made them, and under which licenses.
 ---
 
