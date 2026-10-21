@@ -120,14 +120,19 @@ class ConfigWindow:
                         s, k, v.get(), t))
                     ttk.Entry(tab, textvariable=svar, width=10).grid(row=row, column=1, sticky="w")
                     self.vars.append(svar)
-                    if (section, key) == ("camera", "index"):
-                        ttk.Button(tab, text="Choose from live views…",
-                                   command=lambda v=svar: self._pick_camera(v)).grid(row=row, column=2, sticky="w")
                 help_text = _GENERAL_HELP.get((section, key))
-                if help_text:
+                if (section, key) == ("camera", "index"):
+                    # The button and its help share one cell so the help sits right next to the button.
+                    cell = ttk.Frame(tab)
+                    cell.grid(row=row, column=2, sticky="w")
+                    ttk.Button(cell, text="Choose from live views…",
+                               command=lambda v=svar: self._pick_camera(v)).grid(row=0, column=0, sticky="w")
+                    if help_text:
+                        ttk.Label(cell, text=help_text, foreground=theme.MUTED, wraplength=380, justify="left").grid(
+                            row=0, column=1, sticky="w", padx=(8, 0))
+                elif help_text:
                     ttk.Label(tab, text=help_text, foreground=theme.MUTED, wraplength=380, justify="left").grid(
-                        row=row, column=3 if (section, key) == ("camera", "index") else 2,
-                        sticky="w", padx=(8, 0))
+                        row=row, column=2, sticky="w", padx=(8, 0))
                 row += 1
 
     def _pick_camera(self, var: tk.StringVar) -> None:
