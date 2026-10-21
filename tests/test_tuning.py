@@ -83,7 +83,7 @@ def test_takes_that_cannot_reach_the_edge_are_reported():
 
 
 def test_head_shake_fits_its_edges_and_whole_gesture_time():
-    quick = [0.0] * 10 + [12.0, 25.0, 12.0, 0.0, -12.0, -25.0, -12.0] + [0.0] * 20
+    quick = [0.0] * 10 + [12.0, 25.0, 25.0, 12.0, 0.0, -12.0, -25.0, -25.0, -12.0] + [0.0] * 20
     slow = [0.0] * 10 + [25.0] * 45 + [0.0] * 10 + [-25.0] * 20 + [0.0] * 10
     takes = [*(head_take(DO, quick, "yaw") for _ in range(5)), *(head_take(TOO_SLOW, slow, "yaw") for _ in range(2))]
     result = fit(Config(), "head_shake", takes)
@@ -117,6 +117,32 @@ def test_other_takes_are_only_checked():
     result = fit(Config(), "blink", takes)
     # A normal-length blink while reading still fires: the wizard reports it.
     assert result.results[3].fired_at is not None
+
+
+def test_one_stray_frame_does_not_set_the_edge():
+    weak = blink_take(DO, 14, depth=0.4)
+    weak.observations[3] = obs(3, eyes=0.0)
+    result = fit(Config(), "blink", [blink_take(DO, 14), weak, blink_take(DO, 13)])
+    # 60% of the way to the weakest blink (0.4), not made weaker by the lone 0.0 frame.
+    assert result.gesture.steps[0].below_ratio == 0.64
+
+
+def test_the_edge_rises_above_a_take_that_should_not_fire():
+    nod = [0.0] * 10 + [10.0, 20.0, 20.0, 10.0] + [0.0] * 20
+    glance = [0.0] * 10 + [10.0, 13.0, 13.0, 10.0] + [0.0] * 20
+    takes = [*(head_take(DO, nod, "pitch") for _ in range(3)), head_take(OTHER, glance, "pitch")]
+    result = fit(Config(), "nod_down", takes)
+    assert 13.0 < result.gesture.steps[0].above_deg < 20.0
+    assert [r.fired_at is not None for r in result.results] == [True] * 3 + [False]
+    assert any("stays above your \"shouldn't fire\" take 4" in n for n in result.notes)
+
+
+def test_a_take_that_cannot_be_told_apart_is_reported():
+    nod = [0.0] * 10 + [10.0, 20.0, 20.0, 10.0] + [0.0] * 20
+    takes = [*(head_take(DO, nod, "pitch") for _ in range(3)), head_take(OTHER, nod, "pitch")]
+    result = fit(Config(), "nod_down", takes)
+    assert result.results[3].fired_at is not None
+    assert any(n.startswith("take 4: it shouldn't fire but still does") for n in result.notes)
 
 
 def test_gestures_made_of_other_gestures_cannot_be_tuned():

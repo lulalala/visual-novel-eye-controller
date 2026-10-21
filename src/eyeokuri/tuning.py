@@ -120,7 +120,21 @@ def _show(signal: str, value: float) -> str:
     return f"{value:.2f}" if signal == "eyes" else f"{value:.0f}°"
 
 
-def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: list[str]) -> GestureConfig:
+def _peak(away: list[float]) -> float:
+    """The furthest a take got from rest and stayed for two frames in a row, so
+    one stray landmark frame doesn't set the edge."""
+    pairs = [min(a, b) for a, b in zip(away, away[1:])]
+    return max(pairs) if pairs else max(away)
+
+
+def _away(take: Take, signal: str, rest: float, d: int) -> list[float]:
+    return [d * (v - rest) for o in take.observations if (v := signal_value(signal, o)) is not None]
+
+
+def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: list[str],
+               avoid: list[tuple[int, Take]]) -> GestureConfig:
+    """Moves each step's edge to match ``takes``; ``avoid`` are takes that
+    shouldn't fire, whose edge is kept above their peak when there's room."""
     steps = list(gesture.steps)
     missed: set[int] = set()
     for i, step in enumerate(steps):
@@ -131,9 +145,9 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: lis
         signal, rest = step.signal, _REST[step.signal]
         peaks = []
         for n, take in takes:
-            values = [v for o in take.observations if (v := signal_value(signal, o)) is not None]
+            values = _away(take, signal, rest, d)
             if values:
-                peaks.append((n, max(d * (v - rest) for v in values)))
+                peaks.append((n, _peak(values)))
         if not peaks:
             continue
         typical = statistics.median(p for _, p in peaks)
@@ -152,6 +166,12 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: lis
                 inner = getattr(other, f"{'below' if d > 0 else 'above'}_{other.unit}")
                 if inner is not None:
                     reach = max(reach, d * (inner - rest) + _GAP[signal])
+        # A take that shouldn't fire but moves further than the edge: raise the
+        # edge between it and your weakest take, if that leaves room.
+        reached = [(n, _peak(v)) for n, t in avoid if (v := _away(t, signal, rest, d))]
+        blockers = [(n, p) for n, p in reached if reach <= p < weakest]
+        if blockers:
+            reach = max(reach, (max(p for _, p in blockers) + weakest) / 2)
         far = getattr(step, f"{'below' if d > 0 else 'above'}_{step.unit}")
         if far is not None:
             reach = min(reach, d * (far - rest) - _GAP[signal])
@@ -160,7 +180,8 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: lis
         if value != old:
             word = "above" if d > 0 else "below"
             notes.append(f"step {i + 1}: {signal} {word} {_show(signal, value)} (was {_show(signal, old)}). "
-                         f"Your weakest take reached {_show(signal, rest + d * weakest)}.")
+                         f"Your weakest take reached {_show(signal, rest + d * weakest)}."
+                         + "".join(f" It stays above your \"shouldn't fire\" take {n}." for n, _ in blockers))
             steps[i] = replace(step, **{key: value})
         if reach > weakest:
             notes.append(f"step {i + 1}: your weakest take didn't reach the edge, which can't be closer "
@@ -218,14 +239,29 @@ def _fit_max(pos: list[float], neg: list[float]) -> tuple[float, int]:
 
 def fit(config: Config, name: str, takes: list[Take]) -> Fit:
     """Fits gesture ``name`` to the takes. Step edges move to match how far
-    your takes go; time limits that are set move to fit between your takes and
-    the near misses. Limits that are off (0) stay off."""
+    your takes go, and clear of takes that shouldn't fire when they can; time
+    limits that are set move to fit between your takes and the near misses.
+    Limits that are off (0) stay off."""
+    result = _fit(config, name, takes, [])
+    firing = [(n, t) for (n, t), r in zip(enumerate(takes, 1), result.results)
+              if t.kind == OTHER and r.fired_at is not None]
+    if not firing:
+        return result
+    result = _fit(config, name, takes, firing)
+    for n, t in firing:
+        if result.results[n - 1].fired_at is not None:
+            result.notes.append(f"take {n}: it shouldn't fire but still does, and no setting tells it apart "
+                                "from your takes that should. Redo it, or do the gesture more differently.")
+    return result
+
+
+def _fit(config: Config, name: str, takes: list[Take], avoid: list[tuple[int, Take]]) -> Fit:
     gesture = config.gestures[name]
     if not can_tune(gesture):
         raise ValueError(f"gestures.{name}: steps that are other gestures can't be fitted")
     notes: list[str] = []
     numbered = list(enumerate(takes, 1))
-    gesture = _fit_edges(gesture, [(n, t) for n, t in numbered if t.kind == DO], notes)
+    gesture = _fit_edges(gesture, [(n, t) for n, t in numbered if t.kind == DO], notes, avoid)
 
     # Find each take's steps with the fitted edges and no time limits.
     relaxed = replace(
