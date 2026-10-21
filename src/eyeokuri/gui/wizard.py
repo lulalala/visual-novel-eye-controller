@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import time
 import tkinter as tk
 from dataclasses import replace
@@ -12,7 +11,7 @@ from typing import TYPE_CHECKING
 from eyeokuri import theme
 from eyeokuri.config import GestureConfig
 from eyeokuri.eyes import Observation
-from eyeokuri.gui.model import RECORD_S, gesture_model
+from eyeokuri.gui.model import gesture_model, wizard_traces
 from eyeokuri.gui.plot import PlotEditor, tint
 from eyeokuri.gui.tkutil import place_over, scaled_font
 from eyeokuri.gui.worker import MAX_TAKE_S
@@ -294,6 +293,7 @@ class WizardWindow:
                 if elapsed >= MAX_TAKE_S:
                     self._toggle_record()
                 else:
+                    self._draw(self.page, self.worker.recent(elapsed))
                     text = f"Recording… {elapsed:.1f} s" + (f"   ({problem})" if problem else "")
                     self.status.configure(text=text, foreground=theme.BAD if problem else theme.OK)
             elif problem:
@@ -325,31 +325,14 @@ class WizardWindow:
         self.results = {} if self.fitted is None else {
             j: r for (j, _), r in zip(recorded, self.fitted.results)}
 
-    def _draw(self, picked: int | None) -> None:
-        # Every take is drawn on one plot, each cut to where it moves and
-        # counted from that cut. The picked take is drawn bold; on the review
-        # page the others are tinted by whether they do what they should.
+    def _draw(self, picked: int | None, live: list[Observation] | None = None) -> None:
+        # While recording, the plot shows the raw signal as it comes in.
         signals = {s.signal for s in self._gesture().steps if s.signal}
-        main: list[Observation] = []
-        result: Replay | None = None
-        others: list[tuple[list[Observation], str]] = []
-        for j, take in enumerate(self.takes):
-            if take is None:
-                continue
-            start, cut = trim(take.observations, signals)
-            found = self.results[j]
-            if j == picked:
-                main = cut
-                result = Replay(None if found.fired_at is None else found.fired_at - start, found.reason,
-                                tuple((s, t - start) for s, t in found.steps))
-            elif self._on_review():
-                ok = (found.fired_at is not None) == (take.kind == DO)
-                others.append((cut, tint(theme.OK if ok else theme.BAD, 0.45)))
-            else:
-                others.append((cut, theme.GRID_TRACE))
-        length = max((c[-1].timestamp for c in [main, *(o for o, _ in others)] if c), default=0.0)
-        duration = max(1.0, math.ceil(length)) if length else RECORD_S
-        self.plot.draw(gesture_model(self._gesture()), main, result, duration, others)
+        traces = wizard_traces(self.takes, self.results, picked, signals, self._on_review(), live)
+        tones = {"ok": tint(theme.OK, 0.45), "bad": tint(theme.BAD, 0.45), "plain": theme.GRID_TRACE}
+        others = [(cut, tones[tone]) for cut, tone in traces.others]
+        self.plot.draw(gesture_model(self._gesture()), traces.main, traces.result, traces.duration, others,
+                       traces.boxes)
 
     def _use(self) -> None:
         assert self.fitted is not None

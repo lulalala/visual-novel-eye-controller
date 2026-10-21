@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import re
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from eyeokuri.config import CameraConfig, GestureConfig, StepConfig
+from eyeokuri.eyes import Observation
+from eyeokuri.triggers import Replay
+from eyeokuri.tuning import DO, Take, trim
 
 
 # Seconds of signal kept for "Live" and for saving a test recording.
@@ -116,3 +120,44 @@ def find_notice_file(name: str, folders: list[Path]) -> Path | None:
         if candidate.is_file():
             return candidate
     return None
+
+
+@dataclass(frozen=True)
+class WizardTraces:
+    main: list[Observation]
+    result: Replay | None
+    others: list[tuple[list[Observation], str]]
+    """Thin traces behind the main one, each with a tone: ``ok``, ``bad`` or ``plain``."""
+    duration: float
+    boxes: bool = True
+    """Whether to draw the gesture's step boxes: not while recording, when nothing is fitted yet."""
+
+
+def wizard_traces(takes: list[Take | None], results: dict[int, Replay], picked: int | None, signals: set[str],
+                  on_review: bool, live: list[Observation] | None = None) -> WizardTraces:
+    """What the wizard plots. Every take is cut to where it moves and counted
+    from that cut. The picked take is the main trace; on the review page the
+    others are toned by whether they do what they should. While recording,
+    ``live`` is the main trace, uncut and without a result."""
+    main: list[Observation] = list(live) if live is not None else []
+    result: Replay | None = None
+    others: list[tuple[list[Observation], str]] = []
+    for j, take in enumerate(takes):
+        if take is None:
+            continue
+        start, cut = trim(take.observations, signals)
+        found = results[j]
+        if j == picked and live is None:
+            main = cut
+            result = Replay(None if found.fired_at is None else found.fired_at - start, found.reason,
+                            tuple((s, t - start) for s, t in found.steps))
+        elif on_review:
+            others.append((cut, "ok" if (found.fired_at is not None) == (take.kind == DO) else "bad"))
+        else:
+            others.append((cut, "plain"))
+    length = max((c[-1].timestamp for c in [main, *(o for o, _ in others)] if c), default=0.0)
+    if live is not None:
+        duration = max(RECORD_S, math.ceil(length))
+    else:
+        duration = max(1.0, math.ceil(length)) if length else RECORD_S
+    return WizardTraces(main, result, others, duration, boxes=live is None)

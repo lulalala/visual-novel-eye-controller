@@ -3,9 +3,12 @@ import pytest
 from eyeokuri.config import SIGNALS, CameraConfig, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    GESTURE_NAME, SIGNAL_PLOTS, find_notice_file, fmt, gesture_config, gesture_model, new_step, users_of, view_size,
+    GESTURE_NAME, RECORD_S, SIGNAL_PLOTS, find_notice_file, fmt, gesture_config, gesture_model, new_step, users_of, view_size,
+    wizard_traces,
 )
 from eyeokuri.gui.worker import state_text
+from eyeokuri.triggers import Replay
+from eyeokuri.tuning import DO, Take
 
 
 @pytest.mark.parametrize("name", list(Config().gestures))
@@ -96,3 +99,37 @@ def test_notice_file_is_found_in_the_first_folder_that_has_it(tmp_path):
 
 def test_missing_notice_file_gives_none(tmp_path):
     assert find_notice_file("LICENSE", [tmp_path]) is None
+
+
+def _eyes(count, eyes=1.0):
+    return [Observation(i / 30, face_present=True, ready=True, combined=eyes, baseline=1.0) for i in range(count)]
+
+
+def test_wizard_plot_shows_the_raw_trace_while_recording():
+    live = _eyes(45, eyes=0.2)
+    traces = wizard_traces([None], {}, picked=None, signals={"eyes"}, on_review=False, live=live)
+    assert traces.main == live
+    assert traces.result is None
+    assert traces.duration == RECORD_S
+
+
+def test_wizard_plot_stretches_to_a_long_recording():
+    traces = wizard_traces([None], {}, picked=None, signals={"eyes"}, on_review=False, live=_eyes(30 * 6))
+    assert traces.duration == 6.0
+
+
+def test_wizard_plot_keeps_earlier_takes_behind_the_recording():
+    earlier = Take(DO, _eyes(30, eyes=0.2))
+    result = Replay(None, "no step matched", ())
+    traces = wizard_traces([earlier, None], {0: result}, picked=1, signals={"eyes"}, on_review=False, live=_eyes(10))
+    assert len(traces.others) == 1
+
+
+def test_wizard_plot_hides_the_step_boxes_while_recording():
+    assert not wizard_traces([None], {}, picked=None, signals={"eyes"}, on_review=False, live=_eyes(10)).boxes
+
+
+def test_wizard_plot_shows_the_step_boxes_for_a_finished_take():
+    take = Take(DO, _eyes(30, eyes=0.2))
+    result = Replay(None, "no step matched", ())
+    assert wizard_traces([take], {0: result}, picked=0, signals={"eyes"}, on_review=False).boxes

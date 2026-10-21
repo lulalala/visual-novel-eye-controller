@@ -39,15 +39,16 @@ class PlotEditor:
 
     def draw(self, gesture: dict[str, Any], observations: list[Observation],
              result: Replay | None, duration: float,
-             others: list[tuple[list[Observation], str]] | None = None) -> None:
-        """``others`` are more traces (observations, color) drawn thin behind the main one."""
-        self._last = (gesture, observations, result, duration, others or [])
+             others: list[tuple[list[Observation], str]] | None = None, boxes: bool = True) -> None:
+        """``others`` are more traces (observations, color) drawn thin behind the main one.
+        ``boxes=False`` leaves out the step boxes and draws only the lanes and traces."""
+        self._last = (gesture, observations, result, duration, others or [], boxes)
         self._redraw()
 
     def _redraw(self) -> None:
         if self._last is None:
             return
-        gesture, observations, result, duration, others = self._last
+        gesture, observations, result, duration, others, boxes = self._last
         c = self.canvas
         c.delete("all")
         self._handles = []
@@ -96,7 +97,7 @@ class PlotEditor:
         reached = dict(result.steps) if result else {}
         order = [i for i, _ in sorted(reached.items(), key=lambda kv: kv[1])]
         steps = gesture["steps"]
-        for i, step in enumerate(steps):
+        for i, step in enumerate(steps if boxes else []):
             if step["kind"] not in SIGNALS:
                 continue
             li = lanes.index(step["kind"])
