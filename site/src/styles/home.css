@@ -224,7 +224,7 @@ nav { width: min(100%, max(calc((100vh - 110px) * 16 / 9), 560px)); margin-inlin
 .controls .intro p { margin: 0; font-size: 18px; max-width: 34ch; }
 /* Crop the 834x512px screenshot by trimming pixels from each side (edit the four numbers), shown at 2x
    and scaled down with the column on narrow screens, so the crop never changes. */
-.shot { --crop-top: 55; --crop-right: 535; --crop-bottom: 260; --crop-left: 2;
+.shot { border: 1px solid lightskyblue; box-shadow: 0 10px 30px -12px rgba(80,70,180,.35); --crop-top: 55; --crop-right: 535; --crop-bottom: 260; --crop-left: 2;
   --w: calc(834 - var(--crop-left) - var(--crop-right)); --h: calc(512 - var(--crop-top) - var(--crop-bottom));
   position: relative; overflow: hidden; width: 100%; max-width: calc(var(--w) * 2px); aspect-ratio: calc(var(--w)) / calc(var(--h)); }
 .shot img { position: absolute; max-width: none; width: calc(834 / var(--w) * 100%); left: calc(var(--crop-left) / var(--w) * -100%); top: calc(var(--crop-top) / var(--h) * -100%); }
