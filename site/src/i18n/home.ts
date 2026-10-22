@@ -68,7 +68,7 @@ export const home: Record<string, HomeText> = {
       message: "Blink. Next line. Read your visual novel hands-free with eyeokuri.",
     },
     gestures: {
-      kicker: "face → keys",
+      kicker: "gesture → key",
       title: "Your face is the controller",
       text: "eyeokuri watches your webcam and presses keys for you. Blink to read on, and shake your head when you need a break.",
       shotAlt: "The eyeokuri window: a list of gestures with their keys and on switches, and the start of the log",
@@ -87,8 +87,7 @@ export const home: Record<string, HomeText> = {
       trust: ["Camera frames never leave your PC", "Free and open source", "Online once, for a 4 MB face model"],
     },
     pass: {
-      title: "Know a VN reader?",
-      text: "Send them this page. Star the repo, or ask for the one you want.",
+      title: "Spread the word",
       star: "★ Star on GitHub",
       request: "Request a gesture →",
     },
