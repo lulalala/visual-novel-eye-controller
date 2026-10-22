@@ -39,6 +39,15 @@ nav { display: flex; align-items: center; justify-content: space-between; gap: 1
 nav .links { display: flex; align-items: center; gap: 22px; font-size: 15px; font-weight: 700; }
 nav .links a { text-decoration: none; color: var(--ink-soft); }
 nav .links a:hover { color: var(--sakura); }
+.lang { position: relative; }
+.lang summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--ink-soft); }
+.lang summary::-webkit-details-marker { display: none; }
+.lang summary:hover, .lang[open] summary { color: var(--sakura); }
+.lang ul { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; margin: 0; padding: 6px; list-style: none; min-width: 9em; background: #fff; border: 2px solid var(--sakura-soft); border-radius: 14px; box-shadow: 0 6px 18px rgba(42, 40, 80, .12); }
+.lang li a { display: block; padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
+.lang li a:hover { background: var(--sakura-soft); }
+.lang li a[aria-current] { color: var(--sakura); }
+@media (max-width: 520px) { nav .links { gap: 14px; } }
 
 /* hero text */
 h1 {

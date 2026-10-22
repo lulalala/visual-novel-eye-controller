@@ -59,6 +59,17 @@ const alternates = Astro.site
       <a class="navbtn" href={`${REPO}/releases/latest`}>{t.nav.download}</a>
       <a href={docsPath}>{t.nav.docs}</a>
       <a href={REPO}>{t.nav.github}</a>
+      <details class="lang">
+        <summary aria-label={t.nav.language}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg>
+          {t.langName}
+        </summary>
+        <ul>
+          {Object.entries(home).map(([l, o]) => (
+            <li><a href={path(l)} lang={o.lang} hreflang={o.lang} aria-current={l === locale ? "true" : undefined}>{o.langName}</a></li>
+          ))}
+        </ul>
+      </details>
     </div>
   </nav>
 

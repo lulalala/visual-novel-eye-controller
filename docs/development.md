@@ -72,7 +72,7 @@ site/             static site (Astro with Starlight)
   src/i18n/       home.ts, the homepage text for each language
   src/scripts/    home.js, the homepage demo
   src/styles/     home.css (homepage) and docs.css (docs theme)
-  src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
+  src/content/docs/  docs pages in Markdown; translations go in ja/
 ```
 
 ## Update the window icons
@@ -100,9 +100,9 @@ The site needs Node.js 22.22 or later. In `site/`, run `npm install` once, then:
 
 ## Translate the site
 
-The docs are set up for English, Japanese (`ja`) and Traditional Chinese (`zh-tw`). A docs page without a translation shows the English text with a notice.
+The docs are set up for English and Japanese (`ja`). A docs page without a translation shows the English text with a notice.
 
-- To translate a docs page, copy it to the same path under `site/src/content/docs/ja/` or `zh-tw/` and translate it.
+- To translate a docs page, copy it to the same path under `site/src/content/docs/ja/` and translate it.
 - To translate the homepage, add the language to `site/src/i18n/home.ts`, then add `site/src/pages/<language>/index.astro` that renders `<Home locale="<language>" />`.
 
 ## Extend eyeokuri

@@ -1,11 +1,12 @@
 // Homepage text per locale. Add a locale here, then a page in src/pages/<locale>/index.astro.
 export interface HomeText {
   lang: string;
+  langName: string;
   title: string;
   description: string;
   ogDescription: string;
   keywords: string;
-  nav: { download: string; docs: string; github: string };
+  nav: { download: string; docs: string; github: string; language: string };
   heroLine1: string;
   heroLine2: string;
   sub: string;
@@ -36,12 +37,13 @@ export interface HomeText {
 export const home: Record<string, HomeText> = {
   en: {
     lang: "en",
+    langName: "English",
     title: "eyeokuri: Blink. Next line.",
     description: "Read your visual novel hands‑free. eyeokuri turns a blink into the Enter key.",
     ogDescription:
       "Read your visual novel hands-free. Blink to advance the text, shake your head to pause. Free, open source, and nothing leaves your PC.",
     keywords: "visual novel, hands-free, blink to advance, webcam, eye control, accessibility, auto advance",
-    nav: { download: "Download", docs: "Docs", github: "GitHub" },
+    nav: { download: "Download", docs: "Docs", github: "GitHub", language: "Language" },
     heroLine1: "Blink.",
     heroLine2: "Next line.",
     sub: "Read your visual novel hands-free. eyeokuri turns a blink into the Enter key.",
