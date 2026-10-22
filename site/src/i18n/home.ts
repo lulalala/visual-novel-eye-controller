@@ -24,11 +24,7 @@ export interface HomeText {
     kicker: string;
     title: string;
     text: string;
-    panel: string;
-    rows: { gesture: string; note: string; key: string; on: boolean }[];
-    on: string;
-    off: string;
-    foot: string;
+    shotAlt: string;
   };
   start: { kicker: string; title: string; steps: { title: string; text: string }[]; button: string; trust: string[] };
   pass: { title: string; text: string; star: string; request: string };
@@ -75,16 +71,7 @@ export const home: Record<string, HomeText> = {
       kicker: "face → keys",
       title: "Your face is the controller",
       text: "eyeokuri watches your webcam and presses keys for you. Blink to read on, and shake your head when you need a break.",
-      panel: "Controls",
-      rows: [
-        { gesture: "Blink", note: "Next line", key: "Enter ⏎", on: true },
-        { gesture: "Shake your head", note: "Pause or resume", key: "pause", on: true },
-        { gesture: "Nod up", note: "Turn on in settings", key: "↑", on: false },
-        { gesture: "Nod down", note: "Turn on in settings", key: "↓", on: false },
-      ],
-      on: "On",
-      off: "Off",
-      foot: "Your game wants something else? Send space, a click or a scroll instead of Enter.",
+      shotAlt: "The eyeokuri window: a list of gestures with their keys and on switches, and the start of the log",
     },
     start: {
       kicker: "3 steps",

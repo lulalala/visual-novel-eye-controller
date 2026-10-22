@@ -3,6 +3,7 @@
 import "../styles/home.css";
 import logoSource from "../../../logo/eye-blink.svg?raw";
 import { home } from "../i18n/home";
+import mainWindow from "../assets/screenshots/main-window.png";
 
 interface Props {
   locale: string;
@@ -105,17 +106,7 @@ const alternates = Astro.site
       <p>{t.gestures.text}</p>
     </div>
     <div class="panel">
-      <p class="panel-head" aria-hidden="true">{t.gestures.panel}</p>
-      <ul>
-        {t.gestures.rows.map((r) => (
-          <li class={r.on ? "" : "off"}>
-            <span class="what"><b>{r.gesture}</b><small>{r.note}</small></span>
-            <span class="glyph">{r.key}</span>
-            <span class="switch"><span class="sr">{r.on ? t.gestures.on : t.gestures.off}</span></span>
-          </li>
-        ))}
-      </ul>
-      <p class="panel-foot">{t.gestures.foot}</p>
+      <div class="shot"><img src={mainWindow.src} alt={t.gestures.shotAlt} loading="lazy"></div>
     </div>
   </section>
 
