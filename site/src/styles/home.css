@@ -150,7 +150,9 @@ h1 .next::after {
 .title .sub { margin: 1.6cqw 0 0; max-width: 36ch; color: var(--ink-soft); font-size: clamp(14px, 1.9cqw, 28px); line-height: 1.5; }
 .title .cta { justify-content: flex-start; margin-top: 2.4cqw; gap: 10px; }
 .title .meta { margin: 0 0 0 .6cqw; }
-.title .cta { align-items: center; }
+.meta { padding-left: 1.2em; list-style: disc; line-height: 1.5; }
+.meta li { padding: 0; }
+.title .cta { display: flex; flex-wrap: wrap; align-items: center; }
 .title .btn.big { font-size: clamp(14px, 1.9cqw, 24px); padding: .8em 1.7em; }
 .title .btn.alt { font-size: clamp(13px, 1.6cqw, 20px); }
 .portrait { grid-column: 5 / 13; grid-row: 2; display: grid; place-items: start end; padding: 0 1cqw 0 0; overflow: visible; min-height: 0; }
@@ -175,7 +177,7 @@ h1 .next::after {
   .title { padding: 18px 16px 0; text-align: center; }
   .title .sub { margin-inline: auto; font-size: 16px; }
   .title .cta { justify-content: center; margin-top: 18px; }
-  .title .meta { margin: 6px 0 0; flex-basis: 100%; text-align: center; }
+  .title .meta { margin: 6px 0 0; flex-basis: 100%; padding-left: 0; text-align: center; list-style-position: inside; }
   .title .btn.big { font-size: 17px; }
   .title .btn.alt { font-size: 15px; }
   .portrait { place-items: center; padding: 8px 16px 0; }

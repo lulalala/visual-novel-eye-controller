@@ -77,7 +77,7 @@ const alternates = Astro.site
       <p class="sub">{t.sub}</p>
       <div class="cta">
         <a class="btn big" href={`${REPO}/releases/latest`}>{t.cta}</a>
-        <p class="meta">{t.meta}</p>
+        <ul class="meta">{t.meta.map((item) => <li>{item}</li>)}</ul>
       </div>
     </div>
 

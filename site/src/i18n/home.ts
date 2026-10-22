@@ -10,7 +10,7 @@ export interface HomeText {
   heroLine2: string;
   sub: string;
   cta: string;
-  meta: string;
+  meta: string[];
   demoLabel: string;
   eyeLabel: string;
   dialogLabel: string;
@@ -46,7 +46,7 @@ export const home: Record<string, HomeText> = {
     heroLine2: "Next line.",
     sub: "Read your visual novel hands-free. eyeokuri turns a blink into the Enter key.",
     cta: "Download",
-    meta: "Free · open source · about 65 MB",
+    meta: ["Free", "Open source", "About 65 MB"],
     demoLabel: "Interactive demo of eyeokuri in a visual novel",
     eyeLabel: "An anime eye that blinks",
     dialogLabel: "Advance the dialogue (blink, click, or press Space)",
