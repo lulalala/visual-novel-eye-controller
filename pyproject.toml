@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eyeokuri"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Advance visual novels with eye gestures (webcam prototype)"
 readme = "README.md"
 license = "Apache-2.0"
@@ -24,6 +24,9 @@ dev = ["pytest>=8"]
 [project.scripts]
 eyeokuri = "eyeokuri.app:main"
 eyeokuri-gui = "eyeokuri.gui:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "eyeokuri.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
