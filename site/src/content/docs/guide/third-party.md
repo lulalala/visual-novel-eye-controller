@@ -23,8 +23,8 @@ eyeokuri is not affiliated with or endorsed by Google. "MediaPipe" and "Google" 
 
 ## Python packages
 
-The executable also contains Python, OpenCV and NumPy, which have their own licenses:
+The executable also contains Python and two packages, each under its own license:
 
-- [OpenCV license](https://github.com/opencv/opencv/blob/4.x/LICENSE)
-- [NumPy license](https://github.com/numpy/numpy/blob/main/LICENSE.txt)
-- [Python license](https://docs.python.org/3/license.html)
+- **OpenCV** (the `opencv-python` build) runs the face model. OpenCV uses the [Apache License, Version 2.0](https://github.com/opencv/opencv/blob/4.x/LICENSE); the `opencv-python` packaging uses the [MIT License](https://github.com/opencv/opencv-python/blob/4.x/LICENSE.txt). The package also carries FFmpeg libraries under the [GNU Lesser General Public License, version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). eyeokuri does not modify them, and you can replace them by installing the package yourself. See the [full list of bundled components](https://github.com/opencv/opencv-python/blob/4.x/LICENSE-3RD-PARTY.txt).
+- **NumPy** uses the [BSD 3-Clause License](https://github.com/numpy/numpy/blob/main/LICENSE.txt). It carries OpenBLAS, which also uses the BSD 3-Clause License.
+- **Python** uses the [Python Software Foundation License](https://docs.python.org/3/license.html).
