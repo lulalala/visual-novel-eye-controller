@@ -47,8 +47,10 @@ class Take:
 @dataclass(frozen=True)
 class Fit:
     gesture: GestureConfig
-    notes: list[str]
-    """What changed and why, and takes that were left out."""
+    changes: list[str]
+    """What changed and why."""
+    warnings: list[str]
+    """Takes that were left out or won't do what they should, and why."""
     results: list[Replay]
     """The fitted gesture replayed over each take, in take order."""
 
@@ -141,10 +143,11 @@ def _away(take: Take, signal: str, rest: float, d: int) -> list[float]:
     return [d * (v - rest) for o in take.observations if (v := signal_value(signal, o)) is not None]
 
 
-def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: list[str],
-               avoid: list[tuple[int, Take]]) -> GestureConfig:
+def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: list[str], warnings: list[str],
+               avoid: list[tuple[int, Take]]) -> tuple[GestureConfig, set[int]]:
     """Moves each step's edge to match ``takes``; ``avoid`` are takes that
-    shouldn't fire, whose edge is kept above their peak when there's room."""
+    shouldn't fire, whose edge is kept above their peak when there's room.
+    Also returns the takes left out for hardly moving."""
     steps = list(gesture.steps)
     missed: set[int] = set()
     for i, step in enumerate(steps):
@@ -162,8 +165,8 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: lis
             continue
         typical = statistics.median(p for _, p in peaks)
         if typical < _MIN_REACH[signal]:
-            notes.append(f"step {i + 1}: your takes hardly moved {signal}, so its edge stays. "
-                         "Redo them, and move further.")
+            warnings.append(f"step {i + 1}: your takes hardly moved {signal}, so its edge stays. "
+                            "Redo them, and move further.")
             continue
         used = [p for n, p in peaks if p >= _MISS * typical]
         missed |= {n for n, p in peaks if p < _MISS * typical}
@@ -189,16 +192,16 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: lis
         old = getattr(step, key)
         if value != old:
             word = "above" if d > 0 else "below"
-            notes.append(f"step {i + 1}: {signal} {word} {_show(signal, value)} (was {_show(signal, old)}). "
-                         f"Your weakest take reached {_show(signal, rest + d * weakest)}."
-                         + "".join(f" It stays above your \"shouldn't fire\" take {n}." for n, _ in blockers))
+            changes.append(f"step {i + 1}: {signal} {word} {_show(signal, value)} (was {_show(signal, old)}). "
+                           f"Your weakest take reached {_show(signal, rest + d * weakest)}."
+                           + "".join(f" It stays above your \"shouldn't fire\" take {n}." for n, _ in blockers))
             steps[i] = replace(step, **{key: value})
         if reach > weakest:
-            notes.append(f"step {i + 1}: your weakest take didn't reach the edge, which can't be closer "
-                         f"to rest, so that take won't fire. Move further when you do the gesture.")
+            warnings.append(f"step {i + 1}: your weakest take didn't reach the edge, which can't be closer "
+                            f"to rest, so that take won't fire. Move further when you do the gesture.")
     for n in sorted(missed):
-        notes.append(f"take {n}: hardly any movement, so it was left out. Redo it if you missed the cue.")
-    return replace(gesture, steps=steps)
+        warnings.append(f"take {n}: hardly any movement, so it was left out. Redo it if you missed the cue.")
+    return replace(gesture, steps=steps), missed
 
 
 def _attempts(name: str, gesture: GestureConfig, take: Take) -> list[tuple[tuple[int, float], ...]]:
@@ -218,6 +221,14 @@ def _attempts(name: str, gesture: GestureConfig, take: Take) -> list[tuple[tuple
 def _span(times: list[float]) -> str:
     lo, hi = min(times), max(times)
     return f"{lo:.2f}s" if f"{lo:.2f}" == f"{hi:.2f}" else f"{lo:.2f}-{hi:.2f}s"
+
+
+def _window(step: StepConfig) -> str:
+    """The step's time limits after the previous step, as one phrase."""
+    lo, hi = step.after_min_s, step.after_max_s
+    if lo and hi:
+        return f"{lo:.2f}-{hi:.2f}s"
+    return f"at least {lo:.2f}s" if lo else f"at most {hi:.2f}s"
 
 
 def _floor(value: float) -> float:
@@ -247,31 +258,34 @@ def _fit_max(pos: list[float], neg: list[float]) -> tuple[float, int]:
     return max(_ceil(value), 0.01), len(neg) - len(above)
 
 
-def fit(config: Config, name: str, takes: list[Take]) -> Fit:
+def fit(config: Config, name: str, takes: list[Take], numbers: list[int] | None = None) -> Fit:
     """Fits gesture ``name`` to the takes. Step edges move to match how far
     your takes go, and clear of takes that shouldn't fire when they can; time
     limits that are set move to fit between your takes and the near misses.
-    Limits that are off (0) stay off."""
-    result = _fit(config, name, takes, [])
-    firing = [(n, t) for (n, t), r in zip(enumerate(takes, 1), result.results)
+    Limits that are off (0) stay off. Messages call the takes by ``numbers``
+    (1, 2, 3, ... by default), so they match what you saw while recording."""
+    numbered = list(zip(numbers or range(1, len(takes) + 1), takes))
+    result = _fit(config, name, numbered, [])
+    firing = [(n, t) for (n, t), r in zip(numbered, result.results)
               if t.kind == OTHER and r.fired_at is not None]
     if not firing:
         return result
-    result = _fit(config, name, takes, firing)
-    for n, t in firing:
-        if result.results[n - 1].fired_at is not None:
-            result.notes.append(f"take {n}: it shouldn't fire but still does, and no setting tells it apart "
-                                "from your takes that should. Redo it, or do the gesture more differently.")
+    result = _fit(config, name, numbered, firing)
+    still = {n for (n, _), r in zip(numbered, result.results) if r.fired_at is not None}
+    for n, _ in firing:
+        if n in still:
+            result.warnings.append(f"take {n}: it shouldn't fire but still does, and no setting tells it apart "
+                                   "from your takes that should. Redo it, or do the gesture more differently.")
     return result
 
 
-def _fit(config: Config, name: str, takes: list[Take], avoid: list[tuple[int, Take]]) -> Fit:
+def _fit(config: Config, name: str, numbered: list[tuple[int, Take]], avoid: list[tuple[int, Take]]) -> Fit:
     gesture = config.gestures[name]
     if not can_tune(gesture):
         raise ValueError(f"gestures.{name}: steps that are other gestures can't be fitted")
-    notes: list[str] = []
-    numbered = list(enumerate(takes, 1))
-    gesture = _fit_edges(gesture, [(n, t) for n, t in numbered if t.kind == DO], notes, avoid)
+    changes: list[str] = []
+    warnings: list[str] = []
+    gesture, missed = _fit_edges(gesture, [(n, t) for n, t in numbered if t.kind == DO], changes, warnings, avoid)
 
     # Find each take's steps with the fitted edges and no time limits.
     relaxed = replace(
@@ -285,8 +299,8 @@ def _fit(config: Config, name: str, takes: list[Take], avoid: list[tuple[int, Ta
         if take.kind != TOO_SLOW:
             # Only a take that is too slow learns from an unfinished attempt.
             attempts = [a for a in attempts if a[-1][0] != -1]
-        if not attempts and take.kind == DO:
-            notes.append(f"take {n}: the gesture wasn't found, so its timing was left out")
+        if not attempts and take.kind == DO and n not in missed:
+            warnings.append(f"take {n}: the gesture wasn't found, so its timing was left out")
         if not attempts or take.kind == OTHER:
             continue
         # A stray quick blink can share a take with the one you meant, so a
@@ -310,36 +324,34 @@ def _fit(config: Config, name: str, takes: list[Take], avoid: list[tuple[int, Ta
         pos = gaps[DO].get(i, [])
         if not pos:
             continue
-        changes = {}
+        limits = {}
         if step.after_min_s:
-            changes["after_min_s"], leaks = _fit_min(pos, gaps[TOO_QUICK].get(i, []))
+            limits["after_min_s"], leaks = _fit_min(pos, gaps[TOO_QUICK].get(i, []))
             if leaks:
-                notes.append(f"step {i + 1}: {leaks} too-quick take(s) were as slow as your quickest "
-                             "take, so they will still fire")
+                warnings.append(f"step {i + 1}: {leaks} too-quick take(s) were as slow as your quickest "
+                                 "take, so they will still fire")
         if step.after_max_s:
-            changes["after_max_s"], leaks = _fit_max(pos, gaps[TOO_SLOW].get(i, []))
+            limits["after_max_s"], leaks = _fit_max(pos, gaps[TOO_SLOW].get(i, []))
             if leaks:
-                notes.append(f"step {i + 1}: {leaks} too-slow take(s) were as quick as your slowest "
-                             "take, so they will still fire")
-        for key, value in changes.items():
-            old = getattr(step, key)
-            if value != old:
-                word = "at least" if key == "after_min_s" else "at most"
-                notes.append(f"step {i + 1}: {word} {value:.2f}s after the previous step (was {old:.2f}s). "
-                             f"Your takes took {_span(pos)}.")
-        steps[i] = replace(step, **changes)
+                warnings.append(f"step {i + 1}: {leaks} too-slow take(s) were as quick as your slowest "
+                                 "take, so they will still fire")
+        timed = replace(step, **limits)
+        if timed != step:
+            changes.append(f"step {i + 1}: {_window(timed)} after the previous step (was {_window(step)}). "
+                           f"Your takes took {_span(pos)}.")
+        steps[i] = timed
     gesture = replace(gesture, steps=steps)
 
     if gesture.within_s and totals[DO]:
         value, leaks = _fit_max(totals[DO], totals[TOO_SLOW])
         if value != gesture.within_s:
-            notes.append(f"whole gesture: within {value:.2f}s (was {gesture.within_s:.2f}s). "
-                         f"Your takes took {_span(totals[DO])}.")
+            changes.append(f"whole gesture: within {value:.2f}s (was {gesture.within_s:.2f}s). "
+                           f"Your takes took {_span(totals[DO])}.")
         if leaks:
-            notes.append(f"whole gesture: {leaks} too-slow take(s) were as quick as your slowest "
-                         "take, so they will still fire")
+            warnings.append(f"whole gesture: {leaks} too-slow take(s) were as quick as your slowest "
+                            "take, so they will still fire")
         gesture = replace(gesture, within_s=value)
 
     fitted = replace(config, gestures={**config.gestures, name: gesture})
-    results = [replay(fitted, name, t.observations) for t in takes]
-    return Fit(gesture, notes, results)
+    results = [replay(fitted, name, t.observations) for _, t in numbered]
+    return Fit(gesture, changes, warnings, results)

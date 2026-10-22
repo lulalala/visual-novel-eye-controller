@@ -199,7 +199,10 @@ class WizardWindow:
             result = self.results[self.page]
             fired = result.fired_at is not None
             ok = fired == (kind == DO)
-            text = f"Fires at {result.fired_at:.2f}s." if fired else f"Doesn't fire: {result.reason}."
+            if fired:
+                text = "Fires, as it should." if ok else "Fires, but it shouldn't."
+            else:
+                text = f"Doesn't fire{', as it should' if ok else ''}: {result.reason}."
             message = f"{'✓' if ok else '✕'} {text}"
             if kind == DO and not self._moved(take):
                 message += " Hardly any movement: redo it and move further."
@@ -232,26 +235,33 @@ class WizardWindow:
 
         recorded = [j for j, t in enumerate(self.takes) if t is not None]
         wrong = 0
-        for n, j in enumerate(recorded, 1):
+        for j in recorded:
             take, result = self.takes[j], self.results[j]
             assert take is not None
             fired = result.fired_at is not None
             ok = fired == (take.kind == DO)
             wrong += not ok
-            text = f"fires at {result.fired_at:.2f}s" if fired else f"doesn't fire: {result.reason}"
-            view.insert("", "end", iid=str(j), values=(f"{n}. {KIND_LABELS[take.kind].capitalize()}",
+            text = "fires" if fired else f"doesn't fire: {result.reason}"
+            # Numbered by page, as on the take pages and in the notes below.
+            view.insert("", "end", iid=str(j), values=(f"{j + 1}. {KIND_LABELS[take.kind].capitalize()}",
                         f"{'✓' if ok else '✕'} {text}"), tags=("ok" if ok else "bad",))
+        row = 1
         if self.fitted is not None:
-            notes = self.fitted.notes or ["Your takes fit the current settings. Nothing changed."]
+            # The verdict first, then what to act on, then what changed.
             summary = ("Every take does what it should." if not wrong else
                        f"{wrong} take(s) don't do what they should. Redo them, or fine-tune the boxes afterward.")
-            ttk.Label(self.content, style="Wizard.TLabel", wraplength=_WIZARD_WRAP, justify="left",
-                      text="\n".join(f"• {n}" for n in notes) + "\n" + summary,
-                      foreground=theme.OK if not wrong else theme.BAD,
-                      ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(10, 0))
+            changes = self.fitted.changes or ["Your takes fit the current settings. Nothing changed."]
+            for lines, color in (([summary], theme.OK if not wrong else theme.BAD),
+                                 ([f"• {w}" for w in self.fitted.warnings], theme.BAD),
+                                 ([f"• {c}" for c in changes], None)):
+                if lines:
+                    ttk.Label(self.content, style="Wizard.TLabel", wraplength=_WIZARD_WRAP, justify="left",
+                              text="\n".join(lines), **({"foreground": color} if color else {}),
+                              ).grid(row=row, column=0, columnspan=2, sticky="w", pady=(10 if row == 1 else 6, 0))
+                    row += 1
         if not self.base.gestures[self.name].enabled:
             ttk.Checkbutton(self.content, text=f"Turn {self.name} on", variable=self.enable, style="Wizard.TCheckbutton",
-                            ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(10, 0))
+                            ).grid(row=row, column=0, columnspan=2, sticky="w", pady=(10, 0))
         self.back_button.configure(state="normal")
         has_do = any(t is not None and t.kind == DO for t in self.takes)
         self.next_button.configure(text="Use these settings", state="normal" if has_do else "disabled",
@@ -321,7 +331,7 @@ class WizardWindow:
 
     def _refit(self) -> None:
         recorded = [(j, t) for j, t in enumerate(self.takes) if t is not None]
-        self.fitted = fit(self.base, self.name, [t for _, t in recorded]) if recorded else None
+        self.fitted = fit(self.base, self.name, [t for _, t in recorded], [j + 1 for j, _ in recorded]) if recorded else None
         self.results = {} if self.fitted is None else {
             j: r for (j, _), r in zip(recorded, self.fitted.results)}
 
