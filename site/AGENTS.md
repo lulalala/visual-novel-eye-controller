@@ -4,7 +4,8 @@ The public website: a custom homepage (`src/components/Home.astro`, text in `src
 
 ## Voice
 
-- **Homepage: playful.** The demo dialog speaks as a tsundere visual novel character (stammers, "It's not like…", "idiot!"), and jokes are welcome. Each line still carries one real fact (blink → `Enter`, head shake pauses, nothing leaves your PC). The voice is the site's hook, so don't flatten it into product copy.
+- **Homepage demo dialog: tsundere.** Only the demo's dialog lines (`lines` in `home.ts`) speak as a tsundere visual novel character (stammers, "It's not like…", "idiot!"). Each line still carries one real fact (blink → `Enter`, head shake pauses, nothing leaves your PC). The voice is the site's hook, so don't flatten it into product copy.
+- **Rest of the homepage: casual.** Hero, sections, steps and footer have no character voice, but jokes are welcome. Keep privacy and install facts (trust bullets, the Windows warning steps) plain so readers can trust them.
 - **Docs pages: plain.** They follow the root docs standard; no character voice or jokes.
 
 ## Translations
