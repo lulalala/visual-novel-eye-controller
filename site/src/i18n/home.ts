@@ -26,7 +26,7 @@ export interface HomeText {
     text: string;
     shotAlt: string;
   };
-  start: { kicker: string; title: string; steps: { title: string; text: string }[]; button: string; trust: string[] };
+  start: { title: string; steps: { title: string; text: string }[]; button: string; trust: string[] };
   pass: { title: string; text: string; star: string; request: string };
   footer: string;
   footerReleases: string;
@@ -74,7 +74,6 @@ export const home: Record<string, HomeText> = {
       shotAlt: "The eyeokuri window: a list of gestures with their keys and on switches, and the start of the log",
     },
     start: {
-      kicker: "3 steps",
       title: "Your hands are free now",
       steps: [
         { title: "Download", text: "Free for Windows, about 65 MB. Any webcam works, even an Android phone as a webcam." },
