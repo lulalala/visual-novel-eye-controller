@@ -43,7 +43,7 @@ src/eyeokuri/
     opencv.py     the built-in source: webcam -> face mesh -> Signals
     face_mesh.py  MediaPipe's face model, run with OpenCV
     camera.py     webcam capture that reconnects, plus the scanner for the camera picker
-  eyes.py         Signals -> Observation (open/closed vs. your open-eye level)
+  eyes.py         Signals -> Observation (open/closed vs. your open-eye level, and wink: one eye vs. the other)
   head.py         Signals -> head yaw/pitch relative to your usual pose
   triggers.py     Observation -> step boxes entered -> gestures -> TriggerEvent
   keys.py         key names and combinations ("ctrl+s"): parsing and press order

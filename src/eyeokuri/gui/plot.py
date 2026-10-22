@@ -6,7 +6,7 @@ import tkinter as tk
 from typing import Any, Callable
 
 from eyeokuri import theme
-from eyeokuri.config import SIGNALS
+from eyeokuri.config import RATIO_SIGNALS, SIGNALS
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import RECORD_S, SIGNAL_PLOTS
 from eyeokuri.triggers import Replay, signal_value
@@ -89,7 +89,7 @@ class PlotEditor:
             for v in axis.grid:
                 c.create_line(self.L, y(v, li), width - self.R, y(v, li),
                               fill=theme.ZERO if v == axis.zero else theme.GRID)
-                label = f"{v:.2f}" if sig == "eyes" else f"{v:g}{axis.unit}"
+                label = f"{v:.2f}" if sig in RATIO_SIGNALS else f"{v:g}{axis.unit}"
                 c.create_text(self.L - 6, y(v, li), anchor="e", text=label, fill=theme.MUTED, font="TkSmallCaptionFont")
 
         # Each step's box. A box after the first starts at the moment the

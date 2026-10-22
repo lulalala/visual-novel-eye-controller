@@ -29,9 +29,10 @@ warmup_s = 2.0
 
 # Each gesture is a list of steps. A step is a box on a plot of one signal
 # over time, and it counts the moment the signal enters the box:
-#   signal       eyes (1.0 = your usual open level), pitch (degrees,
-#                + = head down) or yaw (degrees, + = your left)
-#   above_ratio, below_ratio   the box for eyes (leave one out: open-ended)
+#   signal       eyes (1.0 = your usual open level), wink (right eye's
+#                openness minus the left's, + = left eye closed), pitch
+#                (degrees, + = head down) or yaw (degrees, + = your left)
+#   above_ratio, below_ratio   the box for eyes and wink (leave one out: open-ended)
 #   above_deg, below_deg       the box for pitch and yaw
 #   after_min_s, after_max_s   time allowed since the previous step (0 = no limit)
 #   hold_s       stay in the box this long before the step counts
@@ -59,6 +60,34 @@ guards = [
 ]
 cooldown_s = 1.0
 output = "enter"
+
+[gestures.wink_left]
+# Close your left eye with the right open, then open it again. A normal
+# blink closes both eyes, so it doesn't count. Off by default, no output yet.
+enabled = false
+steps = [
+  { signal = "wink", above_ratio = 0.25 },
+  { signal = "wink", above_ratio = -0.15, below_ratio = 0.15, after_min_s = 0.05, after_max_s = 0.6 },
+]
+guards = [
+  { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
+  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
+]
+cooldown_s = 1.0
+output = ""
+
+[gestures.wink_right]
+enabled = false
+steps = [
+  { signal = "wink", below_ratio = -0.25 },
+  { signal = "wink", above_ratio = -0.15, below_ratio = 0.15, after_min_s = 0.05, after_max_s = 0.6 },
+]
+guards = [
+  { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
+  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
+]
+cooldown_s = 1.0
+output = ""
 
 [gestures.head_shake]
 # Turn past 15° one way, then past 15° the other way, within 1 s

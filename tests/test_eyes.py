@@ -64,3 +64,26 @@ def test_any_proportional_scale_works():
 def test_inverted_or_empty_hysteresis_is_rejected(close_ratio, open_ratio):
     with pytest.raises(ValueError, match="eyes.close_ratio"):
         EyeStateTracker(EyeConfig(close_ratio=close_ratio, open_ratio=open_ratio))
+
+
+def test_wink_is_zero_with_both_eyes_open_even_when_they_differ():
+    tracker = EyeStateTracker(EyeConfig())
+    assert feed(tracker, 0.0, 3.0, 0.24, right=0.30)[-1].wink == pytest.approx(0.0)
+
+
+def test_wink_is_positive_with_the_left_eye_closed():
+    tracker = EyeStateTracker(EyeConfig())
+    feed(tracker, 0.0, 3.0, 0.24, right=0.30)
+    assert feed(tracker, 3.0, 3.2, 0.06, right=0.30)[-1].wink == pytest.approx(0.75)
+    assert feed(tracker, 3.2, 3.4, 0.24, right=0.06)[-1].wink == pytest.approx(-0.8)
+
+
+def test_wink_stays_near_zero_with_both_eyes_closed():
+    tracker = EyeStateTracker(EyeConfig())
+    feed(tracker, 0.0, 3.0, 0.24, right=0.30)
+    assert feed(tracker, 3.0, 3.2, 0.06, right=0.075)[-1].wink == pytest.approx(0.0)
+
+
+def test_wink_is_unknown_before_warmup():
+    tracker = EyeStateTracker(EyeConfig())
+    assert feed(tracker, 0.0, 1.0, 0.3)[-1].wink is None

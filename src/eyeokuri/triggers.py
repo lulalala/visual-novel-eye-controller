@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable, Protocol
 
-from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig
+from eyeokuri.config import RATIO_SIGNALS, SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Source
 
@@ -46,6 +46,9 @@ def signal_value(signal: str, obs: Observation) -> float | None:
         if not obs.ready or obs.combined is None or not obs.baseline:
             return None
         return obs.combined / obs.baseline
+    if signal == "wink":
+        # Positive = left eye closed, like yaw: positive = your left.
+        return obs.wink if obs.ready else None
     # Positive pitch = head tilted down; positive yaw = face turned toward
     # the camera image's right, which is your left.
     return obs.head_pitch if signal == "pitch" else obs.head_yaw
@@ -114,7 +117,7 @@ class GestureTrigger:
         self._watchers = {i: StepWatcher(s) for i, s in enumerate(config.steps) if s.signal}
         self._gestures = {i: gestures[s.gesture] for i, s in enumerate(config.steps) if s.gesture}
         self._guards = config.guards
-        needs = {EYE_OPENNESS if s.signal == "eyes" else HEAD_POSE for s in config.steps if s.signal}
+        needs = {EYE_OPENNESS if s.signal in RATIO_SIGNALS else HEAD_POSE for s in config.steps if s.signal}
         for gesture in self._gestures.values():
             needs |= gesture.needs
         self.needs = frozenset(needs)
@@ -254,8 +257,8 @@ class GestureTrigger:
         for signal, value in self._values.items():
             if value is None:
                 parts.append(f"no {signal}")
-            elif signal == "eyes":
-                parts.append(f"eyes {value:.2f}")
+            elif signal in RATIO_SIGNALS:
+                parts.append(f"{signal} {value:+.2f}" if signal == "wink" else f"eyes {value:.2f}")
             else:
                 parts.append(f"{signal} {value:+.0f}°")
         if len(self._steps) > 1 and self._partials:

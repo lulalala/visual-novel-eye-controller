@@ -20,6 +20,8 @@ The two thresholds form a hysteresis band. With a single threshold, noise around
 
 With `eyes.require_both_eyes = true` (the default), the tracker uses the more open of the two eyes, so both must close to count as closed. A wink or a one-eyed squint doesn't trigger. With `false`, it uses the less open eye, so either eye closing counts.
 
+The `wink` signal compares the two eyes instead: right openness over its median minus left openness over its median, taken over the same open-eye history as the baseline. Dividing each eye by its own median keeps the value near 0 when your eyes differ in size, and a two-eye blink also stays near 0 because both eyes drop together. It doesn't depend on `require_both_eyes`. It is `None` until the baseline is ready.
+
 ## Head pose baseline
 
 `HeadTracker` in `head.py` reports yaw and pitch relative to the median pose over the last `head.baseline_window_s` seconds (10 by default). An off-center webcam or a habitual slight tilt therefore reads as 0°. Brief turns such as a head shake or nod barely move the median, so it stays close to the resting pose. For the first `head.warmup_s` seconds (2 by default), and again after a face loss longer than the window, the history is too short to trust, so the tracker reports no head pose and head gestures can't start.

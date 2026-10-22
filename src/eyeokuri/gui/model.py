@@ -39,6 +39,8 @@ class SignalPlot:
 SIGNAL_PLOTS = {
     "eyes": SignalPlot(0.0, 1.3, (0.0, 0.25, 0.5, 0.75, 1.0, 1.25), 1.0, "", 0.01,
                        "Eyes: openness, 1.0 = your usual open level"),
+    "wink": SignalPlot(-1.0, 1.0, (-1.0, -0.5, 0.0, 0.5, 1.0), 0.0, "", 0.01,
+                       "Wink: right eye minus left, + = left eye closed"),
     "pitch": SignalPlot(-40.0, 50.0, (-40, -20, 0, 20, 40, 50), 0.0, "°", 0.5,
                         "Head pitch: + = tilted down"),
     "yaw": SignalPlot(-60.0, 60.0, (-60, -40, -20, 0, 20, 40, 60), 0.0, "°", 0.5,
@@ -96,7 +98,7 @@ def gesture_config(model: dict[str, Any]) -> GestureConfig:
 
 
 def new_step(kind: str) -> dict[str, Any]:
-    above, below = {"eyes": (None, 0.55), "pitch": (12.0, None), "yaw": (15.0, None)}.get(kind, (None, None))
+    above, below = {"eyes": (None, 0.55), "wink": (0.25, None), "pitch": (12.0, None), "yaw": (15.0, None)}.get(kind, (None, None))
     return {"kind": kind, "gesture": "", "above": above, "below": below,
             "after_min_s": 0.0, "after_max_s": 1.0, "hold_s": 0.0}
 

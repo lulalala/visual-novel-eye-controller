@@ -24,11 +24,11 @@ def custom(*steps, log=None, **changes):
     return GestureTrigger("custom", GestureConfig(steps=list(steps), **changes), log)
 
 
-def obs(i, eyes=1.0, yaw=0.0, pitch=0.0, face=True, ready=True):
+def obs(i, eyes=1.0, yaw=0.0, pitch=0.0, face=True, ready=True, wink=0.0):
     if not face:
         return Observation(i / FPS, face_present=False)
     return Observation(i / FPS, face_present=True, ready=ready, combined=eyes, baseline=1.0,
-                       head_yaw=yaw, head_pitch=pitch)
+                       head_yaw=yaw, head_pitch=pitch, wink=wink)
 
 
 def drive(triggers, observations):
@@ -229,6 +229,98 @@ def test_steps_can_use_different_signals():
                      StepConfig(signal="eyes", below_ratio=0.55, after_max_s=1.0))
     stream = [obs(i, pitch=20.0 if i >= 5 else 0.0, eyes=0.3 if i >= 15 else 1.0) for i in range(20)]
     assert len(drive([trigger], stream)) == 1
+
+
+# Wink
+
+
+def winks(segments, start=0, **head_values):
+    """segments: list of (frames, wink value); + = left eye closed."""
+    result, i = [], start
+    for frames, value in segments:
+        for _ in range(frames):
+            result.append(obs(i, wink=value, **head_values))
+            i += 1
+    return result
+
+
+def all_eye_gestures(log=None):
+    return [gesture(n, log, enabled=True) for n in ("blink", "wink_left", "wink_right")]
+
+
+def test_wink_gestures_start_disabled_without_output():
+    for name in ("wink_left", "wink_right"):
+        assert not DEFAULTS[name].enabled
+        assert DEFAULTS[name].output == ""
+
+
+# (gesture, sign of its wink): + = left eye closed.
+WINKS = pytest.mark.parametrize("name, sign", [("wink_left", 1), ("wink_right", -1)])
+
+
+@WINKS
+def test_wink_fires_only_its_own_gesture_on_the_reopen_frame(name, sign):
+    events = drive(all_eye_gestures(), winks([(30, 0.0), (9, sign * 0.8), (15, 0.0)]))
+    assert [e.action for e in events] == [name]
+    assert events[0].timestamp == 39 / FPS
+
+
+@WINKS
+def test_moderate_wink_fires(name, sign):
+    events = drive(all_eye_gestures(), winks([(30, 0.0), (9, sign * 0.3), (15, 0.0)]))
+    assert [e.action for e in events] == [name]
+
+
+def test_blink_with_both_eyes_fires_no_wink():
+    stream = [obs(i, eyes=0.3 if 30 <= i < 39 else 1.0, wink=0.05) for i in range(60)]
+    assert [e.action for e in drive(all_eye_gestures(), stream)] == ["blink"]
+
+
+@WINKS
+def test_blink_where_one_eye_lags_a_frame_is_too_short_for_a_wink(name, sign):
+    messages = []
+    trigger = gesture(name, messages.append)
+    assert drive([trigger], winks([(30, 0.0), (1, sign * 0.7), (15, 0.0)])) == []
+    assert messages == [f"{name}: step 2 came 0.03s after step 1 (too short, min 0.05s)"]
+
+
+@WINKS
+def test_one_eye_held_closed_too_long_is_canceled(name, sign):
+    messages = []
+    trigger = gesture(name, messages.append)
+    assert drive([trigger], winks([(30, 0.0), (30, sign * 0.8), (15, 0.0)])) == []
+    assert messages == [f"{name}: step 2 not reached in time (too long, max 0.60s)"]
+
+
+@WINKS
+def test_wink_cooldown_blocks_rapid_repeat(name, sign):
+    messages = []
+    trigger = gesture(name, messages.append)
+    events = drive([trigger], winks([(15, 0.0), (9, sign * 0.8), (6, 0.0), (9, sign * 0.8), (15, 0.0)]))
+    assert len(events) == 1
+    assert "cooldown" in messages[0]
+
+
+@WINKS
+def test_losing_face_cancels_wink(name, sign):
+    messages = []
+    trigger = gesture(name, messages.append)
+    stream = (winks([(30, 0.0), (5, sign * 0.8)]) + [obs(35, face=False)]
+              + winks([(5, sign * 0.8), (15, 0.0)], start=36))
+    assert drive([trigger], stream) == []
+    assert messages == [f"{name}: canceled (face lost)"]
+
+
+@WINKS
+def test_wink_waits_until_ready(name, sign):
+    trigger = gesture(name)
+    stream = [obs(i, wink=sign * 0.8 if 30 <= i < 39 else 0.0, ready=False) for i in range(60)]
+    assert drive([trigger], stream) == []
+
+
+@WINKS
+def test_wink_is_ignored_with_head_turned_away(name, sign):
+    assert drive([gesture(name)], winks([(30, 0.0), (9, sign * 0.8), (15, 0.0)], yaw=30.0)) == []
 
 
 # Head shake

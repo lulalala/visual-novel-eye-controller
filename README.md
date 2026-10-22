@@ -51,6 +51,7 @@ The log shows gestures that fired, gestures that didn't and why (too short, too 
 - **Blink** (both eyes closed at least 0.15 s): you hear a beep and `Enter` is sent when you reopen your eyes. Closing them for more than 2 s cancels.
 - **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. A shake often comes with a blink, so it can also advance one line.
 - **Nod up or down** (sends the `up` or `down` arrow key) is off by default. Turn it on with its checkbox in the main window.
+- **Wink with your left or right eye** (`wink_left`, `wink_right`) is off by default and sends nothing until you choose an output in its gesture window. A wink counts when one eye is at least 0.25 less open than the other (relative to each eye's usual level), then both are level again 0.05–0.6 s later. A normal blink closes both eyes, so it doesn't count as a wink. Turning your head makes one eye look narrower to the camera, so winks count only with your head within 20° sideways and 15° up or down. Run the wizard to fit it to your face.
 
 ## Set up a gesture with the wizard
 
@@ -80,6 +81,7 @@ If the camera stops sending frames (for example, it briefly disconnects), eyeoku
 Each gesture in your config file is a list of steps. Picture a plot of one signal over time: a step is a box on that plot, and it counts the moment the signal enters the box. The signals are:
 
 - `eyes`: how open your eyes are, where 1.0 is your usual open level.
+- `wink`: how open your right eye is minus your left, each relative to its usual level. It stays near 0 with both eyes open or both closed. Closing only your left eye takes it toward +1, and closing only your right eye toward −1.
 - `pitch`: head tilt in degrees. Positive is down.
 - `yaw`: head turn in degrees. Positive is your left.
 
@@ -103,7 +105,7 @@ The `guards` keep a blink from counting while you look away. Moving your head of
 
 Each step sets its own box and timing, so you can change one step without changing the others:
 
-- `above_ratio`/`below_ratio` (eyes) or `above_deg`/`below_deg` (head) set the box. Leave one out for a box that is open on that side.
+- `above_ratio`/`below_ratio` (`eyes` and `wink`) or `above_deg`/`below_deg` (head) set the box. Leave one out for a box that is open on that side.
 - `after_min_s`/`after_max_s` set the time allowed since the previous step. 0 means no limit.
 - `hold_s` makes you stay inside the box that long before the step counts, for example to fire on looking left for 1 s.
 

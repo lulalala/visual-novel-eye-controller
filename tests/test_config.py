@@ -13,6 +13,8 @@ def test_defaults():
     assert config.gestures["blink"].steps[1].after_min_s == 0.15
     assert {name: g.output for name, g in config.gestures.items()} == {
         "blink": "enter",
+        "wink_left": "",
+        "wink_right": "",
         "head_shake": "app:toggle_pause",
         "nod_up": "up",
         "nod_down": "down",

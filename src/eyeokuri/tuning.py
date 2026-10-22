@@ -6,7 +6,7 @@ import math
 import statistics
 from dataclasses import dataclass, replace
 
-from eyeokuri.config import Config, GestureConfig, StepConfig
+from eyeokuri.config import RATIO_SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.triggers import GestureTrigger, Replay, replay, signal_value
 
@@ -20,15 +20,15 @@ KIND_LABELS = {DO: "should fire", TOO_QUICK: "too quick", TOO_SLOW: "too slow", 
 DO_TAKES = 3
 
 # Where each signal sits while you just read.
-_REST = {"eyes": 1.0, "pitch": 0.0, "yaw": 0.0}
+_REST = {"eyes": 1.0, "wink": 0.0, "pitch": 0.0, "yaw": 0.0}
 # A step's edge goes this share of the way from rest to your weakest take's peak.
 REACH = 0.6
 # An edge stays at least this far from rest, so small movements and noise don't count.
-_MIN_REACH = {"eyes": 0.15, "pitch": 5.0, "yaw": 5.0}
+_MIN_REACH = {"eyes": 0.15, "wink": 0.2, "pitch": 5.0, "yaw": 5.0}
 # The wizard's plot cuts a take to where it gets this share of the way to its peak.
 TRIM_SHARE = 0.5
 # Space kept between a step's edge and the edge of a box around rest (the hysteresis).
-_GAP = {"eyes": 0.1, "pitch": 3.0, "yaw": 3.0}
+_GAP = {"eyes": 0.1, "wink": 0.1, "pitch": 3.0, "yaw": 3.0}
 # A take that moves less than this share of your typical take is a miss and left out.
 _MISS = 0.4
 # Time limits without a counterexample: the minimum at this share of your
@@ -68,6 +68,16 @@ def suggestions(name: str) -> list[tuple[str, str]]:
             (DO, "blink once, the way you want to advance the text"),
             (TOO_QUICK, "blink once quickly, the way you blink without thinking"),
             (TOO_SLOW, "close your eyes for a few seconds, as if resting them"),
+        ],
+        "wink_left": [
+            (DO, "wink your left eye once"),
+            (TOO_SLOW, "close your left eye for a few seconds"),
+            (OTHER, "blink both eyes a few times, the way you blink without thinking"),
+        ],
+        "wink_right": [
+            (DO, "wink your right eye once"),
+            (TOO_SLOW, "close your right eye for a few seconds"),
+            (OTHER, "blink both eyes a few times, the way you blink without thinking"),
         ],
         "head_shake": [
             (DO, "shake your head once"),
@@ -117,7 +127,7 @@ def _excursion(step: StepConfig) -> tuple[str, int] | None:
 
 
 def _show(signal: str, value: float) -> str:
-    return f"{value:.2f}" if signal == "eyes" else f"{value:.0f}°"
+    return f"{value:.2f}" if signal in RATIO_SIGNALS else f"{value:.0f}°"
 
 
 def _peak(away: list[float]) -> float:
@@ -175,7 +185,7 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], notes: lis
         far = getattr(step, f"{'below' if d > 0 else 'above'}_{step.unit}")
         if far is not None:
             reach = min(reach, d * (far - rest) - _GAP[signal])
-        value = round(rest + d * reach, 2) if signal == "eyes" else float(round(rest + d * reach))
+        value = round(rest + d * reach, 2) if signal in RATIO_SIGNALS else float(round(rest + d * reach))
         old = getattr(step, key)
         if value != old:
             word = "above" if d > 0 else "below"

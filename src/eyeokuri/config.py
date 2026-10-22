@@ -52,18 +52,21 @@ class HeadConfig:
     warmup_s: float = 2.0
 
 
-SIGNALS = ("eyes", "pitch", "yaw")
+SIGNALS = ("eyes", "wink", "pitch", "yaw")
+# Signals measured relative to your usual level (the _ratio bounds); the rest are degrees.
+RATIO_SIGNALS = ("eyes", "wink")
 
 
 @dataclass(frozen=True)
 class StepConfig:
-    # What to watch: eyes (openness, 1.0 = your usual open level), pitch
+    # What to watch: eyes (openness, 1.0 = your usual open level), wink (right
+    # eye's openness minus the left's, positive = left eye closed), pitch
     # (degrees, positive = head tilted down) or yaw (degrees, positive = your left).
     signal: str = ""
     # Instead of a signal: another gesture's name. The step counts when it fires.
     gesture: str = ""
     # The step's box: the step counts the moment the signal enters it. Eyes
-    # use the _ratio bounds, the head the _deg bounds. Leave one out for a box
+    # and wink use the _ratio bounds, the head the _deg bounds. Leave one out for a box
     # that is open on that side.
     above_ratio: float | None = None
     below_ratio: float | None = None
@@ -77,13 +80,13 @@ class StepConfig:
 
     @property
     def unit(self) -> str:
-        """The suffix of this step's bound fields: ratio for eyes, deg for the head."""
-        return "ratio" if self.signal == "eyes" else "deg"
+        """The suffix of this step's bound fields: ratio for eyes and wink, deg for the head."""
+        return "ratio" if self.signal in RATIO_SIGNALS else "deg"
 
     @property
     def bounds(self) -> tuple[float | None, float | None]:
         """(above, below) of the box, from the fields its signal uses."""
-        if self.signal == "eyes":
+        if self.signal in RATIO_SIGNALS:
             return self.above_ratio, self.below_ratio
         return self.above_deg, self.below_deg
 
@@ -120,6 +123,10 @@ def _default_gestures() -> dict[str, GestureConfig]:
         StepConfig(signal="pitch", above_deg=-15.0, below_deg=15.0),
     ]
     center = {"above_deg": -8.0, "below_deg": 8.0, "after_max_s": 0.8}
+    # A wink is one eye at least 0.25 less open than the other, then both level
+    # again within 0.6 s. after_min_s keeps out a blink where one eye closes a
+    # frame later; after_max_s, squinting or rubbing one eye.
+    level = {"above_ratio": -0.15, "below_ratio": 0.15, "after_min_s": 0.05, "after_max_s": 0.6}
     return {
         # 0.15 s lets most natural blinks advance the text; raise after_min_s
         # (e.g. 0.35-0.45) to require a deliberate closure. Holding the eyes
@@ -130,6 +137,16 @@ def _default_gestures() -> dict[str, GestureConfig]:
                 StepConfig(signal="eyes", above_ratio=0.75, after_min_s=0.15, after_max_s=2.0),
             ],
             guards=straight, cooldown_s=1.0, output="enter",
+        ),
+        "wink_left": GestureConfig(
+            enabled=False,
+            steps=[StepConfig(signal="wink", above_ratio=0.25), StepConfig(signal="wink", **level)],
+            guards=straight, cooldown_s=1.0,
+        ),
+        "wink_right": GestureConfig(
+            enabled=False,
+            steps=[StepConfig(signal="wink", below_ratio=-0.25), StepConfig(signal="wink", **level)],
+            guards=straight, cooldown_s=1.0,
         ),
         "head_shake": GestureConfig(
             steps=[StepConfig(signal="yaw", above_deg=15.0), StepConfig(signal="yaw", below_deg=-15.0)],

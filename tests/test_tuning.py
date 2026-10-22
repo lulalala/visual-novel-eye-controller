@@ -9,9 +9,9 @@ from eyeokuri.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit,
 FPS = 30
 
 
-def obs(i, eyes=1.0, yaw=0.0, pitch=0.0):
+def obs(i, eyes=1.0, yaw=0.0, pitch=0.0, wink=0.0):
     return Observation(i / FPS, face_present=True, ready=True, combined=eyes, baseline=1.0,
-                       head_yaw=yaw, head_pitch=pitch)
+                       head_yaw=yaw, head_pitch=pitch, wink=wink)
 
 
 def blink_take(kind, closed_frames, depth=0.2, total=90):
@@ -194,3 +194,15 @@ def test_tuning_tables_cover_every_signal():
     from eyeokuri.config import SIGNALS
 
     assert set(tuning._REST) == set(tuning._MIN_REACH) == set(tuning._GAP) == set(SIGNALS)
+
+
+def test_wink_fits_its_edge_to_your_winks_and_not_your_blinks():
+    def take(kind, value, frames):
+        values = [0.0] * 15 + [value] * frames + [0.0] * 30
+        return Take(kind, [obs(i, wink=v) for i, v in enumerate(values)])
+
+    takes = [take(DO, v, 9) for v in (0.7, 0.8, 0.9)] + [take(OTHER, 0.1, 6)]
+    result = fit(Config(), "wink_left", takes)
+    # 60% of the way from 0 to your weakest wink (0.7).
+    assert result.gesture.steps[0].above_ratio == 0.42
+    assert [r.fired_at is not None for r in result.results] == [True, True, True, False]

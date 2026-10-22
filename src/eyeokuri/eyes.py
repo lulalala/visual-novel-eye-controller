@@ -23,6 +23,9 @@ class Observation:
     ready: bool = False
     """True once enough "open" samples exist to judge closure."""
     closed: bool = False
+    wink: float | None = None
+    """Right eye's openness minus the left's, each relative to its own usual
+    level: 0 with both open or both closed, positive = left eye closed."""
     head_yaw: float | None = None
     """Head turn in degrees relative to the user's usual pose (sign: left/right)."""
     head_pitch: float | None = None
@@ -48,7 +51,8 @@ class EyeStateTracker:
                 f"({config.open_ratio}), not {config.close_ratio}"
             )
         self.config = config
-        self._history: deque[tuple[float, float]] = deque()
+        # (time, combined, left, right) while the eyes count as open.
+        self._history: deque[tuple[float, float, float, float]] = deque()
         self._closed = False
 
     def update(self, signals: Signals) -> Observation:
@@ -66,6 +70,14 @@ class EyeStateTracker:
         combined = max(left, right) if self.config.require_both_eyes else min(left, right)
 
         baseline, ready = self._baseline(t)
+        wink = None
+        if ready:
+            # Each eye against its own usual level, so eyes that differ in size
+            # (or look different at an angle) still sit near 0 when both are open.
+            left_base = statistics.median(h[2] for h in self._history)
+            right_base = statistics.median(h[3] for h in self._history)
+            if left_base > 0 and right_base > 0:
+                wink = right / right_base - left / left_base
         if ready:
             if self._closed:
                 self._closed = combined < baseline * self.config.open_ratio
@@ -77,7 +89,7 @@ class EyeStateTracker:
             self._closed = False
 
         if not self._closed:
-            self._history.append((t, combined))
+            self._history.append((t, combined, left, right))
 
         return Observation(
             timestamp=t,
@@ -88,6 +100,7 @@ class EyeStateTracker:
             baseline=baseline,
             ready=ready,
             closed=self._closed,
+            wink=wink,
         )
 
     def _baseline(self, now: float) -> tuple[float | None, bool]:
@@ -97,7 +110,7 @@ class EyeStateTracker:
             return None, False
         # Blinks are a small fraction of the time, so the median is a robust
         # "eyes open" level that also follows slow changes in head posture.
-        baseline = statistics.median(v for _, v in self._history)
+        baseline = statistics.median(h[1] for h in self._history)
         span = now - self._history[0][0]
         ready = span >= self.config.warmup_s and len(self._history) >= 10
         return baseline, ready
