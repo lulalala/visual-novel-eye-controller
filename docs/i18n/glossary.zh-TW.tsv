@@ -37,3 +37,14 @@ cooldown	冷卻時間
 head limit	頭部範圍	The "only while the head stays within" guard.
 hold	持續	A step column: how long the signal stays in the box.
 config (file)	設定檔	
+log	記錄	The GUI log and its lines. Quoted log lines stay in English.
+baseline	基準值	The usual open-eye level or head position eyeokuri learns.
+threshold	門檻	Where a step box starts on the signal axis.
+plot	圖表	The signal-over-time plot; 圖 for short.
+time limit	時間限制	The time allowed between steps or in total.
+window (app)	視窗	主視窗, 動作視窗, 設定視窗.
+status bar	狀態列	
+checkbox	核取方塊	
+tab	分頁	一般 / 進階.
+live view	即時畫面	The camera picker shows each camera live.
+Help (menu)	說明	The Windows menu name, not the docs (使用說明).
