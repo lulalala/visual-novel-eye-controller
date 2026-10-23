@@ -135,8 +135,8 @@ class MainWindow:
             self.save_config(config)
         except (ValueError, OSError) as e:
             var.set(not enabled)
-            messagebox.showerror("eyeokuri", f"Couldn't turn {name} {'on' if enabled else 'off'}:\n\n{e}",
-                                 parent=self.root)
+            failed = "Couldn't turn on this gesture:" if enabled else "Couldn't turn off this gesture:"
+            messagebox.showerror("eyeokuri", f"{failed}\n\n{name}\n\n{e}", parent=self.root)
             return
         self.worker.log(f"{name}: {'on' if enabled else 'off'}")
 
@@ -158,8 +158,8 @@ class MainWindow:
         if not name:
             return
         if not GESTURE_NAME.fullmatch(name) or name in self.config.gestures:
-            messagebox.showerror("New gesture", f"{name!r} is taken or has other characters than "
-                                 "letters, digits, _ and -.", parent=self.root)
+            messagebox.showerror("New gesture", "This name is taken or has other characters than "
+                                 f"letters, digits, _ and -:\n\n{name}", parent=self.root)
             return
         self.gesture_window = GestureWindow(self, name, GestureConfig(steps=[StepConfig(signal="eyes", below_ratio=0.55)]))
         self.push_config()

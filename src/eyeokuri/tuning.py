@@ -15,7 +15,7 @@ DO = "do"
 TOO_QUICK = "too_quick"
 TOO_SLOW = "too_slow"
 OTHER = "other"
-KIND_LABELS = {DO: "should fire", TOO_QUICK: "too quick", TOO_SLOW: "too slow", OTHER: "shouldn't fire"}
+KIND_LABELS = {DO: "Should fire", TOO_QUICK: "Too quick", TOO_SLOW: "Too slow", OTHER: "Shouldn't fire"}
 # How many times the wizard asks you to do the gesture itself.
 DO_TAKES = 3
 
@@ -64,32 +64,32 @@ def script(name: str, do_takes: int = DO_TAKES) -> list[tuple[str, str]]:
 
 def suggestions(name: str) -> list[tuple[str, str]]:
     """(kind, what to do) for takes worth recording for this gesture."""
-    read = (OTHER, "read the screen normally for a few seconds")
+    read = (OTHER, "Read the screen normally for a few seconds.")
     known = {
         "blink": [
-            (DO, "blink once, the way you want to advance the text"),
-            (TOO_QUICK, "blink once quickly, the way you blink without thinking"),
-            (TOO_SLOW, "close your eyes for a few seconds, as if resting them"),
+            (DO, "Blink once, the way you want to advance the text."),
+            (TOO_QUICK, "Blink once quickly, the way you blink without thinking."),
+            (TOO_SLOW, "Close your eyes for a few seconds, as if resting them."),
         ],
         "wink_left": [
-            (DO, "wink your left eye once"),
-            (TOO_SLOW, "close your left eye for a few seconds"),
-            (OTHER, "blink both eyes a few times, the way you blink without thinking"),
+            (DO, "Wink your left eye once."),
+            (TOO_SLOW, "Close your left eye for a few seconds."),
+            (OTHER, "Blink both eyes a few times, the way you blink without thinking."),
         ],
         "wink_right": [
-            (DO, "wink your right eye once"),
-            (TOO_SLOW, "close your right eye for a few seconds"),
-            (OTHER, "blink both eyes a few times, the way you blink without thinking"),
+            (DO, "Wink your right eye once."),
+            (TOO_SLOW, "Close your right eye for a few seconds."),
+            (OTHER, "Blink both eyes a few times, the way you blink without thinking."),
         ],
         "head_shake": [
-            (DO, "shake your head once"),
-            (TOO_SLOW, "turn slowly to one side, wait, then slowly to the other"),
-            (OTHER, "look around the screen naturally"),
+            (DO, "Shake your head once."),
+            (TOO_SLOW, "Turn slowly to one side, wait, then slowly to the other."),
+            (OTHER, "Look around the screen naturally."),
         ],
-        "nod_down": [(DO, "nod down once"), (TOO_SLOW, "look down for a few seconds"), read],
-        "nod_up": [(DO, "nod up once"), (TOO_SLOW, "look up for a few seconds"), read],
+        "nod_down": [(DO, "Nod down once."), (TOO_SLOW, "Look down for a few seconds."), read],
+        "nod_up": [(DO, "Nod up once."), (TOO_SLOW, "Look up for a few seconds."), read],
     }
-    return known.get(name, [(DO, f"do {name} once"), (TOO_SLOW, f"do {name} slowly"), read])
+    return known.get(name, [(DO, "Do the gesture once."), (TOO_SLOW, "Do the gesture slowly."), read])
 
 
 def can_tune(gesture: GestureConfig) -> bool:
@@ -165,7 +165,7 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
             continue
         typical = statistics.median(p for _, p in peaks)
         if typical < _MIN_REACH[signal]:
-            warnings.append(f"step {i + 1}: your takes hardly moved {signal}, so its edge stays. "
+            warnings.append(f"Step {i + 1} · {signal}: Your takes hardly moved, so the edge stays. "
                             "Redo them, and move further.")
             continue
         used = [p for n, p in peaks if p >= _MISS * typical]
@@ -191,16 +191,17 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
         value = round(rest + d * reach, 2) if signal in RATIO_SIGNALS else float(round(rest + d * reach))
         old = getattr(step, key)
         if value != old:
-            word = "above" if d > 0 else "below"
-            changes.append(f"step {i + 1}: {signal} {word} {_show(signal, value)} (was {_show(signal, old)}). "
-                           f"Your weakest take reached {_show(signal, rest + d * weakest)}."
-                           + "".join(f" It stays above your \"shouldn't fire\" take {n}." for n, _ in blockers))
+            # A short sentence, then labeled values, so a translation never has to reorder them.
+            changes.append(f"Step {i + 1} · {signal}: Edge moved. Now: {_show(signal, value)}. "
+                           f"Was: {_show(signal, old)}. Your weakest take: {_show(signal, rest + d * weakest)}."
+                           + (" Kept clear of these \"shouldn't fire\" takes: "
+                              f"{', '.join(str(n) for n, _ in blockers)}." if blockers else ""))
             steps[i] = replace(step, **{key: value})
         if reach > weakest:
-            warnings.append(f"step {i + 1}: your weakest take didn't reach the edge, which can't be closer "
-                            f"to rest, so that take won't fire. Move further when you do the gesture.")
+            warnings.append(f"Step {i + 1} · {signal}: Your weakest take didn't reach the edge, which can't be "
+                            "closer to rest, so that take won't fire. Move further when you do the gesture.")
     for n in sorted(missed):
-        warnings.append(f"take {n}: hardly any movement, so it was left out. Redo it if you missed the cue.")
+        warnings.append(f"Take {n}: Hardly any movement, so it was left out. Redo it if you missed the cue.")
     return replace(gesture, steps=steps), missed
 
 
@@ -224,11 +225,11 @@ def _span(times: list[float]) -> str:
 
 
 def _window(step: StepConfig) -> str:
-    """The step's time limits after the previous step, as one phrase."""
+    """The step's time limits after the previous step, in symbols rather than words."""
     lo, hi = step.after_min_s, step.after_max_s
     if lo and hi:
         return f"{lo:.2f}-{hi:.2f}s"
-    return f"at least {lo:.2f}s" if lo else f"at most {hi:.2f}s"
+    return f"≥{lo:.2f}s" if lo else f"≤{hi:.2f}s"
 
 
 def _floor(value: float) -> float:
@@ -274,7 +275,7 @@ def fit(config: Config, name: str, takes: list[Take], numbers: list[int] | None 
     still = {n for (n, _), r in zip(numbered, result.results) if r.fired_at is not None}
     for n, _ in firing:
         if n in still:
-            result.warnings.append(f"take {n}: it shouldn't fire but still does, and no setting tells it apart "
+            result.warnings.append(f"Take {n}: It shouldn't fire but still does, and no setting tells it apart "
                                    "from your takes that should. Redo it, or do the gesture more differently.")
     return result
 
@@ -300,7 +301,7 @@ def _fit(config: Config, name: str, numbered: list[tuple[int, Take]], avoid: lis
             # Only a take that is too slow learns from an unfinished attempt.
             attempts = [a for a in attempts if a[-1][0] != -1]
         if not attempts and take.kind == DO and n not in missed:
-            warnings.append(f"take {n}: the gesture wasn't found, so its timing was left out")
+            warnings.append(f"Take {n}: The gesture wasn't found, so its timing was left out.")
         if not attempts or take.kind == OTHER:
             continue
         # A stray quick blink can share a take with the one you meant, so a
@@ -328,28 +329,28 @@ def _fit(config: Config, name: str, numbered: list[tuple[int, Take]], avoid: lis
         if step.after_min_s:
             limits["after_min_s"], leaks = _fit_min(pos, gaps[TOO_QUICK].get(i, []))
             if leaks:
-                warnings.append(f"step {i + 1}: {leaks} too-quick take(s) were as slow as your quickest "
-                                 "take, so they will still fire")
+                warnings.append(f"Step {i + 1}: Too-quick takes that still fire: {leaks}. "
+                                "They were as slow as your quickest take.")
         if step.after_max_s:
             limits["after_max_s"], leaks = _fit_max(pos, gaps[TOO_SLOW].get(i, []))
             if leaks:
-                warnings.append(f"step {i + 1}: {leaks} too-slow take(s) were as quick as your slowest "
-                                 "take, so they will still fire")
+                warnings.append(f"Step {i + 1}: Too-slow takes that still fire: {leaks}. "
+                                "They were as quick as your slowest take.")
         timed = replace(step, **limits)
         if timed != step:
-            changes.append(f"step {i + 1}: {_window(timed)} after the previous step (was {_window(step)}). "
-                           f"Your takes took {_span(pos)}.")
+            changes.append(f"Step {i + 1}: Time after the previous step changed. Now: {_window(timed)}. "
+                           f"Was: {_window(step)}. Your takes: {_span(pos)}.")
         steps[i] = timed
     gesture = replace(gesture, steps=steps)
 
     if gesture.within_s and totals[DO]:
         value, leaks = _fit_max(totals[DO], totals[TOO_SLOW])
         if value != gesture.within_s:
-            changes.append(f"whole gesture: within {value:.2f}s (was {gesture.within_s:.2f}s). "
-                           f"Your takes took {_span(totals[DO])}.")
+            changes.append(f"Whole gesture: Time limit changed. Now: {value:.2f}s. "
+                           f"Was: {gesture.within_s:.2f}s. Your takes: {_span(totals[DO])}.")
         if leaks:
-            warnings.append(f"whole gesture: {leaks} too-slow take(s) were as quick as your slowest "
-                            "take, so they will still fire")
+            warnings.append(f"Whole gesture: Too-slow takes that still fire: {leaks}. "
+                            "They were as quick as your slowest take.")
         gesture = replace(gesture, within_s=value)
 
     fitted = replace(config, gestures={**config.gestures, name: gesture})

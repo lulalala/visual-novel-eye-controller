@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
         check_config(config)
     except (ValueError, OSError) as e:
         root.withdraw()
-        messagebox.showerror("eyeokuri", f"Can't load {args.config}:\n\n{e}")
+        messagebox.showerror("eyeokuri", f"Can't load the config file:\n\n{args.config}\n\n{e}")
         root.destroy()
         return 2
     MainWindow(root, config, args.config)

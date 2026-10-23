@@ -170,7 +170,7 @@ class PlotEditor:
             c.create_line(fx, self.TOP, fx, bottom, fill=theme.OK, dash=(4, 3), width=2)
             left = fx > width - 90
             c.create_text(fx - 4 if left else fx + 4, bottom - 4, anchor="se" if left else "sw", fill=theme.OK,
-                          text=f"fires {result.fired_at:.2f}s", font="TkSmallCaptionFont")
+                          text=f"Fires: {result.fired_at:.2f}s", font="TkSmallCaptionFont")
         if not observations:
             c.create_text(width / 2, self.TOP + 40, fill=theme.MUTED, text="No signal yet. Is the camera running?")
 

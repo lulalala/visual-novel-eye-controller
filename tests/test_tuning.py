@@ -55,17 +55,17 @@ def test_a_take_with_hardly_any_movement_is_left_out():
     takes[2] = blink_take(DO, 14, depth=0.9)
     result = fit(Config(), "blink", takes)
     assert result.gesture.steps[0].below_ratio == 0.52
-    assert any(n.startswith("take 3: hardly any movement") for n in result.warnings)
+    assert any(n.startswith("Take 3: Hardly any movement") for n in result.warnings)
     # Being left out already says why it isn't found.
-    assert not any(n.startswith("take 3: the gesture wasn't found") for n in result.warnings)
+    assert not any(n.startswith("Take 3: The gesture wasn't found") for n in result.warnings)
     assert result.results[2].fired_at is None
 
 
 def test_both_time_limits_of_a_step_share_one_line():
     result = fit(Config(), "blink", blink_takes())
-    timing = [n for n in result.changes if n.startswith("step 2:") and "after the previous step" in n]
+    timing = [n for n in result.changes if n.startswith("Step 2:") and "after the previous step" in n]
     assert len(timing) == 1
-    assert "(was 0.15-2.00s)" in timing[0]
+    assert "Was: 0.15-2.00s." in timing[0]
 
 
 def test_messages_use_the_take_numbers_you_saw():
@@ -73,13 +73,13 @@ def test_messages_use_the_take_numbers_you_saw():
     nod = [0.0] * 10 + [10.0, 20.0, 20.0, 10.0] + [0.0] * 20
     takes = [*(head_take(DO, nod, "pitch") for _ in range(3)), head_take(OTHER, nod, "pitch")]
     result = fit(Config(), "nod_down", takes, [1, 2, 3, 5])
-    assert any(n.startswith("take 5: it shouldn't fire but still does") for n in result.warnings)
+    assert any(n.startswith("Take 5: It shouldn't fire but still does") for n in result.warnings)
 
 
 def test_takes_without_movement_leave_the_edges_alone():
     result = fit(Config(), "blink", [blink_take(DO, 0) for _ in range(5)])
     assert result.gesture.steps[0].below_ratio == 0.55
-    assert any("hardly moved eyes" in n for n in result.warnings)
+    assert any(n.startswith("Step 1 · eyes: Your takes hardly moved") for n in result.warnings)
 
 
 def test_an_edge_stays_clear_of_the_box_around_rest():
@@ -95,7 +95,7 @@ def test_takes_that_cannot_reach_the_edge_are_reported():
     nod = [0.0] * 10 + [5.0, 10.0, 10.0, 5.0] + [0.0] * 20
     result = fit(Config(), "nod_down", [head_take(DO, nod, "pitch") for _ in range(3)])
     assert result.gesture.steps[0].above_deg == 11.0
-    assert any("weakest take didn't reach the edge" in n for n in result.warnings)
+    assert any("Your weakest take didn't reach the edge" in n for n in result.warnings)
     assert all(r.fired_at is None for r in result.results)
 
 
@@ -116,7 +116,7 @@ def test_near_misses_that_overlap_your_takes_are_reported():
     takes = [*(blink_take(DO, n) for n in (6, 12, 14)), blink_take(TOO_QUICK, 8)]
     result = fit(Config(), "blink", takes)
     assert result.gesture.steps[1].after_min_s < 6 / FPS
-    assert any("too-quick take(s) were as slow as your quickest" in n for n in result.warnings)
+    assert any("Too-quick takes that still fire: 1." in n for n in result.warnings)
     assert result.results[3].fired_at is not None
 
 
@@ -126,7 +126,7 @@ def test_without_any_matching_take_the_timing_stays():
     default = Config().gestures["blink"].steps[1]
     assert (result.gesture.steps[1].after_min_s, result.gesture.steps[1].after_max_s) == (
         default.after_min_s, default.after_max_s)
-    assert any("the gesture wasn't found" in n for n in result.warnings)
+    assert any("The gesture wasn't found" in n for n in result.warnings)
 
 
 def test_other_takes_are_only_checked():
@@ -151,7 +151,7 @@ def test_the_edge_rises_above_a_take_that_should_not_fire():
     result = fit(Config(), "nod_down", takes)
     assert 13.0 < result.gesture.steps[0].above_deg < 20.0
     assert [r.fired_at is not None for r in result.results] == [True] * 3 + [False]
-    assert any("stays above your \"shouldn't fire\" take 4" in n for n in result.changes)
+    assert any("Kept clear of these \"shouldn't fire\" takes: 4." in n for n in result.changes)
 
 
 def test_a_take_that_cannot_be_told_apart_is_reported():
@@ -159,7 +159,7 @@ def test_a_take_that_cannot_be_told_apart_is_reported():
     takes = [*(head_take(DO, nod, "pitch") for _ in range(3)), head_take(OTHER, nod, "pitch")]
     result = fit(Config(), "nod_down", takes)
     assert result.results[3].fired_at is not None
-    assert any(n.startswith("take 4: it shouldn't fire but still does") for n in result.warnings)
+    assert any(n.startswith("Take 4: It shouldn't fire but still does") for n in result.warnings)
 
 
 def test_gestures_made_of_other_gestures_cannot_be_tuned():

@@ -153,7 +153,7 @@ class ConfigWindow:
             self.values[section][key] = kind(text.strip())
             self._field_errors.pop(label, None)
         except ValueError:
-            self._field_errors[label] = f"{label}: {text!r} is not a{'n integer' if kind is int else ' number'}"
+            self._field_errors[label] = ("Not a whole number: " if kind is int else "Not a number: ") + f"{label} = {text!r}"
         self._refresh()
 
     def _refresh(self) -> None:

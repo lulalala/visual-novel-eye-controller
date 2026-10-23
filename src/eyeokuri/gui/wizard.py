@@ -29,7 +29,7 @@ _WIZARD_WRAP = 760
 
 
 def _outcome(kind: str) -> str:
-    return "you choose" if kind in _ASK_KINDS else "should fire" if kind == DO else "shouldn't fire"
+    return "You choose" if kind in _ASK_KINDS else "Should fire" if kind == DO else "Shouldn't fire"
 
 
 class WizardWindow:
@@ -138,11 +138,11 @@ class WizardWindow:
 
     def _take_page(self) -> None:
         kind, what = self.script[self.page]
-        self.counter.configure(text=f"Take {self.page + 1} of {len(self.script)}")
-        self.heading.configure(text=f"{what[0].upper()}{what[1:]}.")
-        outcome = "" if kind in _ASK_KINDS else _outcome(kind).capitalize() + "."
+        self.counter.configure(text=f"Take {self.page + 1} / {len(self.script)}")
+        self.heading.configure(text=what)
+        outcome = "" if kind in _ASK_KINDS else _outcome(kind) + "."
         # The first page also says what the wizard does, since it has no page of its own.
-        intro = f"Record a few takes, and the wizard fits {self.name} to them. " if self.page == 0 else ""
+        intro = "Record a few takes, and the wizard fits this gesture to them. " if self.page == 0 else ""
         self.subheading.configure(text=intro + outcome)
         row = ttk.Frame(self.content)
         row.pack(fill="x")
@@ -202,7 +202,7 @@ class WizardWindow:
             if fired:
                 text = "Fires, as it should." if ok else "Fires, but it shouldn't."
             else:
-                text = f"Doesn't fire{', as it should' if ok else ''}: {result.reason}."
+                text = ("Doesn't fire, as it should: " if ok else "Doesn't fire: ") + result.reason + "."
             message = f"{'✓' if ok else '✕'} {text}"
             if kind == DO and not self._moved(take):
                 message += " Hardly any movement: redo it and move further."
@@ -213,7 +213,7 @@ class WizardWindow:
 
     def _review_page(self) -> None:
         self.counter.configure(text="Review")
-        self.heading.configure(text=f"New settings for {self.name}")
+        self.heading.configure(text="New settings")
         self.subheading.configure(text="Select a take to see it on the plot.")
         self.content.columnconfigure(1, weight=1)
         self.content.rowconfigure(0, weight=1)
@@ -241,15 +241,15 @@ class WizardWindow:
             fired = result.fired_at is not None
             ok = fired == (take.kind == DO)
             wrong += not ok
-            text = "fires" if fired else f"doesn't fire: {result.reason}"
+            text = "Fires" if fired else "Doesn't fire: " + result.reason
             # Numbered by page, as on the take pages and in the notes below.
-            view.insert("", "end", iid=str(j), values=(f"{j + 1}. {KIND_LABELS[take.kind].capitalize()}",
+            view.insert("", "end", iid=str(j), values=(f"{j + 1}. {KIND_LABELS[take.kind]}",
                         f"{'✓' if ok else '✕'} {text}"), tags=("ok" if ok else "bad",))
         row = 1
         if self.fitted is not None:
             # The verdict first, then what to act on, then what changed.
             summary = ("Every take does what it should." if not wrong else
-                       f"{wrong} take(s) don't do what they should. Redo them, or fine-tune the boxes afterward.")
+                       f"Takes that don't do what they should: {wrong}. Redo them, or fine-tune the boxes afterward.")
             changes = self.fitted.changes or ["Your takes fit the current settings. Nothing changed."]
             for lines, color in (([summary], theme.OK if not wrong else theme.BAD),
                                  ([f"• {w}" for w in self.fitted.warnings], theme.BAD),
@@ -260,7 +260,7 @@ class WizardWindow:
                               ).grid(row=row, column=0, columnspan=2, sticky="w", pady=(10 if row == 1 else 6, 0))
                     row += 1
         if not self.base.gestures[self.name].enabled:
-            ttk.Checkbutton(self.content, text=f"Turn {self.name} on", variable=self.enable, style="Wizard.TCheckbutton",
+            ttk.Checkbutton(self.content, text="Turn this gesture on", variable=self.enable, style="Wizard.TCheckbutton",
                             ).grid(row=row, column=0, columnspan=2, sticky="w", pady=(10, 0))
         self.back_button.configure(state="normal")
         has_do = any(t is not None and t.kind == DO for t in self.takes)
@@ -307,20 +307,20 @@ class WizardWindow:
                     text = f"Recording… {elapsed:.1f} s" + (f"   ({problem})" if problem else "")
                     self.status.configure(text=text, foreground=theme.BAD if problem else theme.OK)
             elif problem:
-                self.status.configure(text=problem[0].upper() + problem[1:], foreground=theme.BAD)
+                self.status.configure(text=problem, foreground=theme.BAD)
             elif take is not None:
-                self.status.configure(text=f"Recorded {take.observations[-1].timestamp:.1f} s", foreground=theme.MUTED)
+                self.status.configure(text=f"Recorded: {take.observations[-1].timestamp:.1f} s", foreground=theme.MUTED)
             else:
                 self.status.configure(text="Ready (Space starts and stops)", foreground=theme.MUTED)
         self._poll_id = self.win.after(100, self._poll)
 
     def _face_problem(self) -> str | None:
         if self.worker.engine is None:
-            return "the camera isn't running"
+            return "The camera isn't running"
         recent = self.worker.recent(0.3)
         signals = {s.signal for s in self.base.gestures[self.name].steps}
         if not recent or any(signal_value(s, recent[-1]) is None for s in signals):
-            return "no face in view"
+            return "No face in view"
         return None
 
     def _moved(self, take: Take) -> bool:

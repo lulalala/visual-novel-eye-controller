@@ -209,7 +209,7 @@ class GestureWindow:
         try:
             value = None if text == "" and optional else float(text or 0)
         except ValueError:
-            self._field_errors[label] = f"{label}: {text!r} is not a number"
+            self._field_errors[label] = f"Not a number: {label} = {text!r}"
             return
         self._field_errors.pop(label, None)
         target[key] = value
@@ -295,7 +295,7 @@ class GestureWindow:
         if self._suppress:
             return
         guard = self.model["guards"][i]
-        self._set_number(guard, key, self.guard_vars[(i, key)].get(), f"Head limit {i + 1} {key}", True)
+        self._set_number(guard, key, self.guard_vars[(i, key)].get(), f"Head limit {i + 1} · {key}", True)
         self._refresh()
 
     def _add_guard(self) -> None:
@@ -327,7 +327,7 @@ class GestureWindow:
         if self._suppress:
             return
         step = self.model["steps"][i]
-        self._set_number(step, key, self.step_vars[(i, key)].get(), f"Step {i + 1} {key}", optional)
+        self._set_number(step, key, self.step_vars[(i, key)].get(), f"Step {i + 1} · {key}", optional)
         self._refresh()
 
     def _add_step(self) -> None:
@@ -401,7 +401,7 @@ class GestureWindow:
         if result is None:
             self.result.configure(text="", foreground=theme.MUTED)
         elif result.fired_at is not None:
-            self.result.configure(text=f"✓ Fires at {result.fired_at:.2f}s", foreground=theme.OK)
+            self.result.configure(text=f"✓ Fires: {result.fired_at:.2f}s", foreground=theme.OK)
         else:
             self.result.configure(text=f"✕ {result.reason[:1].upper()}{result.reason[1:]}", foreground=theme.BAD)
         self.plot.draw(self.model, observations, result, RECORD_S)
@@ -435,10 +435,10 @@ class GestureWindow:
             return
         users = users_of(self._opened_with.gestures, self.name)
         if users:
-            messagebox.showerror("Delete gesture", f"{self.name} is a step of {', '.join(users)}. "
-                                 "Remove it from there first.", parent=self.win)
+            messagebox.showerror("Delete gesture", "Other gestures use this one as a step. Remove it from them first:"
+                                 f"\n\n{', '.join(users)}", parent=self.win)
             return
-        if not messagebox.askyesno("Delete gesture", f"Delete {self.name}?", parent=self.win):
+        if not messagebox.askyesno("Delete gesture", f"Delete this gesture?\n\n{self.name}", parent=self.win):
             return
         if self.new:
             self.cancel()

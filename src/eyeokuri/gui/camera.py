@@ -110,8 +110,8 @@ class CameraPicker:
         tile.grid(row=n // 2, column=n % 2, padx=4, pady=4)
         label = ttk.Label(tile, cursor="hand2")
         label.pack()
-        caption = f"Camera {index}" + (" (in use)" if index == self.current else "")
-        ttk.Button(tile, text=f"Use {caption.lower()}" if index != self.current else caption,
+        caption = f"Camera {index} · " + ("In use" if index == self.current else "Use")
+        ttk.Button(tile, text=caption,
                    command=lambda: self._pick(index)).pack(fill="x", pady=(4, 0))
         label.bind("<Button-1>", lambda _e: self._pick(index))
         self.tiles[index] = (label, None)
