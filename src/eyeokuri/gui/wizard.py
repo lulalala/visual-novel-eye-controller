@@ -15,7 +15,7 @@ from eyeokuri.gui.model import gesture_model, wizard_traces
 from eyeokuri.gui.plot import PlotEditor, tint
 from eyeokuri.gui.tkutil import place_over, scaled_font
 from eyeokuri.gui.worker import MAX_TAKE_S
-from eyeokuri.i18n import _
+from eyeokuri.i18n import _, gap, stop
 from eyeokuri.triggers import Replay, signal_value
 from eyeokuri.tuning import DO, KIND_LABELS, TOO_QUICK, TOO_SLOW, Fit, Take, fit, script, trim
 
@@ -139,7 +139,7 @@ class WizardWindow:
         self.heading.configure(text=_(what))
         outcome = "" if kind in _ASK_KINDS else _("Should fire.") if kind == DO else _("Shouldn't fire.")
         # The first page also says what the wizard does, since it has no page of its own.
-        intro = _("Record a few takes, and the wizard fits this gesture to them.") + " " if self.page == 0 else ""
+        intro = _("Record a few takes, and the wizard fits this gesture to them.") + gap() if self.page == 0 else ""
         self.subheading.configure(text=intro + outcome)
         row = ttk.Frame(self.content)
         row.pack(fill="x")
@@ -199,12 +199,12 @@ class WizardWindow:
             if fired:
                 text = _("Fires, as it should.") if ok else _("Fires, but it shouldn't.")
             else:
-                text = (_("Doesn't fire, as it should:") if ok else _("Doesn't fire:")) + " " + result.reason + "."
+                text = (_("Doesn't fire, as it should:") if ok else _("Doesn't fire:")) + " " + result.reason + stop()
             message = f"{'✓' if ok else '✕'} {text}"
             if kind == DO and not self._moved(take):
-                message += " " + _("Hardly any movement: redo it and move further.")
+                message += gap() + _("Hardly any movement: redo it and move further.")
             elif not ok:
-                message += " " + _("Redo it if you got it wrong.")
+                message += gap() + _("Redo it if you got it wrong.")
             self.result.configure(text=message, foreground=theme.OK if ok else theme.BAD)
         self._draw(self.page)
 
@@ -220,7 +220,10 @@ class WizardWindow:
                                              height=8, selectmode="browse", style="Wizard.Treeview")
         view.heading("take", text=_("Take"))
         view.heading("result", text=_("Result"))
-        view.column("take", width=170)
+        # Wide enough for the longest take name in this language.
+        take_width = max(self._text.measure(f"{len(self.takes)}. {_(label)}")
+                         for label in KIND_LABELS.values())
+        view.column("take", width=max(170, take_width + 24))
         view.column("result", width=340)
         view.tag_configure("ok", foreground=theme.OK)
         view.tag_configure("bad", foreground=theme.BAD)
@@ -246,7 +249,7 @@ class WizardWindow:
         if self.fitted is not None:
             # The verdict first, then what to act on, then what changed.
             summary = (_("Every take does what it should.") if not wrong else
-                       _("Takes that don't do what they should:") + f" {wrong}. "
+                       _("Takes that don't do what they should:") + f" {wrong}" + stop() + gap()
                        + _("Redo them, or fine-tune the boxes afterward."))
             changes = self.fitted.changes or [_("Your takes fit the current settings. Nothing changed.")]
             for lines, color in (([summary], theme.OK if not wrong else theme.BAD),

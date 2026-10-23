@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from tkinter import font as tkfont
 from typing import Any, Callable
 
 from eyeokuri import theme
@@ -169,9 +170,11 @@ class PlotEditor:
         if result is not None and result.fired_at is not None:
             fx = x(result.fired_at)
             c.create_line(fx, self.TOP, fx, bottom, fill=theme.OK, dash=(4, 3), width=2)
-            left = fx > width - 90
+            label = _("Fires:") + f" {result.fired_at:.2f}s"
+            # The label sits right of the line unless it would run off the plot.
+            left = fx + 4 + tkfont.nametofont("TkSmallCaptionFont").measure(label) > width
             c.create_text(fx - 4 if left else fx + 4, bottom - 4, anchor="se" if left else "sw", fill=theme.OK,
-                          text=_("Fires:") + f" {result.fired_at:.2f}s", font="TkSmallCaptionFont")
+                          text=label, font="TkSmallCaptionFont")
         if not observations:
             c.create_text(width / 2, self.TOP + 40, fill=theme.MUTED, text=_("No signal yet. Is the camera running?"))
 

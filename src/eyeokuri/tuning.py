@@ -8,7 +8,7 @@ from dataclasses import dataclass, replace
 
 from eyeokuri.config import RATIO_SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
-from eyeokuri.i18n import N_, _
+from eyeokuri.i18n import N_, _, gap, stop
 from eyeokuri.triggers import GestureTrigger, Replay, replay, signal_value
 
 # What a take is: the gesture as you mean it, or a near miss that must not fire.
@@ -171,7 +171,7 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
         typical = statistics.median(p for _, p in peaks)
         if typical < _MIN_REACH[signal]:
             warnings.append(_step_label(i, signal) + " " + _("Your takes hardly moved, so the edge stays.")
-                            + " " + _("Redo them, and move further."))
+                            + gap() + _("Redo them, and move further."))
             continue
         used = [p for n, p in peaks if p >= _MISS * typical]
         missed |= {n for n, p in peaks if p < _MISS * typical}
@@ -197,19 +197,20 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
         old = getattr(step, key)
         if value != old:
             # A short sentence, then labeled values, so a translation never has to reorder them.
-            changes.append(_step_label(i, signal) + " " + _("Edge moved.") + " " + _("Now:") + f" {_show(signal, value)}. "
-                           + _("Was:") + f" {_show(signal, old)}. "
-                           + _("Your weakest take:") + f" {_show(signal, rest + d * weakest)}."
-                           + (" " + _("Kept clear of these \"shouldn't fire\" takes:")
-                              + f" {', '.join(str(n) for n, _n in blockers)}." if blockers else ""))
+            changes.append(_step_label(i, signal) + " " + _("Edge moved.") + gap()
+                           + _("Now:") + f" {_show(signal, value)}" + stop() + gap()
+                           + _("Was:") + f" {_show(signal, old)}" + stop() + gap()
+                           + _("Your weakest take:") + f" {_show(signal, rest + d * weakest)}" + stop()
+                           + (gap() + _("Kept clear of these \"shouldn't fire\" takes:")
+                              + f" {', '.join(str(n) for n, _n in blockers)}" + stop() if blockers else ""))
             steps[i] = replace(step, **{key: value})
         if reach > weakest:
             warnings.append(_step_label(i, signal) + " "
                             + _("Your weakest take didn't reach the edge, which can't be closer to rest, so that take won't fire.")
-                            + " " + _("Move further when you do the gesture."))
+                            + gap() + _("Move further when you do the gesture."))
     for n in sorted(missed):
         warnings.append(_("Take") + f" {n}: " + _("Hardly any movement, so it was left out.")
-                        + " " + _("Redo it if you missed the cue."))
+                        + gap() + _("Redo it if you missed the cue."))
     return replace(gesture, steps=steps), missed
 
 
@@ -286,7 +287,7 @@ def fit(config: Config, name: str, takes: list[Take], numbers: list[int] | None 
             result.warnings.append(
                 _("Take") + f" {n}: "
                 + _("It shouldn't fire but still does, and no setting tells it apart from your takes that should.")
-                + " " + _("Redo it, or do the gesture more differently."))
+                + gap() + _("Redo it, or do the gesture more differently."))
     return result
 
 
@@ -339,29 +340,29 @@ def _fit(config: Config, name: str, numbered: list[tuple[int, Take]], avoid: lis
         if step.after_min_s:
             limits["after_min_s"], leaks = _fit_min(pos, gaps[TOO_QUICK].get(i, []))
             if leaks:
-                warnings.append(_("Step") + f" {i + 1}: " + _("Too-quick takes that still fire:") + f" {leaks}. "
+                warnings.append(_("Step") + f" {i + 1}: " + _("Too-quick takes that still fire:") + f" {leaks}" + stop() + gap()
                                 + _("They were as slow as your quickest take."))
         if step.after_max_s:
             limits["after_max_s"], leaks = _fit_max(pos, gaps[TOO_SLOW].get(i, []))
             if leaks:
-                warnings.append(_("Step") + f" {i + 1}: " + _("Too-slow takes that still fire:") + f" {leaks}. "
+                warnings.append(_("Step") + f" {i + 1}: " + _("Too-slow takes that still fire:") + f" {leaks}" + stop() + gap()
                                 + _("They were as quick as your slowest take."))
         timed = replace(step, **limits)
         if timed != step:
-            changes.append(_("Step") + f" {i + 1}: " + _("Time after the previous step changed.") + " "
-                           + _("Now:") + f" {_window(timed)}. " + _("Was:") + f" {_window(step)}. "
-                           + _("Your takes:") + f" {_span(pos)}.")
+            changes.append(_("Step") + f" {i + 1}: " + _("Time after the previous step changed.") + gap()
+                           + _("Now:") + f" {_window(timed)}" + stop() + gap() + _("Was:") + f" {_window(step)}" + stop() + gap()
+                           + _("Your takes:") + f" {_span(pos)}" + stop())
         steps[i] = timed
     gesture = replace(gesture, steps=steps)
 
     if gesture.within_s and totals[DO]:
         value, leaks = _fit_max(totals[DO], totals[TOO_SLOW])
         if value != gesture.within_s:
-            changes.append(_("Whole gesture:") + " " + _("Time limit changed.") + " "
-                           + _("Now:") + f" {value:.2f}s. " + _("Was:") + f" {gesture.within_s:.2f}s. "
-                           + _("Your takes:") + f" {_span(totals[DO])}.")
+            changes.append(_("Whole gesture:") + " " + _("Time limit changed.") + gap()
+                           + _("Now:") + f" {value:.2f}s" + stop() + gap() + _("Was:") + f" {gesture.within_s:.2f}s" + stop() + gap()
+                           + _("Your takes:") + f" {_span(totals[DO])}" + stop())
         if leaks:
-            warnings.append(_("Whole gesture:") + " " + _("Too-slow takes that still fire:") + f" {leaks}. "
+            warnings.append(_("Whole gesture:") + " " + _("Too-slow takes that still fire:") + f" {leaks}" + stop() + gap()
                             + _("They were as quick as your slowest take."))
         gesture = replace(gesture, within_s=value)
 

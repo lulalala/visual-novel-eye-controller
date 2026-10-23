@@ -18,7 +18,11 @@ _LOCALE_LANGUAGES = {
     "zh_HK": "zh-TW",
 }
 
+# Language code -> (gap between sentences, full stop). Chinese has no space after a sentence and ends with 。.
+_STYLES = {"zh-TW": ("", "。")}
+
 _active: dict[str, str] = {}
+_style = (" ", ".")
 
 
 def _(text: str) -> str:
@@ -33,8 +37,19 @@ def N_(text: str) -> str:
 
 def set_language(code: str) -> None:
     """Pick a catalog by code (a key of CATALOGS); any other code, such as "en", selects English."""
-    global _active
+    global _active, _style
     _active = CATALOGS.get(code, {})
+    _style = _STYLES.get(code, (" ", ".")) if code in CATALOGS else (" ", ".")
+
+
+def gap() -> str:
+    """What goes between two sentences: a space, or nothing in Chinese."""
+    return _style[0]
+
+
+def stop() -> str:
+    """The full stop that ends a sentence after a value, which the catalog can't hold."""
+    return _style[1]
 
 
 def language_for_locale(name: str) -> str:

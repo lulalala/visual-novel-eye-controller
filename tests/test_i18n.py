@@ -94,3 +94,11 @@ def test_auto_language_detects_and_others_are_used_as_given(monkeypatch):
     monkeypatch.setattr(i18n, "detect_language", lambda: "zh-TW")
     assert i18n.resolve_language("auto") == "zh-TW"
     assert i18n.resolve_language("en") == "en"
+
+
+def test_sentence_gap_and_stop_follow_the_language():
+    assert (i18n.gap(), i18n.stop()) == (" ", ".")
+    set_language("zh-TW")
+    assert (i18n.gap(), i18n.stop()) == ("", "。")
+    set_language("en")
+    assert (i18n.gap(), i18n.stop()) == (" ", ".")
