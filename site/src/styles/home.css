@@ -13,6 +13,8 @@
   --display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
 }
+/* Zen Maru Gothic only has Japanese glyphs, so Traditional Chinese uses a TC system font instead of a mix of both. */
+:root:lang(zh-TW) { --display: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {

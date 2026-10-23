@@ -18,6 +18,7 @@ export default defineConfig({
       locales: {
         root: { label: "English", lang: "en" },
         ja: { label: "日本語", lang: "ja" },
+        "zh-tw": { label: "繁體中文", lang: "zh-TW" },
       },
       customCss: ["./src/styles/docs.css"],
       sidebar: [{ label: "Guide", items: [{ autogenerate: { directory: "guide" } }] }],

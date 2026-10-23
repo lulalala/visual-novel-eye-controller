@@ -28,7 +28,7 @@ export interface HomeText {
     shotAlt: string;
   };
   start: { title: string; steps: { title: string; text: string }[]; button: string; trust: string[] };
-  pass: { title: string; text: string; star: string; request: string };
+  pass: { title: string; star: string; request: string };
   footer: string;
   footerReleases: string;
   footerCredits: string;
@@ -96,5 +96,67 @@ export const home: Record<string, HomeText> = {
     footer: "eyeokuri · open source · made for people who read a lot",
     footerReleases: "All releases",
     footerCredits: "Credits",
+  },
+  "zh-tw": {
+    lang: "zh-TW",
+    langName: "繁體中文",
+    title: "eyeokuri：眨眼，下一句。",
+    description: "不用動手也能讀視覺小說。eyeokuri 把你的眨眼變成 Enter 鍵。",
+    ogDescription:
+      "不用動手也能讀視覺小說：眨眼跳下一句，搖頭暫停。免費、開源，資料完全不會離開你的電腦。",
+    keywords: "視覺小說, galgame, 免手動, 眨眼翻頁, 視訊鏡頭, 眼部控制, 無障礙, 自動播放",
+    nav: { download: "下載", docs: "使用說明", github: "GitHub", language: "語言" },
+    heroLine1: "眨眼，",
+    heroLine2: "下一句。",
+    sub: "躺著也能推 galgame。eyeokuri 把眨眼變成 Enter 鍵，雙手從此解放。",
+    cta: "下載",
+    meta: ["免費", "開源", "約 65 MB"],
+    demoLabel: "eyeokuri 在視覺小說中的互動示範",
+    eyeLabel: "一隻會眨眼的動漫風眼睛",
+    dialogLabel: "推進對話（眨眼、點擊或按空白鍵）",
+    speaker: "eyeokuri",
+    hintBlink: "眨眼繼續",
+    hintClick: "點擊繼續",
+    enterSent: "Enter ⏎<br>已送出",
+    lines: [
+      "手……手上拿滿零食了？很好。我才不是想讓你依賴我呢！",
+      "滑鼠手又犯了？嘖，手給我好好休息。我……我才沒有擔心你呢！",
+      "我會一直盯著你的鏡頭，你一眨眼，我就幫你按 Enter。別……別想太多喔，笨蛋！",
+      "想休息？搖搖頭就好，我會等你。只……只是因為我很閒而已！",
+      "所有東西都留在你的電腦裡，我一格畫面都不會存。蛤？你該不會以為我會偷看你吧！",
+      "哼，準備好了嗎？眨一下眼，故事就交給你了。這種話我可不說第二次喔！",
+    ],
+    share: {
+      copy: "複製連結",
+      copied: "已複製",
+      message: "眨眼，下一句。用 eyeokuri，雙手不碰鍵盤也能讀視覺小說。",
+    },
+    gestures: {
+      kicker: "動作 → 按鍵",
+      title: "你的臉就是手把",
+      text: "eyeokuri 透過視訊鏡頭看著你，替你按下按鍵。眨眼繼續讀，想休息就搖搖頭。",
+      shotAlt: "eyeokuri 視窗：動作清單，列出各動作對應的按鍵與開關，下方是記錄的開頭",
+    },
+    start: {
+      title: "你的雙手，自由了",
+      steps: [
+        { title: "下載", text: "Windows 版免費，約 65 MB。任何視訊鏡頭都能用，連 Android 手機當鏡頭也行。" },
+        {
+          title: "執行",
+          text: "這個程式沒有數位簽章，所以 Windows 可能會警告「不明的發行者」。選擇<b>其他資訊</b>，再按<b>仍要執行</b>。",
+        },
+        { title: "調整", text: "內建精靈可以學習你的眨眼方式，你也可以手動自訂新動作。" },
+      ],
+      button: "下載 Windows 版",
+      trust: ["鏡頭畫面絕不離開你的電腦", "免費且開源", "只連網一次，下載 4 MB 的臉部模型"],
+    },
+    pass: {
+      title: "好東西就是要跟好朋友分享",
+      star: "★ 在 GitHub 上給星星",
+      request: "許願新動作 →",
+    },
+    footer: "開源軟體 eyeokuri，獻給文字量爆表的你",
+    footerReleases: "所有版本",
+    footerCredits: "致謝",
   },
 };
