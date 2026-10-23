@@ -40,6 +40,8 @@ Each gesture row shows the gesture's name and the key it sends. It also has a ch
 
 The **All gestures** checkbox at the top of the list pauses and resumes eyeokuri, as do the `p` key and a head shake. While paused, gestures still fire but only appear in the log (for example `blink: ... -> enter (paused, not sent)`), so you can try them without sending input. eyeokuri saves the pause state, and the next start (in the window or on the command line) begins paused if you left it paused.
 
+The window follows your Windows display language: Traditional Chinese (`zh-TW`) or English. To pick one yourself, set `language = "en"` or `language = "zh-TW"` under `[app]` in `config.toml`. The log lines stay in English.
+
 The log shows gestures that fired, gestures that didn't and why (too short, too long, cooldown, paused), and pauses. The status bar shows whether eyeokuri sees your face.
 
 **View > Camera view…** opens the live camera view with your eye outlines and signal values, next to the main window (the two are the same height). eyeokuri draws it only while that window is open, so close it when you don't need it, to save CPU.

@@ -11,7 +11,7 @@ This plan covers translating the `eyeokuri-gui` windows into other languages, st
 | 2. Wrap the GUI strings | Done: 181 strings; the zh-TW catalog is still empty |
 | 3. zh-TW catalog | Done, awaiting native review |
 | 4. Layout pass | Code done; waiting for the user's visual check |
-| 5. Docs | Not started |
+| 5. Docs | Done |
 
 Update this table when you finish a phase.
 

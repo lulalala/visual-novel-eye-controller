@@ -31,6 +31,7 @@
 - `app.paused` is read only at startup; `set_config()` must not change the live paused state.
 - The gesture window gets match results from `triggers.replay()`, and the wizard fits limits with `tuning.fit()`. Don't reimplement matching or fitting in a window.
 - Logic that needs no widgets goes in `gui/model.py` or `tuning.py` (no Tk imports), so it is unit-tested. One window per module; windows import `MainWindow` only under `TYPE_CHECKING`.
+- **Translations.** Wrap every new user-facing GUI string with `_()` (`N_()` in module-level constants) following the rules in `docs/i18n/gui-plan.md`, and add the entry to every catalog in `locales/` in the same change. Log lines and `ValueError` messages stay English.
 - **Layout: align to columns.** Rows that belong together share one grid so their entries line up (head limits use the steps table's columns). An add button sits directly under the column it extends. This is the most frequent correction in this repo.
 
 ## Code conventions

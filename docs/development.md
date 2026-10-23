@@ -46,6 +46,8 @@ src/eyeokuri/
   eyes.py         Signals -> Observation (open/closed vs. your open-eye level, and wink: one eye vs. the other)
   head.py         Signals -> head yaw/pitch relative to your usual pose
   triggers.py     Observation -> step boxes entered -> gestures -> TriggerEvent
+  i18n.py         GUI translations: _(), N_(), language detection (no Tk; the command line stays English)
+  locales/        one catalog per GUI language ({"English text": "translated text"}), e.g. zh_tw.py
   keys.py         key names and combinations ("ctrl+s"): parsing and press order
   outputs.py      TriggerEvent -> key/mouse input
   engine.py       runs the pipeline one frame at a time (used by both front ends)
@@ -73,7 +75,8 @@ site/             static site (Astro with Starlight)
   src/scripts/    home.js, the homepage demo
   src/styles/     home.css (homepage) and docs.css (docs theme)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
-docs/i18n/        one glossary per language (glossary.zh-TW.tsv): columns en, the language code, note
+docs/i18n/        one glossary per language (glossary.zh-TW.tsv): columns en, the language code, note;
+                  gui-plan.md, the phased plan for translating the GUI
 ```
 
 ## Update the window icons
@@ -106,6 +109,13 @@ The docs are set up for English, Japanese (`ja`) and Traditional Chinese for Tai
 - Use the terms in `docs/i18n/glossary.<language>.tsv`, and add a row when you settle on a new one.
 - To translate a docs page, copy it to the same path under `site/src/content/docs/<language>/` and translate it.
 - To translate the homepage, add the language to `site/src/i18n/home.ts`, then add `site/src/pages/<language>/index.astro` that renders `<Home locale="<language>" />`.
+
+## Translate the GUI
+
+The GUI follows the Windows display language (`app.language = "auto"`) and has a Traditional Chinese (`zh-TW`) catalog. Log lines, `ValueError` messages and the command line stay English. The rules for writing translatable strings are in `docs/i18n/gui-plan.md`.
+
+- To add a string, wrap it with `_("...")` (or `N_("...")` in a module-level constant, and `_(value)` where it shows), then add the entry to every catalog in `eyeokuri/locales/`. `tests/test_i18n.py` fails when a catalog has a missing or stale entry.
+- To add a language, copy `locales/zh_tw.py`, add it to `CATALOGS` in `i18n.py`, add the Windows locale names to `_LOCALE_LANGUAGES` (and the sentence gap and full stop to `_STYLES` if the language needs them), and add `docs/i18n/glossary.<language>.tsv`. Ask a native speaker to review the catalog before release.
 
 ## Extend eyeokuri
 
