@@ -8,10 +8,11 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox
 
-from eyeokuri import theme
+from eyeokuri import i18n, theme
 from eyeokuri.config import Config, load_config
 from eyeokuri.engine import check_config
 from eyeokuri.gui.main_window import MainWindow
+from eyeokuri.i18n import _
 
 
 def _windows_sharp_text() -> None:
@@ -31,6 +32,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="config file to load and save (default: config.toml, created on first save)")
     args = p.parse_args(argv)
     _windows_sharp_text()
+    i18n.set_language(i18n.detect_language())
     root = tk.Tk()
     theme.apply(root)
     try:
@@ -38,9 +40,10 @@ def main(argv: list[str] | None = None) -> int:
         check_config(config)
     except (ValueError, OSError) as e:
         root.withdraw()
-        messagebox.showerror("eyeokuri", f"Can't load the config file:\n\n{args.config}\n\n{e}")
+        messagebox.showerror("eyeokuri", _("Can't load the config file:") + f"\n\n{args.config}\n\n{e}")
         root.destroy()
         return 2
+    i18n.set_language(i18n.resolve_language(config.app.language))
     MainWindow(root, config, args.config)
     root.mainloop()
     return 0

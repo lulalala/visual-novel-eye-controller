@@ -9,6 +9,8 @@ from dataclasses import dataclass, field, fields, is_dataclass, replace
 from pathlib import Path
 from typing import Any
 
+from eyeokuri.i18n import CATALOGS
+
 
 @dataclass(frozen=True)
 class CameraConfig:
@@ -177,6 +179,14 @@ class AppConfig:
     # Start paused: gestures are detected and logged but send nothing. The GUI
     # saves this whenever you pause or resume, so it starts the way you left it.
     paused: bool = False
+    # GUI language: "auto" follows the Windows display language; "en" or a
+    # translation's code (zh-TW) picks one. The command line is always English.
+    language: str = "auto"
+
+    def __post_init__(self) -> None:
+        allowed = ("auto", "en", *sorted(CATALOGS))
+        if self.language not in allowed:
+            raise ValueError(f"app.language must be one of {', '.join(allowed)}, not {self.language!r}")
 
 
 CONFIG_VERSION = 1

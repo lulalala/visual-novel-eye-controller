@@ -201,3 +201,13 @@ def test_paused_survives_a_dump_and_works_with_set(tmp_path):
     path = tmp_path / "saved.toml"
     path.write_text(text)
     assert load_config(path) == config
+
+
+def test_language_can_be_set_through_set():
+    assert config_from("--set", "app.language=en").app.language == "en"
+    assert config_from("--set", "app.language=zh-TW").app.language == "zh-TW"
+
+
+def test_unknown_language_is_rejected():
+    with pytest.raises(ValueError, match="app.language must be one of auto, en, zh-TW"):
+        config_from("--set", "app.language=fr")

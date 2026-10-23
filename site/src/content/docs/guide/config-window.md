@@ -34,6 +34,10 @@ eyeokuri learns your usual open-eye level and your usual head position, and keep
 - **warmup_s** is how many seconds it learns before gestures can fire. It must be below the window.
 - **require_both_eyes** requires both eyes to close, so a wink doesn't count.
 
+## Change the language
+
+The window follows your Windows display language when eyeokuri has a translation for it, and uses English otherwise. To pick a language yourself, set `language` in the `[app]` section of `config.toml` to `"en"` or `"zh-TW"`. The default, `"auto"`, follows Windows. The change applies the next time you start the window.
+
 ## Save or cancel
 
 The config window works like the [gesture window](/guide/edit-a-gesture/#save-or-cancel). eyeokuri uses your changes at once, **OK** saves them, and **Cancel** goes back to the settings you had when you opened the window.
