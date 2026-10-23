@@ -29,3 +29,11 @@ unknown publisher	不明的發行者	Windows SmartScreen wording; not yet checke
 Run anyway	仍要執行	Windows SmartScreen button; not yet checked on a zh-TW Windows.
 star (on GitHub)	給星星	★ 在 GitHub 上給星星.
 request (a feature)	許願	許願新動作.
+take (a wizard recording)	片段	Take 3 = 片段 3. Redo take = 重錄片段.
+edge (of a step box)	邊界	
+fire (a gesture)	觸發	Also: 會觸發 / 不會觸發.
+near miss	太快 / 太慢	Too quick, Too slow. Kinds of take that must not fire.
+cooldown	冷卻時間	
+head limit	頭部範圍	The "only while the head stays within" guard.
+hold	持續	A step column: how long the signal stays in the box.
+config (file)	設定檔	
