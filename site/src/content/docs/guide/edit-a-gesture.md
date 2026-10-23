@@ -22,7 +22,7 @@ The blink in the screenshot has two steps. Box 1 is "eyes below 0.55", and box 2
 ## Test your settings
 
 1. Open the gesture window and do the gesture.
-2. Read the line above the plot. It says `✓ Fires at 1.83s`, or why the gesture doesn't fire, for example `✕ Step 2 came 0.12s after step 1 (too short, min 0.15s)`.
+2. Read the line above the plot. It says `✓ Fires: 1.83s`, or why the gesture doesn't fire, for example `✕ Step 2 came 0.12s after step 1 (too short, min 0.15s)`.
 3. Change a setting and read the line again. It updates as you change the settings.
 
 The plot keeps only the eye and head numbers, in memory. It never keeps images.
