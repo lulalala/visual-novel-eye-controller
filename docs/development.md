@@ -73,6 +73,7 @@ site/             static site (Astro with Starlight)
   src/scripts/    home.js, the homepage demo
   src/styles/     home.css (homepage) and docs.css (docs theme)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
+docs/i18n/        one glossary per language (glossary.zh-TW.tsv): columns en, the language code, note
 ```
 
 ## Update the window icons
@@ -102,6 +103,7 @@ The site needs Node.js 22.22 or later. In `site/`, run `npm install` once, then:
 
 The docs are set up for English, Japanese (`ja`) and Traditional Chinese for Taiwan (`zh-tw`). A docs page without a translation shows the English text with a notice.
 
+- Use the terms in `docs/i18n/glossary.<language>.tsv`, and add a row when you settle on a new one.
 - To translate a docs page, copy it to the same path under `site/src/content/docs/<language>/` and translate it.
 - To translate the homepage, add the language to `site/src/i18n/home.ts`, then add `site/src/pages/<language>/index.astro` that renders `<Home locale="<language>" />`.
 

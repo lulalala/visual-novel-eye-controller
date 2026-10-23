@@ -1,0 +1,31 @@
+en	zh-tw	note
+eyeokuri	eyeokuri	Never translated; always lowercase.
+visual novel	視覺小說	Formal and SEO text (title, description, keywords).
+galgame	galgame	
+eroge	H-game	Not used on the site yet; only if the tone calls for it.
+gesture	動作	Not 手勢: blink, nod and head shake aren't hand movements.
+blink	眨眼	
+wink	眨單眼	wink_left = 眨左眼, wink_right = 眨右眼.
+nod	點頭	
+shake your head	搖頭	The pause gesture.
+head turn	轉頭	yaw; positive is your left.
+tilt (head up/down)	抬頭 / 低頭	pitch; positive is head tilted down (低頭).
+webcam	視訊鏡頭	Not 網路攝影機 or 攝影機.
+camera	鏡頭	Short form after 視訊鏡頭 has been introduced.
+frame (camera image)	畫面 / 影格	畫面 in user-facing copy (鏡頭畫面); 影格 in technical docs and log messages.
+face model	臉部模型	
+key	按鍵	
+Enter key	Enter 鍵	Key names stay in Latin: Enter, Space in labels, ctrl+s.
+Space key	空白鍵	
+output	輸出	The key or mouse input a gesture sends.
+step	步驟	One box on the gesture plot.
+wizard	精靈	The gesture wizard: 動作精靈.
+controller	控制器	Casual copy (你的臉就是手把); 控制器 in technical text.
+dialog box (in a game)	對話框	
+docs	使用說明	Not 說明文件 or 文件.
+release	版本	All releases: 所有版本.
+unsigned (app)	沒有數位簽章	
+unknown publisher	不明的發行者	Windows SmartScreen wording; not yet checked on a zh-TW Windows.
+Run anyway	仍要執行	Windows SmartScreen button; not yet checked on a zh-TW Windows.
+star (on GitHub)	給星星	★ 在 GitHub 上給星星.
+request (a feature)	許願	許願新動作.
