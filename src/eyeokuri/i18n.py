@@ -21,6 +21,9 @@ _LOCALE_LANGUAGES = {
 # Language code -> (gap between sentences, full stop). Chinese has no space after a sentence and ends with 。.
 _STYLES = {"zh-TW": ("", "。")}
 
+# Language code -> the language's name in itself, for the language picker. Not translated.
+LANGUAGE_NAMES = {"en": "English", "zh-TW": "繁體中文"}
+
 _active: dict[str, str] = {}
 _style = (" ", ".")
 

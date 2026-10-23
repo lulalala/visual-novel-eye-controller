@@ -7,8 +7,8 @@ from dataclasses import fields, replace
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Any
 
-from eyeokuri import theme
-from eyeokuri.config import Config
+from eyeokuri import i18n, theme
+from eyeokuri.config import CATALOGS, Config
 from eyeokuri.engine import check_config
 from eyeokuri.gui.camera import CameraPicker
 from eyeokuri.gui.model import fmt
@@ -66,6 +66,7 @@ class ConfigWindow:
         # Cancel goes back to these.
         self._opened_with = app.config
         self._apply_id: str | None = None
+        self.language = app.config.app.language
         self.values = {
             section: {f.name: getattr(getattr(app.config, section), f.name) for f in fields(getattr(app.config, section))}
             for section in _SECTIONS
@@ -80,7 +81,8 @@ class ConfigWindow:
         notebook.add(general_tab, text=_("General"))
         notebook.add(advanced_tab, text=_("Advanced"))
         self.vars: list[Any] = []
-        self._build_tab(general_tab, _GENERAL_SECTIONS, _("Changing camera settings reopens the camera."))
+        self._build_tab(general_tab, _GENERAL_SECTIONS, _("Changing camera settings reopens the camera."),
+                        language=True)
         self._build_tab(advanced_tab, _ADVANCED_SECTIONS, _(
             "Most people never need to change these. Changing them makes eyeokuri learn your usual "
             "eye openness and head position again."))
@@ -99,14 +101,37 @@ class ConfigWindow:
         if self._field_errors:
             raise ValueError(next(iter(self._field_errors.values())))
         base = self.app.config
-        config = replace(base, **{s: replace(getattr(base, s), **v) for s, v in self.values.items()})
+        config = replace(base, app=replace(base.app, language=self.language),
+                         **{s: replace(getattr(base, s), **v) for s, v in self.values.items()})
         check_config(config)
         return config
 
-    def _build_tab(self, tab: ttk.Frame, sections: tuple[str, ...], note: str) -> None:
+    def _build_language(self, tab: ttk.Frame, row: int) -> int:
+        """The language picker row; returns the next free row."""
+        ttk.Label(tab, text=_("Language"), font="TkHeadingFont").grid(row=row, column=0, sticky="w", pady=(8, 2))
+        names = {"auto": _("Automatic (Windows language)"), **{c: i18n.LANGUAGE_NAMES.get(c, c) for c in sorted(CATALOGS)}}
+        names.setdefault("en", "English")
+        codes = list(names)
+        var = tk.StringVar(value=names[self.language])
+        box = ttk.Combobox(tab, textvariable=var, values=list(names.values()), state="readonly", width=24)
+        box.grid(row=row + 1, column=1, columnspan=2, sticky="w", padx=(0, 8))
+        ttk.Label(tab, text="app.language").grid(row=row + 1, column=0, sticky="w", padx=(12, 8))
+        ttk.Label(tab, text=_("Takes effect the next time eyeokuri starts."), foreground=theme.MUTED).grid(
+            row=row + 2, column=1, columnspan=2, sticky="w")
+        box.bind("<<ComboboxSelected>>", lambda _e: self._on_language(codes[box.current()]))
+        self.vars.append(var)
+        return row + 3
+
+    def _on_language(self, code: str) -> None:
+        self.language = code
+        self._refresh()
+
+    def _build_tab(self, tab: ttk.Frame, sections: tuple[str, ...], note: str, language: bool = False) -> None:
         ttk.Label(tab, foreground=theme.MUTED, wraplength=640, justify="left", text=note).grid(
             row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
         row = 1
+        if language:
+            row = self._build_language(tab, row)
         for section in sections:
             values = self.values[section]
             ttk.Label(tab, text=_(_SECTION_TITLES[section]), font="TkHeadingFont").grid(
@@ -197,6 +222,8 @@ class ConfigWindow:
         except (ValueError, OSError) as e:
             self.message.configure(text=str(e), foreground=theme.BAD)
             return
+        if config.app.language != self._opened_with.app.language:
+            messagebox.showinfo("eyeokuri", _("The language changes the next time eyeokuri starts."), parent=self.win)
         self._close()
 
     def cancel(self) -> None:

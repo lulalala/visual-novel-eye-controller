@@ -60,6 +60,10 @@ CATALOG: dict[str, str] = {
     "Discard your changes?": "要捨棄你的變更嗎？",
     "Choose from live views…": "從即時畫面選擇…",
     "Changing camera settings reopens the camera.": "變更鏡頭設定時會重新開啟鏡頭。",
+    "Language": "語言",
+    "Automatic (Windows language)": "自動（跟隨 Windows 語言）",
+    "Takes effect the next time eyeokuri starts.": "下次啟動 eyeokuri 時生效。",
+    "The language changes the next time eyeokuri starts.": "語言會在下次啟動 eyeokuri 時變更。",
     "Most people never need to change these. Changing them makes eyeokuri learn your usual eye openness and head position again.":
         "大多數人都不需要調整這些設定。變更後，eyeokuri 會重新學習你平常的睜眼程度和頭部位置。",
     "Not a number:": "不是數字：",
