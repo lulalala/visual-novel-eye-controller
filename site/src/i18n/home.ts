@@ -133,7 +133,7 @@ export const home: Record<string, HomeText> = {
     },
     gestures: {
       kicker: "動作 → 按鍵",
-      title: "你的臉就是手把",
+      title: "你的臉就是控制器",
       text: "eyeokuri 透過視訊鏡頭看著你，替你按下按鍵。眨眼繼續讀，想休息就搖搖頭。",
       shotAlt: "eyeokuri 視窗：動作清單，列出各動作對應的按鍵與開關，下方是記錄的開頭",
     },
