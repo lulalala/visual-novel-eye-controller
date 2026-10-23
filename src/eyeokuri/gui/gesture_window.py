@@ -17,6 +17,7 @@ from eyeokuri.gui.model import (
 )
 from eyeokuri.gui.plot import PlotEditor
 from eyeokuri.gui.tkutil import place_over
+from eyeokuri.i18n import _
 from eyeokuri.keys import from_tk_event
 from eyeokuri.outputs import APP_OUTPUTS, OUTPUT_NAMES
 from eyeokuri.triggers import Replay, replay
@@ -62,13 +63,13 @@ class GestureWindow:
         bottom.grid(row=1, column=0, sticky="ew")
         self.message = ttk.Label(bottom, text="", foreground=theme.BAD, wraplength=640)
         self.message.pack(side="top", anchor="w", pady=(0, 6))
-        self.delete_button = ttk.Button(bottom, text="Delete", command=self._delete,
+        self.delete_button = ttk.Button(bottom, text=_("Delete"), command=self._delete,
                                         state="disabled" if self.builtin else "normal")
         self.delete_button.pack(side="left")
-        ttk.Button(bottom, text="Reset to default", command=self._reset,
+        ttk.Button(bottom, text=_("Reset to default"), command=self._reset,
                    state="normal" if self.builtin else "disabled").pack(side="left", padx=(6, 0))
-        ttk.Button(bottom, text="Cancel", command=self.cancel).pack(side="right")
-        self.ok_button = ttk.Button(bottom, text="OK", style="Accent.TButton", command=self.ok)
+        ttk.Button(bottom, text=_("Cancel"), command=self.cancel).pack(side="right")
+        self.ok_button = ttk.Button(bottom, text=_("OK"), style="Accent.TButton", command=self.ok)
         self.ok_button.pack(side="right", padx=6)
 
         self._load_fields()
@@ -97,32 +98,32 @@ class GestureWindow:
         banner = ttk.Frame(tab, padding=8, relief="groove")
         banner.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         banner.columnconfigure(1, weight=1)
-        self.wizard_button = ttk.Button(banner, text="Set up with wizard…", style="Accent.TButton",
+        self.wizard_button = ttk.Button(banner, text=_("Set up with wizard…"), style="Accent.TButton",
                                         command=lambda: self.app.open_wizard(self))
         self.wizard_button.grid(row=0, column=0, rowspan=2, padx=(0, 12))
-        ttk.Label(banner, text="Recommended: let the wizard set the limits", font="TkHeadingFont").grid(
+        ttk.Label(banner, text=_("Recommended: let the wizard set the limits"), font="TkHeadingFont").grid(
             row=0, column=1, sticky="w")
-        ttk.Label(banner, foreground=theme.MUTED, text=(
+        ttk.Label(banner, foreground=theme.MUTED, text=_(
             "Do the gesture a few times and the wizard fits the limits and time windows to you. "
             "You can also edit them by hand below.")).grid(row=1, column=1, sticky="w")
 
         top = ttk.Frame(tab)
         top.grid(row=1, column=0, sticky="ew")
-        ttk.Label(top, text="Output").pack(side="left", padx=(0, 4))
+        ttk.Label(top, text=_("Output")).pack(side="left", padx=(0, 4))
         # Editable: any key or combination (f5, ctrl+s) can be typed, or captured below.
         self.output_var = tk.StringVar()
         self.output_var.trace_add("write", lambda *_a: self._on_gesture_field())
         self.output = ttk.Combobox(top, width=18, textvariable=self.output_var,
                                    values=["(none)", *OUTPUT_NAMES, *sorted(APP_OUTPUTS)])
         self.output.pack(side="left")
-        self.capture_button = ttk.Button(top, text="Press a key…", command=self._toggle_capture)
+        self.capture_button = ttk.Button(top, text=_("Press a key…"), command=self._toggle_capture)
         self.capture_button.pack(side="left", padx=(4, 0))
         self._capturing = False
         self.any_order = tk.BooleanVar()
-        ttk.Checkbutton(top, text="Steps in any order", variable=self.any_order,
+        ttk.Checkbutton(top, text=_("Steps in any order"), variable=self.any_order,
                         command=self._on_gesture_field).pack(side="left", padx=(14, 0))
         self.gesture_vars: dict[str, tk.StringVar] = {}
-        for key, label in (("within_s", "Within"), ("cooldown_s", "Cooldown")):
+        for key, label in (("within_s", _("Within")), ("cooldown_s", _("Cooldown"))):
             ttk.Label(top, text=label).pack(side="left", padx=(14, 4))
             var = tk.StringVar()
             var.trace_add("write", lambda *_a, k=key: self._on_gesture_number(k))
@@ -138,7 +139,7 @@ class GestureWindow:
         self.result.grid(row=0, column=0, sticky="w")
         self.plot = PlotEditor(middle, self._on_drag)
         self.plot.canvas.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
-        ttk.Label(middle, foreground=theme.MUTED, text=(
+        ttk.Label(middle, foreground=theme.MUTED, text=_(
             "Drag a box edge to change a threshold or a time limit. Boxes after step 1 start when "
             "the previous step was reached in this recording.")).grid(row=2, column=0, sticky="w", pady=(4, 0))
 
@@ -177,7 +178,7 @@ class GestureWindow:
             self._stop_capture()
             return
         self._capturing = True
-        self.capture_button.configure(text="Press a key now (click to cancel)")
+        self.capture_button.configure(text=_("Press a key now (click to cancel)"))
         # Keys go to the focused button; "break" stops Space or Tab from acting on it.
         self.capture_button.focus_set()
         self.capture_button.bind("<KeyPress>", self._on_capture_key)
@@ -196,7 +197,7 @@ class GestureWindow:
         self._capturing = False
         self.capture_button.unbind("<KeyPress>")
         self.capture_button.unbind("<FocusOut>")
-        self.capture_button.configure(text="Press a key…")
+        self.capture_button.configure(text=_("Press a key…"))
 
     def _on_gesture_number(self, key: str) -> None:
         if self._suppress:
@@ -209,7 +210,7 @@ class GestureWindow:
         try:
             value = None if text == "" and optional else float(text or 0)
         except ValueError:
-            self._field_errors[label] = f"Not a number: {label} = {text!r}"
+            self._field_errors[label] = _("Not a number:") + f" {label} = {text!r}"
             return
         self._field_errors.pop(label, None)
         target[key] = value
@@ -221,7 +222,7 @@ class GestureWindow:
         for child in frame.winfo_children():
             child.destroy()
         self.step_vars: dict[tuple[int, str], tk.StringVar] = {}
-        headers = ("", "Signal", "Above", "", "Below", "", "After previous: min", "max", "Hold", "")
+        headers = ("", _("Signal"), _("Above"), "", _("Below"), "", _("After previous: min"), _("max"), _("Hold"), "")
         for col, text in enumerate(headers):
             ttk.Label(frame, text=text, foreground=theme.MUTED).grid(row=0, column=col, sticky="w", padx=3)
         m = self.model
@@ -251,9 +252,9 @@ class GestureWindow:
             ttk.Label(frame, text=unit).grid(row=r, column=5, sticky="w")
             ttk.Button(frame, text="✕", width=3, command=lambda i=i: self._delete_step(i),
                        state="normal" if len(m["steps"]) > 1 else "disabled").grid(row=r, column=9, padx=3)
-        ttk.Button(frame, text="+ Add step", command=self._add_step).grid(
+        ttk.Button(frame, text=_("+ Add step"), command=self._add_step).grid(
             row=len(m["steps"]) + 1, column=1, sticky="w", padx=3, pady=(4, 0))
-        ttk.Label(frame, foreground=theme.MUTED, text="Leave a number empty for no limit.").grid(
+        ttk.Label(frame, foreground=theme.MUTED, text=_("Leave a number empty for no limit.")).grid(
             row=len(m["steps"]) + 1, column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
         self._add_guard_rows(frame, len(m["steps"]) + 2)
 
@@ -264,7 +265,7 @@ class GestureWindow:
     def _add_guard_rows(self, frame: ttk.Frame, row: int) -> None:
         self.guard_vars: dict[tuple[int, str], tk.StringVar] = {}
         guards = self.model["guards"]
-        ttk.Label(frame, text="Only while the head stays within", foreground=theme.MUTED).grid(
+        ttk.Label(frame, text=_("Only while the head stays within"), foreground=theme.MUTED).grid(
             row=row, column=0, columnspan=10, sticky="w", padx=3, pady=(10, 0))
         for i, guard in enumerate(guards):
             r = row + 1 + i
@@ -282,9 +283,9 @@ class GestureWindow:
             ttk.Button(frame, text="✕", width=3, command=lambda i=i: self._delete_guard(i)).grid(
                 row=r, column=9, padx=3)
         # Lined up with "+ Add step" above, in the Signal column.
-        ttk.Button(frame, text="+ Add head limit", command=self._add_guard).grid(
+        ttk.Button(frame, text=_("+ Add head limit"), command=self._add_guard).grid(
             row=row + 1 + len(guards), column=1, sticky="w", padx=3, pady=(4, 0))
-        ttk.Label(frame, foreground=theme.MUTED, text="Leave a number empty for no limit.").grid(
+        ttk.Label(frame, foreground=theme.MUTED, text=_("Leave a number empty for no limit.")).grid(
             row=row + 1 + len(guards), column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
 
     def _on_guard_kind(self, i: int, value: str) -> None:
@@ -295,7 +296,7 @@ class GestureWindow:
         if self._suppress:
             return
         guard = self.model["guards"][i]
-        self._set_number(guard, key, self.guard_vars[(i, key)].get(), f"Head limit {i + 1} · {key}", True)
+        self._set_number(guard, key, self.guard_vars[(i, key)].get(), _("Head limit") + f" {i + 1} · {key}", True)
         self._refresh()
 
     def _add_guard(self) -> None:
@@ -327,7 +328,7 @@ class GestureWindow:
         if self._suppress:
             return
         step = self.model["steps"][i]
-        self._set_number(step, key, self.step_vars[(i, key)].get(), f"Step {i + 1} · {key}", optional)
+        self._set_number(step, key, self.step_vars[(i, key)].get(), _("Step") + f" {i + 1} · {key}", optional)
         self._refresh()
 
     def _add_step(self) -> None:
@@ -401,7 +402,7 @@ class GestureWindow:
         if result is None:
             self.result.configure(text="", foreground=theme.MUTED)
         elif result.fired_at is not None:
-            self.result.configure(text=f"✓ Fires: {result.fired_at:.2f}s", foreground=theme.OK)
+            self.result.configure(text="✓ " + _("Fires:") + f" {result.fired_at:.2f}s", foreground=theme.OK)
         else:
             self.result.configure(text=f"✕ {result.reason[:1].upper()}{result.reason[1:]}", foreground=theme.BAD)
         self.plot.draw(self.model, observations, result, RECORD_S)
@@ -435,10 +436,10 @@ class GestureWindow:
             return
         users = users_of(self._opened_with.gestures, self.name)
         if users:
-            messagebox.showerror("Delete gesture", "Other gestures use this one as a step. Remove it from them first:"
-                                 f"\n\n{', '.join(users)}", parent=self.win)
+            messagebox.showerror(_("Delete gesture"), _("Other gestures use this one as a step. Remove it from them first:")
+                                 + f"\n\n{', '.join(users)}", parent=self.win)
             return
-        if not messagebox.askyesno("Delete gesture", f"Delete this gesture?\n\n{self.name}", parent=self.win):
+        if not messagebox.askyesno(_("Delete gesture"), _("Delete this gesture?") + f"\n\n{self.name}", parent=self.win):
             return
         if self.new:
             self.cancel()
@@ -482,7 +483,7 @@ class GestureWindow:
         except ValueError:
             changed = True
         if changed and not messagebox.askyesno(
-                f"{self.name} – eyeokuri", "Discard your changes?", icon="warning", parent=self.win):
+                f"{self.name} – eyeokuri", _("Discard your changes?"), icon="warning", parent=self.win):
             return
         self.cancel()
 

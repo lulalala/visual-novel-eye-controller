@@ -9,6 +9,7 @@ from eyeokuri import theme
 from eyeokuri.config import RATIO_SIGNALS, SIGNALS
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import RECORD_S, SIGNAL_PLOTS
+from eyeokuri.i18n import _
 from eyeokuri.triggers import Replay, signal_value
 
 
@@ -59,8 +60,8 @@ class PlotEditor:
         width = max(c.winfo_width(), 400)
         if not lanes:
             c.create_text(width / 2, height / 2, fill=theme.MUTED, text=(
-                "This gesture's steps are other gestures, so there is nothing to plot.\n"
-                "Test it with the gesture wizard."), justify="center")
+                _("This gesture's steps are other gestures, so there is nothing to plot.") + "\n"
+                + _("Test it with the gesture wizard.")), justify="center")
             return
         self._geo = (width, duration, lanes)
 
@@ -84,7 +85,7 @@ class PlotEditor:
             t += tick
         for li, sig in enumerate(lanes):
             axis = SIGNAL_PLOTS[sig]
-            c.create_text(self.L, lane_top(li) - 10, anchor="w", text=axis.hint, fill=theme.MUTED,
+            c.create_text(self.L, lane_top(li) - 10, anchor="w", text=_(axis.hint), fill=theme.MUTED,
                           font="TkSmallCaptionFont")
             for v in axis.grid:
                 c.create_line(self.L, y(v, li), width - self.R, y(v, li),
@@ -170,9 +171,9 @@ class PlotEditor:
             c.create_line(fx, self.TOP, fx, bottom, fill=theme.OK, dash=(4, 3), width=2)
             left = fx > width - 90
             c.create_text(fx - 4 if left else fx + 4, bottom - 4, anchor="se" if left else "sw", fill=theme.OK,
-                          text=f"Fires: {result.fired_at:.2f}s", font="TkSmallCaptionFont")
+                          text=_("Fires:") + f" {result.fired_at:.2f}s", font="TkSmallCaptionFont")
         if not observations:
-            c.create_text(width / 2, self.TOP + 40, fill=theme.MUTED, text="No signal yet. Is the camera running?")
+            c.create_text(width / 2, self.TOP + 40, fill=theme.MUTED, text=_("No signal yet. Is the camera running?"))
 
     def _edge(self, x1: float, y1: float, x2: float, y2: float, color: str,
               kind: str, step: int, prev: float | None) -> None:

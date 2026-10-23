@@ -10,6 +10,7 @@ from typing import Any
 
 from eyeokuri.config import CameraConfig, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
+from eyeokuri.i18n import N_
 from eyeokuri.triggers import Replay
 from eyeokuri.tuning import DO, Take, trim
 
@@ -38,13 +39,13 @@ class SignalPlot:
 
 SIGNAL_PLOTS = {
     "eyes": SignalPlot(0.0, 1.3, (0.0, 0.25, 0.5, 0.75, 1.0, 1.25), 1.0, "", 0.01,
-                       "Eyes: openness, 1.0 = your usual open level"),
+                       N_("Eyes: openness, 1.0 = your usual open level")),
     "wink": SignalPlot(-1.0, 1.0, (-1.0, -0.5, 0.0, 0.5, 1.0), 0.0, "", 0.01,
-                       "Wink: right eye minus left, + = left eye closed"),
+                       N_("Wink: right eye minus left, + = left eye closed")),
     "pitch": SignalPlot(-40.0, 50.0, (-40, -20, 0, 20, 40, 50), 0.0, "°", 0.5,
-                        "Head pitch: + = tilted down"),
+                        N_("Head pitch: + = tilted down")),
     "yaw": SignalPlot(-60.0, 60.0, (-60, -40, -20, 0, 20, 40, 60), 0.0, "°", 0.5,
-                      "Head yaw: + = turned to your left"),
+                      N_("Head yaw: + = turned to your left")),
 }
 GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 

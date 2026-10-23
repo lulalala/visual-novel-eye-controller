@@ -13,6 +13,7 @@ from eyeokuri import preview
 from eyeokuri.config import Config
 from eyeokuri.engine import Engine
 from eyeokuri.eyes import Observation
+from eyeokuri.i18n import _
 from eyeokuri.gui.model import VIEW_MAX_WIDTH
 
 
@@ -23,15 +24,15 @@ MAX_TAKE_S = 20.0
 
 def state_text(obs: Observation, paused: bool, suspended: bool, fps: float) -> str:
     if suspended:
-        state = "Gestures off while editing"
+        state = _("Gestures off while editing")
     elif paused:
-        state = "Paused"
+        state = _("Paused")
     elif not obs.face_present:
-        state = "No face"
+        state = _("No face")
     elif not obs.ready:
-        state = "Calibrating…"
+        state = _("Calibrating…")
     else:
-        state = "Eyes closed" if obs.closed else "Watching"
+        state = _("Eyes closed") if obs.closed else _("Watching")
     return f"{state}   {fps:4.1f} fps"
 
 

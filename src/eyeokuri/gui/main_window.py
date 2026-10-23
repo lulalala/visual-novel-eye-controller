@@ -7,7 +7,7 @@ import time
 import tkinter as tk
 from dataclasses import replace
 from pathlib import Path
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 
 from eyeokuri import theme
 from eyeokuri.config import Config, GestureConfig, StepConfig, dump_config
@@ -17,9 +17,11 @@ from eyeokuri.gui.camera import CameraWindow
 from eyeokuri.gui.config_window import ConfigWindow
 from eyeokuri.gui.gesture_window import GestureWindow
 from eyeokuri.gui.model import GESTURE_NAME, view_size
+from eyeokuri.gui.name_dialog import ask_text
 from eyeokuri.gui.tkutil import menu_bar_height
 from eyeokuri.gui.wizard import WizardWindow
 from eyeokuri.gui.worker import Worker
+from eyeokuri.i18n import _
 
 
 _POLL_MS = 15
@@ -49,14 +51,15 @@ class MainWindow:
 
         menubar = tk.Menu(root)
         self.settings_menu = tk.Menu(menubar, tearoff=False)
-        self.settings_menu.add_command(label="Config…", command=self.open_config)
-        menubar.add_cascade(label="Settings", menu=self.settings_menu)
+        self._config_label = _("Config…")
+        self.settings_menu.add_command(label=self._config_label, command=self.open_config)
+        menubar.add_cascade(label=_("Settings"), menu=self.settings_menu)
         view_menu = tk.Menu(menubar, tearoff=False)
-        view_menu.add_command(label="Camera view…", command=self.open_camera)
-        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_command(label=_("Camera view…"), command=self.open_camera)
+        menubar.add_cascade(label=_("View"), menu=view_menu)
         help_menu = tk.Menu(menubar, tearoff=False)
-        help_menu.add_command(label="About eyeokuri…", command=self.open_about)
-        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label=_("About eyeokuri…"), command=self.open_about)
+        menubar.add_cascade(label=_("Help"), menu=help_menu)
         root.configure(menu=menubar)
 
         left = ttk.Frame(root, padding=(8, 8, 0, 8))
@@ -64,7 +67,7 @@ class MainWindow:
         self.rows = ttk.Frame(left)
         self.rows.pack(anchor="nw")
         self.running = tk.BooleanVar(value=not config.app.paused)
-        self.new_button = ttk.Button(left, text="New gesture…", command=self.new_gesture)
+        self.new_button = ttk.Button(left, text=_("New gesture…"), command=self.new_gesture)
         self.new_button.pack(anchor="w", pady=(10, 0))
         self._build_rows()
 
@@ -86,7 +89,7 @@ class MainWindow:
         # The status bar sits at the bottom of the window, with a size grip in its corner.
         status_bar = ttk.Frame(root, padding=(10, 0, 10, 10))
         status_bar.grid(row=1, column=0, columnspan=2, sticky="ew")
-        self.status = ttk.Label(status_bar, text="Starting…", foreground=theme.MUTED)
+        self.status = ttk.Label(status_bar, text=_("Starting…"), foreground=theme.MUTED)
         self.status.pack(side="left")
         ttk.Sizegrip(status_bar).pack(side="right", anchor="se")
 
@@ -104,16 +107,16 @@ class MainWindow:
         self._shown_rows = tuple((n, g.output, g.enabled) for n, g in self.config.gestures.items())
         for child in self.rows.winfo_children():
             child.destroy()
-        for col, text in enumerate(("Gesture", "Key", "On")):
+        for col, text in enumerate((_("Gesture"), _("Key"), _("On"))):
             ttk.Label(self.rows, text=text, foreground=theme.MUTED).grid(row=0, column=col, sticky="w", padx=4)
-        ttk.Label(self.rows, text="All gestures", font="TkHeadingFont").grid(row=1, column=0, sticky="w", padx=4)
+        ttk.Label(self.rows, text=_("All gestures"), font="TkHeadingFont").grid(row=1, column=0, sticky="w", padx=4)
         pause_toggle = ttk.Checkbutton(self.rows, variable=self.running, command=self._toggle_pause)
         pause_toggle.grid(row=1, column=2, padx=4, pady=2)
         ttk.Separator(self.rows).grid(row=2, column=0, columnspan=4, sticky="ew", pady=4)
         self._row_controls = [pause_toggle]
         for r, (name, gesture) in enumerate(self.config.gestures.items(), 3):
             ttk.Label(self.rows, text=name).grid(row=r, column=0, sticky="w", padx=4)
-            ttk.Label(self.rows, text=gesture.output or "(none)",
+            ttk.Label(self.rows, text=gesture.output or _("(none)"),
                       foreground=theme.INK if gesture.output else theme.MUTED).grid(row=r, column=1, sticky="w", padx=4)
             var = tk.BooleanVar(value=gesture.enabled)
             toggle = ttk.Checkbutton(self.rows, variable=var, command=lambda n=name, v=var: self._set_enabled(n, v))
@@ -135,7 +138,7 @@ class MainWindow:
             self.save_config(config)
         except (ValueError, OSError) as e:
             var.set(not enabled)
-            failed = "Couldn't turn on this gesture:" if enabled else "Couldn't turn off this gesture:"
+            failed = _("Couldn't turn on this gesture:") if enabled else _("Couldn't turn off this gesture:")
             messagebox.showerror("eyeokuri", f"{failed}\n\n{name}\n\n{e}", parent=self.root)
             return
         self.worker.log(f"{name}: {'on' if enabled else 'off'}")
@@ -154,12 +157,12 @@ class MainWindow:
             self.worker.log(f"Couldn't save {self.path}: {e}")
 
     def new_gesture(self) -> None:
-        name = simpledialog.askstring("New gesture", "Name (letters, digits, _ and -):", parent=self.root)
+        name = ask_text(self.root, _("New gesture"), _("Name (letters, digits, _ and -):"))
         if not name:
             return
         if not GESTURE_NAME.fullmatch(name) or name in self.config.gestures:
-            messagebox.showerror("New gesture", "This name is taken or has other characters than "
-                                 f"letters, digits, _ and -:\n\n{name}", parent=self.root)
+            messagebox.showerror(_("New gesture"), _("This name is taken or has other characters than "
+                                 "letters, digits, _ and -:") + f"\n\n{name}", parent=self.root)
             return
         self.gesture_window = GestureWindow(self, name, GestureConfig(steps=[StepConfig(signal="eyes", below_ratio=0.55)]))
         self.push_config()
@@ -224,7 +227,7 @@ class MainWindow:
         state = "disabled" if self._editing else "normal"
         for widget in [*self._row_controls, self.new_button]:
             widget.configure(state=state)
-        self.settings_menu.entryconfigure("Config…", state=state)
+        self.settings_menu.entryconfigure(self._config_label, state=state)
 
     def save_config(self, config: Config) -> None:
         self.apply_config(config)

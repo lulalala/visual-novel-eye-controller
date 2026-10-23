@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Callable
 from eyeokuri import theme
 from eyeokuri.gui.model import view_size
 from eyeokuri.gui.tkutil import place_beside
+from eyeokuri.i18n import _
 from eyeokuri.sources.camera import CameraScanner
 
 if TYPE_CHECKING:
@@ -23,7 +24,7 @@ class CameraWindow:
         self.app = app
         self.win = tk.Toplevel(app.root)
         self.win.withdraw()
-        self.win.title("eyeokuri camera view")
+        self.win.title(_("eyeokuri camera view"))
         self.win.resizable(False, False)
         width, height = view_size(app.config.camera)
         self.photo = tk.PhotoImage(width=width, height=height)
@@ -58,9 +59,9 @@ class CameraPicker:
         self.current = current
         self.choose = choose
         self.win = tk.Toplevel(parent)
-        self.win.title("Choose a camera")
+        self.win.title(_("Choose a camera"))
         self.win.transient(parent)  # type: ignore[arg-type]
-        self.status = ttk.Label(self.win, text="Looking for cameras…", foreground=theme.MUTED)
+        self.status = ttk.Label(self.win, text=_("Looking for cameras…"), foreground=theme.MUTED)
         self.status.pack(anchor="w", padx=10, pady=(8, 0))
         self.grid = ttk.Frame(self.win, padding=8)
         self.grid.pack(fill="both", expand=True)
@@ -86,7 +87,7 @@ class CameraPicker:
             data = frames[index]
             if index not in self.tiles:
                 self._add_tile(index)
-            label, _ = self.tiles[index]
+            label, _photo = self.tiles[index]
             if isinstance(data, bytes):
                 if self._shown.get(index) is data:
                     continue
@@ -97,11 +98,11 @@ class CameraPicker:
             label.configure(image=photo)
             self.tiles[index] = (label, photo)  # keep a reference or Tk drops the image
         if self.scanner.scanning:
-            self.status.configure(text="Looking for cameras…")
+            self.status.configure(text=_("Looking for cameras…"))
         elif not self.tiles:
-            self.status.configure(text="No cameras found.")
+            self.status.configure(text=_("No cameras found."))
         else:
-            self.status.configure(text="Click a camera to use it.")
+            self.status.configure(text=_("Click a camera to use it."))
         self.win.after(100, self._poll)
 
     def _add_tile(self, index: int) -> None:
@@ -110,7 +111,7 @@ class CameraPicker:
         tile.grid(row=n // 2, column=n % 2, padx=4, pady=4)
         label = ttk.Label(tile, cursor="hand2")
         label.pack()
-        caption = f"Camera {index} · " + ("In use" if index == self.current else "Use")
+        caption = _("Camera") + f" {index} · " + (_("In use") if index == self.current else _("Use"))
         ttk.Button(tile, text=caption,
                    command=lambda: self._pick(index)).pack(fill="x", pady=(4, 0))
         label.bind("<Button-1>", lambda _e: self._pick(index))

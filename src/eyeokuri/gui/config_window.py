@@ -13,6 +13,7 @@ from eyeokuri.engine import check_config
 from eyeokuri.gui.camera import CameraPicker
 from eyeokuri.gui.model import fmt
 from eyeokuri.gui.tkutil import place_over
+from eyeokuri.i18n import N_, _
 
 if TYPE_CHECKING:
     from eyeokuri.gui.main_window import MainWindow
@@ -28,21 +29,27 @@ _GENERAL_SECTIONS = ("camera", "feedback")
 _ADVANCED_SECTIONS = ("eyes", "head")
 # One-line help beside each General field, in user terms.
 _GENERAL_HELP = {
-    ("camera", "index"): "Which camera to use. 0 is usually the built-in one.",
-    ("camera", "width"): "Frame width in pixels (at least 160).",
-    ("camera", "height"): "Frame height in pixels (at least 120).",
-    ("camera", "fps"): "Frames per second to ask the camera for.",
-    ("eyes", "baseline_window_s"): "Seconds of history used to learn your usual open-eye level. "
-                                   "Try 5 if lighting or distance changes quickly.",
-    ("eyes", "warmup_s"): "Seconds to learn before blinks can trigger. Must be below the window.",
-    ("eyes", "require_both_eyes"): "Both eyes must close, so a wink doesn't count.",
-    ("head", "baseline_window_s"): "Seconds of history used to learn your usual head position. "
-                                   "Raise it if looking away for a while shifts your zero.",
-    ("head", "warmup_s"): "Seconds to learn before head gestures can trigger. Must be below the window.",
-    ("feedback", "sound"): "Play a sound when a gesture fires or you pause.",
-    ("feedback", "log_rejected"): "Log gestures that were detected but didn't fire, and why.",
+    ("camera", "index"): N_("Which camera to use. 0 is usually the built-in one."),
+    ("camera", "width"): N_("Frame width in pixels (at least 160)."),
+    ("camera", "height"): N_("Frame height in pixels (at least 120)."),
+    ("camera", "fps"): N_("Frames per second to ask the camera for."),
+    ("eyes", "baseline_window_s"): N_("Seconds of history used to learn your usual open-eye level. "
+                                      "Try 5 if lighting or distance changes quickly."),
+    ("eyes", "warmup_s"): N_("Seconds to learn before blinks can trigger. Must be below the window."),
+    ("eyes", "require_both_eyes"): N_("Both eyes must close, so a wink doesn't count."),
+    ("head", "baseline_window_s"): N_("Seconds of history used to learn your usual head position. "
+                                      "Raise it if looking away for a while shifts your zero."),
+    ("head", "warmup_s"): N_("Seconds to learn before head gestures can trigger. Must be below the window."),
+    ("feedback", "sound"): N_("Play a sound when a gesture fires or you pause."),
+    ("feedback", "log_rejected"): N_("Log gestures that were detected but didn't fire, and why."),
 }
 _SECTIONS = (*_GENERAL_SECTIONS, *_ADVANCED_SECTIONS)
+_SECTION_TITLES = {
+    "camera": N_("Camera"),
+    "feedback": N_("Feedback"),
+    "eyes": N_("Eyes"),
+    "head": N_("Head"),
+}
 
 
 class ConfigWindow:
@@ -52,7 +59,7 @@ class ConfigWindow:
         self.app = app
         self.win = tk.Toplevel(app.root)
         self.win.withdraw()
-        self.win.title("eyeokuri config")
+        self.win.title(_("eyeokuri config"))
         self.win.protocol("WM_DELETE_WINDOW", self._close_box)
         self._field_errors: dict[str, str] = {}
         self.camera_picker: CameraPicker | None = None
@@ -70,11 +77,11 @@ class ConfigWindow:
         notebook.grid(row=0, column=0, sticky="nsew", padx=8, pady=8)
         general_tab = ttk.Frame(notebook, padding=12)
         advanced_tab = ttk.Frame(notebook, padding=12)
-        notebook.add(general_tab, text="General")
-        notebook.add(advanced_tab, text="Advanced")
+        notebook.add(general_tab, text=_("General"))
+        notebook.add(advanced_tab, text=_("Advanced"))
         self.vars: list[Any] = []
-        self._build_tab(general_tab, _GENERAL_SECTIONS, "Changing camera settings reopens the camera.")
-        self._build_tab(advanced_tab, _ADVANCED_SECTIONS, (
+        self._build_tab(general_tab, _GENERAL_SECTIONS, _("Changing camera settings reopens the camera."))
+        self._build_tab(advanced_tab, _ADVANCED_SECTIONS, _(
             "Most people never need to change these. Changing them makes eyeokuri learn your usual "
             "eye openness and head position again."))
 
@@ -82,8 +89,8 @@ class ConfigWindow:
         bottom.grid(row=1, column=0, sticky="ew")
         self.message = ttk.Label(bottom, text="", foreground=theme.BAD, wraplength=640)
         self.message.pack(side="left", fill="x", expand=True)
-        ttk.Button(bottom, text="Cancel", command=self.cancel).pack(side="right")
-        self.ok_button = ttk.Button(bottom, text="OK", style="Accent.TButton", command=self.ok)
+        ttk.Button(bottom, text=_("Cancel"), command=self.cancel).pack(side="right")
+        self.ok_button = ttk.Button(bottom, text=_("OK"), style="Accent.TButton", command=self.ok)
         self.ok_button.pack(side="right", padx=6)
         place_over(self.win, app.root)
 
@@ -102,7 +109,7 @@ class ConfigWindow:
         row = 1
         for section in sections:
             values = self.values[section]
-            ttk.Label(tab, text=section.capitalize(), font="TkHeadingFont").grid(
+            ttk.Label(tab, text=_(_SECTION_TITLES[section]), font="TkHeadingFont").grid(
                 row=row, column=0, sticky="w", pady=(8, 2))
             row += 1
             for key, value in values.items():
@@ -125,13 +132,13 @@ class ConfigWindow:
                     # The button and its help share one cell so the help sits right next to the button.
                     cell = ttk.Frame(tab)
                     cell.grid(row=row, column=2, sticky="w")
-                    ttk.Button(cell, text="Choose from live views…",
+                    ttk.Button(cell, text=_("Choose from live views…"),
                                command=lambda v=svar: self._pick_camera(v)).grid(row=0, column=0, sticky="w")
                     if help_text:
-                        ttk.Label(cell, text=help_text, foreground=theme.MUTED, wraplength=380, justify="left").grid(
+                        ttk.Label(cell, text=_(help_text), foreground=theme.MUTED, wraplength=380, justify="left").grid(
                             row=0, column=1, sticky="w", padx=(8, 0))
                 elif help_text:
-                    ttk.Label(tab, text=help_text, foreground=theme.MUTED, wraplength=380, justify="left").grid(
+                    ttk.Label(tab, text=_(help_text), foreground=theme.MUTED, wraplength=380, justify="left").grid(
                         row=row, column=2, sticky="w", padx=(8, 0))
                 row += 1
 
@@ -153,7 +160,7 @@ class ConfigWindow:
             self.values[section][key] = kind(text.strip())
             self._field_errors.pop(label, None)
         except ValueError:
-            self._field_errors[label] = ("Not a whole number: " if kind is int else "Not a number: ") + f"{label} = {text!r}"
+            self._field_errors[label] = (_("Not a whole number:") if kind is int else _("Not a number:")) + f" {label} = {text!r}"
         self._refresh()
 
     def _refresh(self) -> None:
@@ -205,7 +212,7 @@ class ConfigWindow:
         except ValueError:
             changed = True
         if changed and not messagebox.askyesno(
-                "eyeokuri config", "Discard your changes?", icon="warning", parent=self.win):
+                _("eyeokuri config"), _("Discard your changes?"), icon="warning", parent=self.win):
             return
         self.cancel()
 
