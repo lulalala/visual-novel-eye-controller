@@ -75,6 +75,7 @@ site/             static site (Astro with Starlight)
   src/scripts/    home.js, the homepage demo
   src/styles/     home.css (homepage) and docs.css (docs theme)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
+tools/            capture_screenshots.py, which takes the site's GUI screenshots
 docs/i18n/        one glossary per language (glossary.zh-TW.tsv): columns en, the language code, note;
                   gui-plan.md, the phased plan for translating the GUI
 ```
@@ -108,7 +109,21 @@ The docs are set up for English, Japanese (`ja`) and Traditional Chinese for Tai
 
 - Use the terms in `docs/i18n/glossary.<language>.tsv`, and add a row when you settle on a new one.
 - To translate a docs page, copy it to the same path under `site/src/content/docs/<language>/` and translate it.
+- Screenshots show the GUI, so each language needs its own. Take them with `tools/capture_screenshots.py` (see [Take the site screenshots](#take-the-site-screenshots)), and reference `assets/screenshots/<language>/<name>.png` from the translated page.
 - To translate the homepage, add the language to `site/src/i18n/home.ts`, then add `site/src/pages/<language>/index.astro` that renders `<Home locale="<language>" />`.
+
+## Take the site screenshots
+
+`tools/capture_screenshots.py` saves the four GUI screenshots used by the guide pages (`main-window`, `gesture-window`, `wizard-take`, `config-general`) from the real windows. It runs them on a scripted source (a blink, a head shake and steady eyes), so it needs no camera, no camera image appears, and nothing is sent to other windows. It copies pixels from the screen, so it works on Windows only.
+
+```sh
+.venv\Scripts\python tools\capture_screenshots.py --language zh-TW
+```
+
+- Leave the mouse and other windows alone while it runs (about 40 seconds).
+- English screenshots go to `site/src/assets/screenshots/`; other languages go to a subfolder named after the language in lowercase (`zh-tw/`). `--out` picks another folder, and `--only main-window,wizard-take` saves only some.
+- Use the same display scaling and Windows theme each time, so new screenshots match the old ones. Look at the results before you commit them.
+- When the GUI changes, run it again for every language that has screenshots.
 
 ## Translate the GUI
 

@@ -11,6 +11,7 @@ The public website: a custom homepage (`src/components/Home.astro`, text in `src
 ## Translations
 
 - When you change English text, update every locale that already has content (`home.ts` and under `src/content/docs/<locale>/`) in the same change, so no locale goes stale.
+- Screenshots show the GUI in its own language. Retake them with `tools/capture_screenshots.py` (see `docs/development.md`) whenever the GUI or its catalog changes; don't reuse English ones in a translated page.
 - Translate the homepage dialog into the same tsundere register in the target language (for `ja`, natural ツンデレ speech, not a literal rendering).
 
 ## Check
