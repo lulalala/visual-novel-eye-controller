@@ -14,7 +14,7 @@ The main window lists your gestures on the left and shows the log on the right. 
 Each gesture row shows the gesture's name and the key it sends. It has two controls:
 
 - The checkbox in the **On** column turns the gesture on or off. eyeokuri saves the change to the config file right away.
-- The gear button (⚙) opens the gesture's window. See [Edit a gesture](/guide/edit-a-gesture/).
+- The gear button (⚙) opens the gesture's window. See [Edit a gesture](../edit-a-gesture/).
 
 **New gesture…** asks for a name, then opens a gesture window for the new gesture.
 
@@ -32,7 +32,7 @@ The log shows:
 - Gestures that were detected but didn't fire, in gray, with the reason, for example `blink: step 2 came 0.12s after step 1 (too short, min 0.15s)`.
 - Pauses and resumes.
 
-The reasons tell you which setting to change. To stop logging gestures that don't fire, clear **log_rejected** in the [config window](/guide/config-window/).
+The reasons tell you which setting to change. To stop logging gestures that don't fire, clear **log_rejected** in the [config window](../config-window/).
 
 The status bar at the bottom shows what eyeokuri sees: `Calibrating…`, `Watching`, `Eyes closed`, `No face` or `Paused`, and the frame rate. While you edit a gesture, it shows `Gestures off while editing`.
 
@@ -40,7 +40,7 @@ The status bar at the bottom shows what eyeokuri sees: `Calibrating…`, `Watchi
 
 | Menu | Entry | Opens |
 | --- | --- | --- |
-| Settings | **Config…** | The [config window](/guide/config-window/) for the camera, sounds and logging. |
+| Settings | **Config…** | The [config window](../config-window/) for the camera, sounds and logging. |
 | View | **Camera view…** | A live view of your camera with your eye outlines and signal values. |
 | Help | **About eyeokuri…** | The license and third-party notices. |
 

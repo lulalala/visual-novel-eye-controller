@@ -76,6 +76,7 @@ site/             static site (Astro with Starlight)
   src/styles/     home.css (homepage) and docs.css (docs theme)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
 tools/            capture_screenshots.py, which takes the site's GUI screenshots
+.github/workflows/  pages.yml, which builds site/ and publishes it to GitHub Pages on each push to master
 docs/i18n/        one glossary per language (glossary.ja.tsv, glossary.zh-TW.tsv): columns en, the language code, note;
                   gui-plan.md, the rules for translating the GUI and the steps to add a language;
                   site-docs-plan.md, the steps to translate the site's docs into a language
@@ -100,6 +101,7 @@ The site needs Node.js 22.22 or later. In `site/`, run `npm install` once, then:
 
 - `npm run dev` serves the site at `http://localhost:4321/` and reloads on each edit.
 - `npm run build` writes the site to `site/dist/`, which you can host on any static file server.
+- Pushing to `master` publishes the site to `https://lulalala.github.io/visual-novel-eye-controller/` (`.github/workflows/pages.yml`). Because the site lives under that path, start links in Markdown with `../` (`[main window](../main-window/)`), not `/`.
 - `npm run preview` serves the built `site/dist/`.
 
 `site/dist/`, `site/node_modules/` and `site/.astro/` are gitignored. The homepage loads two fonts from Google Fonts; nothing else leaves the page. Astro collects anonymous usage data by default; run `npx astro telemetry disable` to opt out.

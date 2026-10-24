@@ -40,4 +40,4 @@ The window follows your Windows display language when eyeokuri has a translation
 
 ## Save or cancel
 
-The config window works like the [gesture window](/guide/edit-a-gesture/#save-or-cancel). eyeokuri uses your changes at once, **OK** saves them, and **Cancel** goes back to the settings you had when you opened the window.
+The config window works like the [gesture window](../edit-a-gesture/#save-or-cancel). eyeokuri uses your changes at once, **OK** saves them, and **Cancel** goes back to the settings you had when you opened the window.

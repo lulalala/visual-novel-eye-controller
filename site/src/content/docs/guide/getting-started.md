@@ -25,4 +25,4 @@ Windows might warn about an unknown publisher because the app is not signed. Sel
 - **Shake your head** to pause or resume: turn past about 15° to one side, then past about 15° to the other side, within 1 s.
 - **Nod up or down** sends the `up` or `down` arrow key. It is off by default. You can turn it on with its checkbox in the main window.
 
-Next, learn the [main window](/guide/main-window/), then [edit a gesture](/guide/edit-a-gesture/) or [set it up with the wizard](/guide/gesture-wizard/).
+Next, learn the [main window](../main-window/), then [edit a gesture](../edit-a-gesture/) or [set it up with the wizard](../gesture-wizard/).

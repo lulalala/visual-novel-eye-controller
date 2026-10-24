@@ -3,7 +3,9 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
 export default defineConfig({
-  // Set `site` to the public address once the site is hosted, so sitemaps and hreflang links are absolute.
+  // Hosted on GitHub Pages as a project site; with a custom domain, set `site` to it and remove `base`.
+  site: "https://lulalala.github.io",
+  base: "/visual-novel-eye-controller",
   vite: { server: { fs: { allow: [".."] } } }, // the homepage inlines ../logo/eye-blink.svg
   integrations: [
     starlight({

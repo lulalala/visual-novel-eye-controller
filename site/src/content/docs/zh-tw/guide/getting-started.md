@@ -25,4 +25,4 @@ eyeokuri 會透過視訊鏡頭觀察你，當你眨眼時，就對遊戲送出 `
 - **搖頭**可暫停或繼續：在 1 秒內，先往一邊轉超過約 15°，再往另一邊轉超過約 15°。
 - **點頭**會送出 `up` 或 `down` 方向鍵，低頭點頭送出 `down`，抬頭點頭送出 `up`。這個動作預設是關閉的，你可以在主視窗勾選它的核取方塊來開啟。
 
-接下來，認識[主視窗](/zh-tw/guide/main-window/)，再[編輯動作](/zh-tw/guide/edit-a-gesture/)，或是[用精靈設定](/zh-tw/guide/gesture-wizard/)。
+接下來，認識[主視窗](../main-window/)，再[編輯動作](../edit-a-gesture/)，或是[用精靈設定](../gesture-wizard/)。

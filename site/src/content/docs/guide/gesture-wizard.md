@@ -37,7 +37,7 @@ The review page lists whether each take fires with the new settings and what cha
 
 ## Use the result
 
-Select **Use these settings**. The wizard puts the result in the gesture window, and the gesture uses it right away. Then select **OK** in the gesture window to save it, or [fine-tune it](/guide/edit-a-gesture/) first.
+Select **Use these settings**. The wizard puts the result in the gesture window, and the gesture uses it right away. Then select **OK** in the gesture window to save it, or [fine-tune it](../edit-a-gesture/) first.
 
 ## Limits of the wizard
 
