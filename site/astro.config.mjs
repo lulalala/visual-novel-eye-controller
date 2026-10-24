@@ -21,7 +21,7 @@ export default defineConfig({
         "zh-tw": { label: "繁體中文", lang: "zh-TW" },
       },
       customCss: ["./src/styles/docs.css"],
-      sidebar: [{ label: "Guide", translations: { "zh-TW": "使用說明" }, items: [{ autogenerate: { directory: "guide" } }] }],
+      sidebar: [{ label: "Guide", translations: { ja: "ガイド", "zh-TW": "使用說明" }, items: [{ autogenerate: { directory: "guide" } }] }],
     }),
   ],
 });

@@ -22,7 +22,7 @@ step	ステップ	One box on the gesture plot. Followed by a number without 目:
 wizard	ウィザード	The gesture wizard: ジェスチャーウィザード.
 controller	コントローラー	
 dialog box (in a game)	ダイアログ	
-docs	ヘルプ	
+docs	ガイド	Not ヘルプ, which is the Help menu. The sidebar title Guide is ガイド too.
 release	リリース	
 unsigned (app)	署名なし	
 unknown publisher	不明な発行元	Windows SmartScreen wording; not yet checked on a Japanese Windows.
