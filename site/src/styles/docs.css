@@ -1,11 +1,113 @@
-/* Docs theme: the homepage's sakura accent on Starlight. */
+/* Docs theme: the homepage's look on Starlight. Palette and fonts come from home.css (:root); change them in both places.
+   Most of it is Starlight variables; the selectors below them target stable Starlight classes. */
 :root {
+  --paper: #f8f9ff;
+  --ink: #2a2850;
+  --ink-soft: #5e5c86;
+  --sakura: #ff6b9a;
+  --sakura-soft: #ffd8e5;
+  --sky: #cbe4ff;
+  --lilac: #e2d8ff;
+  --sl-font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
   --sl-color-accent-low: #ffd8e5;
-  --sl-color-accent: #d9376f;
+  --sl-color-accent: #d9376f; /* darker than --sakura so link text keeps its contrast */
   --sl-color-accent-high: #8f1c47;
+  --card-bg: #fff;
+  --card-shadow: 0 8px 24px -12px rgba(80, 70, 180, 0.35);
+}
+:root:lang(zh-TW) {
+  --sl-font: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+}
+:root[data-theme="light"] {
+  --sl-color-bg: var(--paper);
+  --sl-color-bg-nav: transparent;
+  --sl-color-bg-sidebar: transparent;
+  --sl-color-hairline-shade: var(--lilac);
+  --sl-color-hairline: var(--lilac);
+  --sl-color-text: var(--ink);
+  --sl-color-white: var(--ink);
+  --sl-color-gray-1: var(--ink);
+  --sl-color-gray-2: var(--ink-soft);
+  --sl-color-gray-3: var(--ink-soft);
 }
 :root[data-theme="dark"] {
   --sl-color-accent-low: #4a1630;
-  --sl-color-accent: #ff6b9a;
+  --sl-color-accent: var(--sakura);
   --sl-color-accent-high: #ffc2d6;
+  --card-bg: var(--sl-color-gray-6);
+  --card-shadow: none;
+}
+
+/* Headings: heavy and tight, like the homepage. */
+h1, h2, h3, h4 {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+/* Site title with the homepage's sakura dot. */
+.site-title {
+  font-weight: 900;
+}
+.site-title::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sakura);
+  box-shadow: 0 0 0 4px var(--sakura-soft);
+  margin-inline-end: 4px;
+}
+:root[data-theme="dark"] .site-title::before {
+  box-shadow: 0 0 0 4px var(--sl-color-accent-low);
+}
+
+/* Sidebar: the current page is a sakura pill. */
+#starlight__sidebar a {
+  border-radius: 99px;
+}
+#starlight__sidebar a[aria-current="page"] {
+  background: var(--sakura);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Cards: asides, code blocks, tables and screenshots get the homepage's soft rounded look. */
+.starlight-aside {
+  border-radius: 24px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+.expressive-code .frame,
+.expressive-code .frame pre {
+  border-radius: 16px;
+}
+.sl-markdown-content img {
+  border-radius: 16px;
+  border: 1px solid lightskyblue;
+}
+.sl-markdown-content :not(pre) > code {
+  background: var(--sl-color-accent-low);
+  border-radius: 8px;
+  padding: 0.1em 0.4em;
+}
+
+/* Buttons are pills; the main one is filled sakura. */
+.sl-link-button {
+  border-radius: 99px;
+  font-weight: 700;
+}
+.sl-link-button.primary {
+  background: var(--sakura);
+  border-color: var(--sakura);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(255, 107, 154, 0.9);
+}
+
+/* Page footer: the homepage's dashed lilac rule. */
+footer {
+  border-top: 2px dashed var(--lilac);
+}
+.pagination-links a {
+  border-radius: 24px;
 }
