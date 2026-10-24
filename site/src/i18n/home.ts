@@ -28,11 +28,10 @@ export interface HomeText {
     shotAlt: string;
   };
   start: { title: string; steps: { title: string; text: string }[]; button: string; trust: string[] };
-  pass: { title: string; star: string; request: string };
+  pass: { title: string; star: string; donate: string; request: string };
   footer: string;
   footerReleases: string;
   footerCredits: string;
-  donate: string;
 }
 
 export const home: Record<string, HomeText> = {
@@ -91,12 +90,12 @@ export const home: Record<string, HomeText> = {
     pass: {
       title: "Spread the word",
       star: "★ Star on GitHub",
+      donate: "☕ Buy me a coffee",
       request: "Request a gesture →",
     },
     footer: "eyeokuri · open source · made for people who read a lot",
     footerReleases: "All releases",
     footerCredits: "Credits",
-    donate: "Support me",
   },
   "zh-tw": {
     lang: "zh-TW",
@@ -153,12 +152,12 @@ export const home: Record<string, HomeText> = {
     pass: {
       title: "好東西就是要跟好朋友分享",
       star: "★ 在 GitHub 上給星星",
+      donate: "☕ 請一杯咖啡",
       request: "許願新動作 →",
     },
     footer: "eyeokuri，獻給閱讀量爆表的你",
     footerReleases: "所有版本",
     footerCredits: "致謝",
-    donate: "支持我",
   },
   ja: {
     lang: "ja",
@@ -216,11 +215,11 @@ export const home: Record<string, HomeText> = {
     pass: {
       title: "布教しよう",
       star: "★ GitHubでスターをつける",
+      donate: "☕ コーヒーを一杯おごる",
       request: "ジェスチャーをリクエスト →",
     },
     footer: "eyeokuri · オープンソース · 積みゲーを崩すあなたのために",
     footerReleases: "すべてのリリース",
     footerCredits: "クレジット",
-    donate: "応援する",
   },
 };

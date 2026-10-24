@@ -151,6 +151,7 @@ const alternates = Astro.site
     </div>
     <p class="follow">
       <a class="btn alt" href={REPO}>{t.pass.star}</a>
+      <a class="btn alt" href="https://ko-fi.com/lulalala">{t.pass.donate}</a>
       <a class="textlink" href={`${REPO}/issues`}>{t.pass.request}</a>
     </p>
   </section>
@@ -167,15 +168,6 @@ const alternates = Astro.site
 </div>
 <script>
   import "../scripts/home.js";
-</script>
-<script is:inline src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"></script>
-<script is:inline define:vars={{ donateText: t.donate }}>
-  kofiWidgetOverlay.draw("lulalala", {
-    type: "floating-chat",
-    "floating-chat.donateButton.text": donateText,
-    "floating-chat.donateButton.background-color": "#5bc0de",
-    "floating-chat.donateButton.text-color": "#323842",
-  });
 </script>
 </body>
 </html>
