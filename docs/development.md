@@ -77,7 +77,8 @@ site/             static site (Astro with Starlight)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
 tools/            capture_screenshots.py, which takes the site's GUI screenshots
 docs/i18n/        one glossary per language (glossary.ja.tsv, glossary.zh-TW.tsv): columns en, the language code, note;
-                  gui-plan.md, the rules for translating the GUI and the steps to add a language
+                  gui-plan.md, the rules for translating the GUI and the steps to add a language;
+                  site-docs-plan.md, the steps to translate the site's docs into a language
 ```
 
 ## Update the window icons
@@ -107,6 +108,7 @@ The site needs Node.js 22.22 or later. In `site/`, run `npm install` once, then:
 
 The docs are set up for English, Japanese (`ja`) and Traditional Chinese for Taiwan (`zh-tw`). A docs page without a translation shows the English text with a notice.
 
+- The step-by-step plan for a new language is in `docs/i18n/site-docs-plan.md`.
 - Use the terms in `docs/i18n/glossary.<language>.tsv`, and add a row when you settle on a new one.
 - To translate a docs page, copy it to the same path under `site/src/content/docs/<language>/` and translate it.
 - Screenshots show the GUI, so each language needs its own. Take them with `tools/capture_screenshots.py` (see [Take the site screenshots](#take-the-site-screenshots)), and reference `assets/screenshots/<language>/<name>.png` from the translated page.
