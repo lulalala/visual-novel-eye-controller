@@ -43,6 +43,8 @@ _GENERAL_HELP = {
     ("feedback", "sound"): N_("Play a sound when a gesture fires or you pause."),
     ("feedback", "log_rejected"): N_("Log gestures that were detected but didn't fire, and why."),
 }
+# Shown in the language just chosen, not the one in use, so it is read with translate_to().
+_LANGUAGE_NOTICE = N_("The language changes the next time eyeokuri starts.")
 _SECTIONS = (*_GENERAL_SECTIONS, *_ADVANCED_SECTIONS)
 _SECTION_TITLES = {
     "camera": N_("Camera"),
@@ -223,7 +225,9 @@ class ConfigWindow:
             self.message.configure(text=str(e), foreground=theme.BAD)
             return
         if config.app.language != self._opened_with.app.language:
-            messagebox.showinfo("eyeokuri", _("The language changes the next time eyeokuri starts."), parent=self.win)
+            # In the new language, since that's the one the user wants to read.
+            notice = i18n.translate_to(_LANGUAGE_NOTICE, i18n.resolve_language(config.app.language))
+            messagebox.showinfo("eyeokuri", notice, parent=self.win)
         self._close()
 
     def cancel(self) -> None:

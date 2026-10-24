@@ -40,6 +40,11 @@ def N_(text: str) -> str:
     return text
 
 
+def translate_to(text: str, code: str) -> str:
+    """The translation of text in the language with this code, whatever the active language is."""
+    return CATALOGS.get(code, {}).get(text, text)
+
+
 def set_language(code: str) -> None:
     """Pick a catalog by code (a key of CATALOGS); any other code, such as "en", selects English."""
     global _active, _style
