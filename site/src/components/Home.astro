@@ -168,5 +168,14 @@ const alternates = Astro.site
 <script>
   import "../scripts/home.js";
 </script>
+<script is:inline src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"></script>
+<script is:inline define:vars={{ donateText: t.donate }}>
+  kofiWidgetOverlay.draw("lulalala", {
+    type: "floating-chat",
+    "floating-chat.donateButton.text": donateText,
+    "floating-chat.donateButton.background-color": "#5bc0de",
+    "floating-chat.donateButton.text-color": "#323842",
+  });
+</script>
 </body>
 </html>
