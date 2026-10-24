@@ -88,7 +88,7 @@ export const home: Record<string, HomeText> = {
       trust: ["Camera frames never leave your PC", "Free and open source", "Online once, for a 4 MB face model"],
     },
     pass: {
-      title: "Spread the word",
+      title: "Share with other gentlemen",
       star: "★ Star on GitHub",
       donate: "☕ Buy me a coffee",
       request: "Request a gesture →",
@@ -150,7 +150,7 @@ export const home: Record<string, HomeText> = {
       trust: ["鏡頭畫面絕不離開你的電腦", "免費且開源", "只連網一次，下載 4 MB 的臉部模型"],
     },
     pass: {
-      title: "好東西就是要跟好朋友分享",
+      title: "好東西就是要跟其他紳士分享",
       star: "★ 在 GitHub 上給星星",
       donate: "☕ 請一杯咖啡",
       request: "許願新動作 →",
@@ -213,7 +213,7 @@ export const home: Record<string, HomeText> = {
       trust: ["カメラ映像はPCの外に出ません", "無料のオープンソース", "ネット接続は初回だけ(4 MBの顔モデルをダウンロード)"],
     },
     pass: {
-      title: "布教しよう",
+      title: "紳士諸君に布教しよう",
       star: "★ GitHubでスターをつける",
       donate: "☕ コーヒーを一杯おごる",
       request: "ジェスチャーをリクエスト →",
