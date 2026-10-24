@@ -29,7 +29,7 @@ description: 開啟或關閉動作、暫停 eyeokuri、查看記錄，以及開�
 記錄會顯示：
 
 - 已觸發的動作，以綠色顯示，例如 `blink -> enter`。
-- 偵測到但沒有觸發的動作，以灰色顯示並附上原因，例如 `blink: step 2 came 0.12s after step 1 (too short, min 0.15s)`。
+- 偵測到但沒有觸發的動作，以灰色顯示並附上原因，例如 `blink: step 2 came 0.07s after step 1 (too short, min 0.10s)`。
 - 暫停和繼續。
 
 記錄中的動作名稱和原因都是英文。原因會告訴你該調整哪個設定。如果你不想記錄沒有觸發的動作，請在[設定視窗](../config-window/)中取消勾選 **log_rejected**。

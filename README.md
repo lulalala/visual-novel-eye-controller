@@ -7,7 +7,7 @@ Read your visual novel hands-free. `eyeokuri` watches your webcam and advances t
 - **Make it fit you.** A gesture wizard learns your blink from a few practice takes. You can also edit each gesture's thresholds and timing in its gesture window.
 - **Private.** It needs only a webcam. Frames are processed on your PC and never stored or sent anywhere.
 
-By default any closure of both eyes lasting 0.15–2 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes deliberately to advance, raise the blink's minimum closed time to about 0.35–0.45 s in the blink's gesture window (or run the wizard with a deliberate blink) (ordinary blinks were 0.17–0.34 s in our first test).
+By default any closure of both eyes lasting 0.1–1 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes deliberately to advance, raise the blink's minimum closed time to about 0.35–0.45 s in the blink's gesture window (or run the wizard with a deliberate blink) (ordinary blinks were 0.17–0.34 s in our first test).
 
 ## Install
 
@@ -58,8 +58,8 @@ The log shows gestures that fired, gestures that didn't and why (too short, too 
 
 ## Default gestures
 
-- **Blink** (both eyes closed at least 0.15 s): you hear a beep and `Enter` is sent when you reopen your eyes. Closing them for more than 2 s cancels.
-- **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side, within 1 s. A different sound plays for pause and resume. Turning to look at something and back does not count. A shake often comes with a blink, so it can also advance one line.
+- **Blink** (both eyes closed at least 0.1 s): you hear a beep and `Enter` is sent when you reopen your eyes. Closing them for more than 1 s cancels.
+- **Shake your head** to pause or resume: turn past ~15° to one side, then past ~15° to the other side, within 1.5 s. A different sound plays for pause and resume. Turning to look at something and back does not count. A shake often comes with a blink, so it can also advance one line.
 - **Nod up or down** (sends the `up` or `down` arrow key) is off by default. Turn it on with its checkbox in the main window.
 - **Wink with your left or right eye** (`wink_left`, `wink_right`) is off by default and sends nothing until you choose an output in its gesture window. A wink counts when one eye is at least 0.25 less open than the other (relative to each eye's usual level), then both are level again 0.05–0.6 s later. A normal blink closes both eyes, so it doesn't count as a wink. Turning your head makes one eye look narrower to the camera, so winks count only with your head within 20° sideways and 15° up or down. Run the wizard to fit it to your face.
 
@@ -95,13 +95,13 @@ Each gesture in your config file is a list of steps. Picture a plot of one signa
 - `pitch`: head tilt in degrees. Positive is down.
 - `yaw`: head turn in degrees. Positive is your left.
 
-For example, the built-in blink is "eyes below 55%, then eyes above 75% between 0.15 s and 2 s later":
+For example, the built-in blink is "eyes below 60%, then eyes above 70% between 0.1 s and 1 s later":
 
 ```toml
 [gestures.blink]
 steps = [
-  { signal = "eyes", below_ratio = 0.55 },
-  { signal = "eyes", above_ratio = 0.75, after_min_s = 0.15, after_max_s = 2.0 },
+  { signal = "eyes", below_ratio = 0.6 },
+  { signal = "eyes", above_ratio = 0.7, after_min_s = 0.1, after_max_s = 1.0 },
 ]
 guards = [
   { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },

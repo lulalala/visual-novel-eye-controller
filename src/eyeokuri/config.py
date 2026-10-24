@@ -130,13 +130,13 @@ def _default_gestures() -> dict[str, GestureConfig]:
     # frame later; after_max_s, squinting or rubbing one eye.
     level = {"above_ratio": -0.15, "below_ratio": 0.15, "after_min_s": 0.05, "after_max_s": 0.6}
     return {
-        # 0.15 s lets most natural blinks advance the text; raise after_min_s
+        # 0.1 s lets most natural blinks advance the text; raise after_min_s
         # (e.g. 0.35-0.45) to require a deliberate closure. Holding the eyes
         # shut past after_max_s (resting them, looking away) cancels.
         "blink": GestureConfig(
             steps=[
-                StepConfig(signal="eyes", below_ratio=0.55),
-                StepConfig(signal="eyes", above_ratio=0.75, after_min_s=0.15, after_max_s=2.0),
+                StepConfig(signal="eyes", below_ratio=0.6),
+                StepConfig(signal="eyes", above_ratio=0.7, after_min_s=0.1, after_max_s=1.0),
             ],
             guards=straight, cooldown_s=1.0, output="enter",
         ),
@@ -152,7 +152,7 @@ def _default_gestures() -> dict[str, GestureConfig]:
         ),
         "head_shake": GestureConfig(
             steps=[StepConfig(signal="yaw", above_deg=15.0), StepConfig(signal="yaw", below_deg=-15.0)],
-            any_order=True, within_s=1.0, cooldown_s=1.5, output="app:toggle_pause",
+            any_order=True, within_s=1.5, cooldown_s=1.5, output="app:toggle_pause",
         ),
         "nod_up": GestureConfig(
             enabled=False,

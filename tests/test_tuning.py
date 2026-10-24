@@ -47,7 +47,7 @@ def test_blink_fits_between_your_blinks_and_the_near_misses():
 
 def test_blink_takes_keep_the_open_edge():
     result = fit(Config(), "blink", blink_takes())
-    assert result.gesture.steps[1].above_ratio == 0.75
+    assert result.gesture.steps[1].above_ratio == 0.7
 
 
 def test_a_take_with_hardly_any_movement_is_left_out():
@@ -65,7 +65,7 @@ def test_both_time_limits_of_a_step_share_one_line():
     result = fit(Config(), "blink", blink_takes())
     timing = [n for n in result.changes if n.startswith("Step 2:") and "after the previous step" in n]
     assert len(timing) == 1
-    assert "Was: 0.15-2.00s." in timing[0]
+    assert "Was: 0.10-1.00s." in timing[0]
 
 
 def test_messages_use_the_take_numbers_you_saw():
@@ -78,7 +78,7 @@ def test_messages_use_the_take_numbers_you_saw():
 
 def test_takes_without_movement_leave_the_edges_alone():
     result = fit(Config(), "blink", [blink_take(DO, 0) for _ in range(5)])
-    assert result.gesture.steps[0].below_ratio == 0.55
+    assert result.gesture.steps[0].below_ratio == 0.6
     assert any(n.startswith("Step 1 · eyes: Your takes hardly moved") for n in result.warnings)
 
 
@@ -137,11 +137,11 @@ def test_other_takes_are_only_checked():
 
 
 def test_one_stray_frame_does_not_set_the_edge():
-    weak = blink_take(DO, 14, depth=0.4)
+    weak = blink_take(DO, 14, depth=0.3)
     weak.observations[3] = obs(3, eyes=0.0)
     result = fit(Config(), "blink", [blink_take(DO, 14), weak, blink_take(DO, 13)])
-    # 60% of the way to the weakest blink (0.4), not made weaker by the lone 0.0 frame.
-    assert result.gesture.steps[0].below_ratio == 0.64
+    # 60% of the way to the weakest blink (0.3), not made weaker by the lone 0.0 frame.
+    assert result.gesture.steps[0].below_ratio == 0.58
 
 
 def test_the_edge_rises_above_a_take_that_should_not_fire():

@@ -10,7 +10,7 @@ def config_from(*argv):
 
 def test_defaults():
     config = config_from()
-    assert config.gestures["blink"].steps[1].after_min_s == 0.15
+    assert config.gestures["blink"].steps[1].after_min_s == 0.1
     assert {name: g.output for name, g in config.gestures.items()} == {
         "blink": "enter",
         "wink_left": "",

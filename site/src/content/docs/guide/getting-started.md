@@ -23,8 +23,8 @@ Your settings are saved in `%APPDATA%\eyeokuri\config.toml`. Upgrading or uninst
 
 ## Default gestures
 
-- **Blink** (both eyes closed for at least 0.15 s): sends `Enter` when you reopen your eyes. Closing your eyes for more than 2 s cancels the blink.
-- **Shake your head** to pause or resume: turn past about 15° to one side, then past about 15° to the other side, within 1 s.
+- **Blink** (both eyes closed for at least 0.1 s): sends `Enter` when you reopen your eyes. Closing your eyes for more than 1 s cancels the blink.
+- **Shake your head** to pause or resume: turn past about 15° to one side, then past about 15° to the other side, within 1.5 s.
 - **Nod up or down** sends the `up` or `down` arrow key. It is off by default. You can turn it on with its checkbox in the main window.
 
 Next, learn the [main window](../main-window/), then [edit a gesture](../edit-a-gesture/) or [set it up with the wizard](../gesture-wizard/).

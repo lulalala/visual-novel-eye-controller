@@ -17,12 +17,12 @@ A gesture is a list of steps. Each step is a box on a plot of one signal over ti
 - **pitch:** head tilt in degrees. Positive is down.
 - **yaw:** head turn in degrees. Positive is your left.
 
-The blink in the screenshot has two steps. Box 1 is "eyes below 0.55", and box 2 is "eyes above 0.75, between 0.15 s and 2 s after step 1". The dark line is your signal over the last 4 seconds.
+The blink in the screenshot has two steps. Box 1 is "eyes below 0.6", and box 2 is "eyes above 0.7, between 0.1 s and 1 s after step 1". The dark line is your signal over the last 4 seconds.
 
 ## Test your settings
 
 1. Open the gesture window and do the gesture.
-2. Read the line above the plot. It says `✓ Fires: 1.83s`, or why the gesture doesn't fire, for example `✕ Step 2 came 0.12s after step 1 (too short, min 0.15s)`.
+2. Read the line above the plot. It says `✓ Fires: 1.83s`, or why the gesture doesn't fire, for example `✕ Step 2 came 0.07s after step 1 (too short, min 0.10s)`.
 3. Change a setting and read the line again. It updates as you change the settings.
 
 The plot keeps only the eye and head numbers, in memory. It never keeps images.

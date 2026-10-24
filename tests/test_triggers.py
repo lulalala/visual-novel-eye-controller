@@ -80,7 +80,7 @@ def test_too_long_closure_is_canceled_while_still_closed():
     messages = []
     trigger = gesture("blink", messages.append)
     assert drive([trigger], eyes([(30, False), (90, True), (30, False)])) == []
-    assert messages == ["blink: step 2 not reached in time (too long, max 2.00s)"]
+    assert messages == ["blink: step 2 not reached in time (too long, max 1.00s)"]
 
 
 def test_losing_face_cancels_closure():
@@ -574,6 +574,6 @@ def test_replay_reports_a_gesture_still_waiting_at_the_end():
 
 def test_replay_reports_an_attempt_that_expired_quietly():
     # A turn right with no turn left after it: the shake started but never finished.
-    result = replay(Config(), "head_shake", head([0.0] * 5 + [-20.0] * 5 + [0.0] * 80, "yaw"))
-    assert result.reason == "didn't finish in time (too slow, max 1.00s)"
+    result = replay(Config(), "head_shake", head([0.0] * 5 + [-20.0] * 5 + [0.0] * 110, "yaw"))
+    assert result.reason == "didn't finish in time (too slow, max 1.50s)"
     assert [i for i, _ in result.steps] == [1]

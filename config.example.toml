@@ -46,12 +46,12 @@ warmup_s = 2.0
 # app:toggle_pause; or "" to send nothing.
 
 [gestures.blink]
-# Close your eyes, then open them again. 0.15 lets natural blinks advance;
-# 0.35-0.45 requires a deliberate closure. Holding them shut past 2 s cancels.
+# Close your eyes, then open them again. 0.1 lets natural blinks advance;
+# 0.35-0.45 requires a deliberate closure. Holding them shut past 1 s cancels.
 enabled = true
 steps = [
-  { signal = "eyes", below_ratio = 0.55 },
-  { signal = "eyes", above_ratio = 0.75, after_min_s = 0.15, after_max_s = 2.0 },
+  { signal = "eyes", below_ratio = 0.6 },
+  { signal = "eyes", above_ratio = 0.7, after_min_s = 0.1, after_max_s = 1.0 },
 ]
 # Blinks while your head is turned past 20° or tilted past 15° don't count.
 guards = [
@@ -90,14 +90,14 @@ cooldown_s = 1.0
 output = ""
 
 [gestures.head_shake]
-# Turn past 15° one way, then past 15° the other way, within 1 s
+# Turn past 15° one way, then past 15° the other way, within 1.5 s
 enabled = true
 steps = [
   { signal = "yaw", above_deg = 15.0 },
   { signal = "yaw", below_deg = -15.0 },
 ]
 any_order = true
-within_s = 1.0
+within_s = 1.5
 cooldown_s = 1.5
 output = "app:toggle_pause"
 

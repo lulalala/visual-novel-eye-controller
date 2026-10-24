@@ -29,7 +29,7 @@ While paused, gestures still fire but only appear in the log, for example `blink
 The log shows:
 
 - Gestures that fired, in green, for example `blink -> enter`.
-- Gestures that were detected but didn't fire, in gray, with the reason, for example `blink: step 2 came 0.12s after step 1 (too short, min 0.15s)`.
+- Gestures that were detected but didn't fire, in gray, with the reason, for example `blink: step 2 came 0.07s after step 1 (too short, min 0.10s)`.
 - Pauses and resumes.
 
 The reasons tell you which setting to change. To stop logging gestures that don't fire, clear **log_rejected** in the [config window](../config-window/).
