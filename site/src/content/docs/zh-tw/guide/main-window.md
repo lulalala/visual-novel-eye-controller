@@ -5,7 +5,7 @@ sidebar:
 description: 開啟或關閉動作、暫停 eyeokuri、查看記錄，以及開啟其他視窗。
 ---
 
-主視窗的左邊列出你的動作，右邊顯示記錄。你可以用 `eyeokuri-gui` 啟動它，或是開啟 Windows 版。
+主視窗的左邊列出你的動作，右邊顯示記錄。安裝後可以從開始功能表啟動它；如果你從原始碼執行，請用 `eyeokuri-gui`。
 
 ![eyeokuri 的主視窗，列出四個動作，以及眨眼和搖頭的記錄](../../../../assets/screenshots/zh-tw/main-window.png)
 

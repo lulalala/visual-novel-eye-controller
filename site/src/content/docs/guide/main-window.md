@@ -5,7 +5,7 @@ sidebar:
 description: Turn gestures on and off, pause eyeokuri, read the log and open the other windows.
 ---
 
-The main window lists your gestures on the left and shows the log on the right. Start it with `eyeokuri-gui`, or by opening the Windows build.
+The main window lists your gestures on the left and shows the log on the right. Start it from the Start menu after you install it, or with `eyeokuri-gui` if you run from source.
 
 ![The eyeokuri main window with four gestures and a log of blinks and a head shake](../../../assets/screenshots/main-window.png)
 
