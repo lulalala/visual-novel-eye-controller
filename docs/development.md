@@ -121,7 +121,7 @@ The site needs Node.js 22.22 or later. In `site/`, run `npm install` once, then:
 
 - `npm run dev` serves the site at `http://localhost:4321/` and reloads on each edit.
 - `npm run build` writes the site to `site/dist/`, which you can host on any static file server.
-- Pushing to `master` publishes the site to `https://lulalala.github.io/visual-novel-eye-controller/` (`.github/workflows/pages.yml`). Because the site lives under that path, start links in Markdown with `../` (`[main window](../main-window/)`), not `/`.
+- Pushing to `master` publishes the site to `https://lulalala.github.io/eyeokuri/` (`.github/workflows/pages.yml`). Because the site lives under that path, start links in Markdown with `../` (`[main window](../main-window/)`), not `/`.
 - `npm run preview` serves the built `site/dist/`.
 
 `site/dist/`, `site/node_modules/` and `site/.astro/` are gitignored. The homepage loads two fonts from Google Fonts; nothing else leaves the page. Astro collects anonymous usage data by default; run `npx astro telemetry disable` to opt out.

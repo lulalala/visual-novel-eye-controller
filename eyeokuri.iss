@@ -11,8 +11,8 @@ AppId={{100F70DC-B0E9-4B78-B51C-1AA890BCDFFF}
 AppName=eyeokuri
 AppVersion={#AppVersion}
 AppPublisher=lulalala
-AppPublisherURL=https://lulalala.github.io/visual-novel-eye-controller/
-AppSupportURL=https://github.com/lulalala/visual-novel-eye-controller/issues
+AppPublisherURL=https://lulalala.github.io/eyeokuri/
+AppSupportURL=https://github.com/lulalala/eyeokuri/issues
 ; Per-user install into %LOCALAPPDATA%\Programs, so no admin prompt.
 PrivilegesRequired=lowest
 DefaultDirName={autopf}\eyeokuri

@@ -9,7 +9,7 @@ eyeokuri watches your webcam and sends `Enter` to the game when you blink. Camer
 
 ## Install
 
-Download `eyeokuri-setup.exe` from the [latest release](https://github.com/lulalala/visual-novel-eye-controller/releases/latest) and run it. It installs eyeokuri for your Windows account without administrator rights and adds it to the Start menu. The face model is included, so eyeokuri works offline.
+Download `eyeokuri-setup.exe` from the [latest release](https://github.com/lulalala/eyeokuri/releases/latest) and run it. It installs eyeokuri for your Windows account without administrator rights and adds it to the Start menu. The face model is included, so eyeokuri works offline.
 
 Windows might warn about an unknown publisher because the app is not signed. Select **More info**, then **Run anyway**.
 

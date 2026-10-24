@@ -11,7 +11,7 @@ By default any closure of both eyes lasting 0.1–1 s counts, so a natural blink
 
 ## Install
 
-Download `eyeokuri-setup.exe` from the [latest release](https://github.com/lulalala/visual-novel-eye-controller/releases/latest) and run it. It installs eyeokuri for your Windows account without administrator rights and adds it to the Start menu. Windows might warn about an unknown publisher because the app is not signed; select **More info**, then **Run anyway**.
+Download `eyeokuri-setup.exe` from the [latest release](https://github.com/lulalala/eyeokuri/releases/latest) and run it. It installs eyeokuri for your Windows account without administrator rights and adds it to the Start menu. Windows might warn about an unknown publisher because the app is not signed; select **More info**, then **Run anyway**.
 
 The installer includes the face model, so eyeokuri works offline. The installed app saves its settings in `%APPDATA%\eyeokuri\config.toml`. The release also has `eyeokuri-windows.zip`, the same app without an installer: unzip it and run `eyeokuri.exe`.
 

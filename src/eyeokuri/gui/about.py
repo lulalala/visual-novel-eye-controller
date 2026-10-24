@@ -18,7 +18,7 @@ from eyeokuri.i18n import _
 if TYPE_CHECKING:
     from eyeokuri.gui.main_window import MainWindow
 
-REPO = "https://github.com/lulalala/visual-novel-eye-controller"
+REPO = "https://github.com/lulalala/eyeokuri"
 
 
 def _folders() -> list[Path]:

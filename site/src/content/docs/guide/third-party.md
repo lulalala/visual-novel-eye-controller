@@ -5,7 +5,7 @@ sidebar:
 description: The models and libraries that eyeokuri includes, who made them, and under which licenses.
 ---
 
-eyeokuri builds on the work of others. This page lists what the Windows build includes. The repository keeps the same list, with the full license text, in [THIRD_PARTY_NOTICES.md](https://github.com/lulalala/visual-novel-eye-controller/blob/master/THIRD_PARTY_NOTICES.md).
+eyeokuri builds on the work of others. This page lists what the Windows build includes. The repository keeps the same list, with the full license text, in [THIRD_PARTY_NOTICES.md](https://github.com/lulalala/eyeokuri/blob/master/THIRD_PARTY_NOTICES.md).
 
 ## Face model
 
