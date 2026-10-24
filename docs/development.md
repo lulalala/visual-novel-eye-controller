@@ -77,7 +77,7 @@ site/             static site (Astro with Starlight)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
 tools/            capture_screenshots.py, which takes the site's GUI screenshots
 docs/i18n/        one glossary per language (glossary.ja.tsv, glossary.zh-TW.tsv): columns en, the language code, note;
-                  gui-plan.md, the phased plan for translating the GUI; ja-plan.md, the steps to add Japanese
+                  gui-plan.md, the rules for translating the GUI and the steps to add a language
 ```
 
 ## Update the window icons
