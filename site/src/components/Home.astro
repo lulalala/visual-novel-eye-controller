@@ -18,6 +18,8 @@ const mainWindow = (
   shots[`../assets/screenshots/${locale}/main-window.png`] ?? shots["../assets/screenshots/main-window.png"]
 ).default;
 const REPO = "https://github.com/lulalala/eyeokuri";
+// GitHub redirects this to the installer in the newest published release
+const SETUP_URL = `${REPO}/releases/latest/download/eyeokuri-setup.exe`;
 
 // The logo is inlined so its blink animation can be read with getCurrentTime().
 const logo = logoSource
@@ -65,7 +67,7 @@ const alternates = Astro.site
   <nav>
     <a class="mark" href="#top"><i></i>eyeokuri</a>
     <div class="links">
-      <a class="navbtn" href={`${REPO}/releases/latest`}>{t.nav.download}</a>
+      <a class="navbtn" href={SETUP_URL}>{t.nav.download}</a>
       <a href={docsPath}>{t.nav.docs}</a>
       <a href={REPO}>{t.nav.github}</a>
       <details class="lang">
@@ -96,7 +98,7 @@ const alternates = Astro.site
       <h1>{t.heroLine1}<br><span class="next">{t.heroLine2}</span></h1>
       <p class="sub">{t.sub}</p>
       <div class="cta">
-        <a class="btn big" href={`${REPO}/releases/latest`}>{t.cta}</a>
+        <a class="btn big" href={SETUP_URL}>{t.cta}</a>
         <ul class="meta">{t.meta.map((item) => <li>{item}</li>)}</ul>
       </div>
     </div>
@@ -137,7 +139,7 @@ const alternates = Astro.site
         <li><b>{st.title}</b><span set:html={st.text} /></li>
       ))}
     </ol>
-    <a class="btn big" href={`${REPO}/releases/latest`}>{t.start.button}</a>
+    <a class="btn big" href={SETUP_URL}>{t.start.button}</a>
     <ul class="trust">
       {t.start.trust.map((x) => <li>{x}</li>)}
     </ul>
