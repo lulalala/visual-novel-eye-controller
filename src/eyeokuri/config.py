@@ -120,9 +120,11 @@ def _default_gestures() -> dict[str, GestureConfig]:
     # inside the first step's edge (12°), so jitter at 12° can't complete a nod.
     # Looking away from the screen (head turned or tilted) makes blinks and
     # eye readings unreliable, so blink only counts with the head near center.
+    # The pitch limit (10°) is inside the nods' edge (12°), so a nod cancels a
+    # blink that its eye movement would otherwise complete.
     straight = [
         StepConfig(signal="yaw", above_deg=-20.0, below_deg=20.0),
-        StepConfig(signal="pitch", above_deg=-15.0, below_deg=15.0),
+        StepConfig(signal="pitch", above_deg=-10.0, below_deg=10.0),
     ]
     center = {"above_deg": -8.0, "below_deg": 8.0, "after_max_s": 0.8}
     # A wink is one eye at least 0.25 less open than the other, then both level

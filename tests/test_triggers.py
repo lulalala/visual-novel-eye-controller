@@ -137,7 +137,7 @@ def blink_with_head(**head_values):
 
 def test_blink_fires_with_head_near_center():
     trigger = gesture("blink")
-    assert len(drive([trigger], blink_with_head(yaw=15.0, pitch=-10.0))) == 1
+    assert len(drive([trigger], blink_with_head(yaw=15.0, pitch=-8.0))) == 1
 
 
 @pytest.mark.parametrize("head_values", [{"yaw": 25.0}, {"yaw": -25.0}, {"pitch": 20.0}, {"pitch": -20.0}])
@@ -392,6 +392,15 @@ def test_nod_up_fires_on_return():
     trigger = gesture("nod_up")
     pitches = [0.0] * 5 + sweep(0, -20, 5) + sweep(-20, 0, 5) + [0.0] * 5
     assert [e.action for e in drive([trigger], head(pitches, "pitch"))] == ["nod_up"]
+
+
+def test_eyes_narrowing_during_a_small_nod_is_not_a_blink():
+    # Tilting back makes the eyes look less open; a nod just past its 12° edge
+    # still crosses the blink's 10° guard, which cancels the closure.
+    pitches = [0.0] * 5 + sweep(0, -13, 5) + sweep(-13, 0, 5) + [0.0] * 15
+    stream = [obs(i, pitch=p, eyes=0.5 if p < -6 else 1.0) for i, p in enumerate(pitches)]
+    events = drive([gesture("blink"), gesture("nod_up")], stream)
+    assert [e.action for e in events] == ["nod_up"]
 
 
 def test_slow_tilt_does_not_fire():

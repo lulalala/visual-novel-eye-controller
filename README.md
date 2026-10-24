@@ -105,13 +105,13 @@ steps = [
 ]
 guards = [
   { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
-  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
+  { signal = "pitch", above_deg = -10.0, below_deg = 10.0 },
 ]
 cooldown_s = 1.0
 output = "enter"
 ```
 
-The `guards` keep a blink from counting while you look away. Moving your head often makes you blink, and a turned or tilted head also changes how open your eyes look. A guard is a box on `pitch` or `yaw`. While your head is outside any guard, the gesture can't start, and one in progress is canceled (the log says `blink: canceled (head yaw +25° outside its limit)`). A closure that began while your head was turned doesn't count after you turn back. By default, a blink counts only when your head is within 20° of your usual pose sideways and 15° up or down. Set `guards = []` to count blinks at any head angle. A source that doesn't report head pose ignores guards. In the gesture window, the **Only while the head stays within** rows edit them.
+The `guards` keep a blink from counting while you look away. Moving your head often makes you blink, and a turned or tilted head also changes how open your eyes look. A guard is a box on `pitch` or `yaw`. While your head is outside any guard, the gesture can't start, and one in progress is canceled (the log says `blink: canceled (head yaw +25° outside its limit)`). A closure that began while your head was turned doesn't count after you turn back. By default, a blink counts only when your head is within 20° of your usual pose sideways and 10° up or down. 10° stays inside the nods' 12°, so the eye movement during a nod doesn't also count as a blink. Set `guards = []` to count blinks at any head angle. A source that doesn't report head pose ignores guards. In the gesture window, the **Only while the head stays within** rows edit them.
 
 Each step sets its own box and timing, so you can change one step without changing the others:
 

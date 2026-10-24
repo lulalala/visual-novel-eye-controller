@@ -53,10 +53,11 @@ steps = [
   { signal = "eyes", below_ratio = 0.6 },
   { signal = "eyes", above_ratio = 0.7, after_min_s = 0.1, after_max_s = 1.0 },
 ]
-# Blinks while your head is turned past 20° or tilted past 15° don't count.
+# Blinks while your head is turned past 20° or tilted past 10° don't count.
+# 10° is inside the nods' 12°, so a nod can't also count as a blink.
 guards = [
   { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
-  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
+  { signal = "pitch", above_deg = -10.0, below_deg = 10.0 },
 ]
 cooldown_s = 1.0
 output = "enter"
@@ -71,7 +72,7 @@ steps = [
 ]
 guards = [
   { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
-  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
+  { signal = "pitch", above_deg = -10.0, below_deg = 10.0 },
 ]
 cooldown_s = 1.0
 output = ""
@@ -84,7 +85,7 @@ steps = [
 ]
 guards = [
   { signal = "yaw", above_deg = -20.0, below_deg = 20.0 },
-  { signal = "pitch", above_deg = -15.0, below_deg = 15.0 },
+  { signal = "pitch", above_deg = -10.0, below_deg = 10.0 },
 ]
 cooldown_s = 1.0
 output = ""
