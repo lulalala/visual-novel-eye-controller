@@ -3,13 +3,20 @@
 import "../styles/home.css";
 import logoSource from "../../../logo/eye-blink.svg?raw";
 import { home } from "../i18n/home";
-import mainWindow from "../assets/screenshots/main-window.png";
+
+// Screenshots show the GUI in the page's language; English lives at the folder root.
+const shots = import.meta.glob<{ default: ImageMetadata }>("../assets/screenshots/**/main-window.png", {
+  eager: true,
+});
 
 interface Props {
   locale: string;
 }
 const { locale } = Astro.props;
 const t = home[locale];
+const mainWindow = (
+  shots[`../assets/screenshots/${locale}/main-window.png`] ?? shots["../assets/screenshots/main-window.png"]
+).default;
 const REPO = "https://github.com/lulalala/visual-novel-eye-controller";
 
 // The logo is inlined so its blink animation can be read with getCurrentTime().
