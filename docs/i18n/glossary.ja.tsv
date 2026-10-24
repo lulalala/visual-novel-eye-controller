@@ -1,0 +1,49 @@
+en	ja	note
+eyeokuri	eyeokuri	Never translated; always lowercase.
+visual novel	ビジュアルノベル	
+galgame	ギャルゲー	
+eroge	エロゲ	Not used on the site yet; only if the tone calls for it.
+gesture	ジェスチャー	Decided with the user. Covers blink, nod and head shake.
+blink	まばたき	
+wink	ウィンク	wink_left = 左ウィンク, wink_right = 右ウィンク.
+nod	うなずき	
+shake your head	首を振る	The pause gesture.
+head turn	首を回す	yaw; positive is your left.
+tilt (head up/down)	上を向く / 下を向く	pitch; positive is head tilted down (下を向く).
+webcam	Webカメラ	
+camera	カメラ	Short form after Webカメラ has been introduced.
+frame (camera image)	映像 / フレーム	映像 in user-facing copy (カメラ映像); フレーム in technical docs and log messages.
+face model	顔モデル	
+key	キー	
+Enter key	Enterキー	Key names stay in Latin: Enter, Space in labels, ctrl+s.
+Space key	スペースキー	
+output	出力	The key or mouse input a gesture sends.
+step	ステップ	One box on the gesture plot. Followed by a number without 目: ステップ 2.
+wizard	ウィザード	The gesture wizard: ジェスチャーウィザード.
+controller	コントローラー	
+dialog box (in a game)	ダイアログ	
+docs	ヘルプ	
+release	リリース	
+unsigned (app)	署名なし	
+unknown publisher	不明な発行元	Windows SmartScreen wording; not yet checked on a Japanese Windows.
+Run anyway	実行	Windows SmartScreen button; not yet checked on a Japanese Windows.
+take (a wizard recording)	テイク	Decided with the user. Take 3 = テイク 3. Redo take = テイクを録り直す.
+edge (of a step box)	端	
+fire (a gesture)	反応する	Decided with the user. Also: 反応する / 反応しない.
+near miss	早すぎ / 遅すぎ	Too quick, Too slow. Kinds of take that must not fire.
+cooldown	クールダウン	
+head limit	頭の範囲	The "only while the head stays within" guard.
+hold	保持	A step column: how long the signal stays in the box.
+config (file)	設定ファイル	
+log	ログ	The GUI log and its lines. Quoted log lines stay in English.
+baseline	基準値	The usual open-eye level or head position eyeokuri learns.
+threshold	しきい値	Where a step box starts on the signal axis.
+plot	グラフ	The signal-over-time plot.
+time limit	制限時間	The time allowed between steps or in total.
+window (app)	ウィンドウ	
+status bar	ステータスバー	
+checkbox	チェックボックス	
+tab	タブ	全般 / 詳細設定.
+live view	ライブ映像	The camera picker shows each camera live.
+Help (menu)	ヘルプ	The Windows menu name.
+register	です/ます for sentences, noun phrases for buttons and labels	Decided with the user, as Windows does.

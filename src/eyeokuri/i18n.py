@@ -5,24 +5,26 @@ from __future__ import annotations
 import locale
 import sys
 
-from eyeokuri.locales import zh_tw
+from eyeokuri.locales import ja, zh_tw
 
 # Language code -> {"English text": "translated text"}. Imported statically so PyInstaller bundles them.
 CATALOGS: dict[str, dict[str, str]] = {
+    "ja": ja.CATALOG,
     "zh-TW": zh_tw.CATALOG,
 }
 
 # Windows locale names (locale.windows_locale values) -> catalog code. Others get English.
 _LOCALE_LANGUAGES = {
+    "ja_JP": "ja",
     "zh_TW": "zh-TW",
     "zh_HK": "zh-TW",
 }
 
-# Language code -> (gap between sentences, full stop). Chinese has no space after a sentence and ends with 。.
-_STYLES = {"zh-TW": ("", "。")}
+# Language code -> (gap between sentences, full stop). Chinese and Japanese have no space after a sentence and end with 。.
+_STYLES = {"ja": ("", "。"), "zh-TW": ("", "。")}
 
 # Language code -> the language's name in itself, for the language picker. Not translated.
-LANGUAGE_NAMES = {"en": "English", "zh-TW": "繁體中文"}
+LANGUAGE_NAMES = {"en": "English", "ja": "日本語", "zh-TW": "繁體中文"}
 
 _active: dict[str, str] = {}
 _style = (" ", ".")
@@ -46,7 +48,7 @@ def set_language(code: str) -> None:
 
 
 def gap() -> str:
-    """What goes between two sentences: a space, or nothing in Chinese."""
+    """What goes between two sentences: a space, or nothing in Chinese and Japanese."""
     return _style[0]
 
 

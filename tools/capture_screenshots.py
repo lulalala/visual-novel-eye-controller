@@ -295,7 +295,7 @@ def _scenes(s: Session, main: MainWindow, source: ScriptedSource) -> None:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Take the site's GUI screenshots from the real windows.")
-    p.add_argument("--language", default="en", help='GUI language: "en" or a catalog code such as zh-TW (default: en)')
+    p.add_argument("--language", default="en", help='GUI language: "en" or a catalog code such as ja or zh-TW (default: en)')
     p.add_argument("--out", type=Path, help="folder to save into (default: site/src/assets/screenshots, "
                    "plus /<language in lowercase> for languages other than en)")
     p.add_argument("--only", help=f"comma-separated names to save, from: {', '.join(NAMES)} (default: all)")

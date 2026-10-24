@@ -40,7 +40,7 @@ def test_english_and_unknown_codes_use_the_source_text(monkeypatch):
     ("zh_TW", "zh-TW"),
     ("zh_HK", "zh-TW"),
     ("zh_CN", "en"),
-    ("ja_JP", "en"),
+    ("ja_JP", "ja"),
     ("", "en"),
     ("zz_ZZ", "en"),
 ])
@@ -99,6 +99,8 @@ def test_auto_language_detects_and_others_are_used_as_given(monkeypatch):
 def test_sentence_gap_and_stop_follow_the_language():
     assert (i18n.gap(), i18n.stop()) == (" ", ".")
     set_language("zh-TW")
+    assert (i18n.gap(), i18n.stop()) == ("", "。")
+    set_language("ja")
     assert (i18n.gap(), i18n.stop()) == ("", "。")
     set_language("en")
     assert (i18n.gap(), i18n.stop()) == (" ", ".")

@@ -135,6 +135,6 @@ log_rejected = true
 # Start paused: gestures are detected and logged but send nothing. The GUI
 # saves this whenever you pause or resume.
 paused = false
-# GUI language: "auto" follows the Windows display language; "en" or "zh-TW" picks one.
+# GUI language: "auto" follows the Windows display language; "en", "ja" or "zh-TW" picks one.
 # The command line is always English.
 language = "auto"

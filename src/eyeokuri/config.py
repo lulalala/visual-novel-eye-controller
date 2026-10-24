@@ -180,7 +180,7 @@ class AppConfig:
     # saves this whenever you pause or resume, so it starts the way you left it.
     paused: bool = False
     # GUI language: "auto" follows the Windows display language; "en" or a
-    # translation's code (zh-TW) picks one. The command line is always English.
+    # translation's code (ja, zh-TW) picks one. The command line is always English.
     language: str = "auto"
 
     def __post_init__(self) -> None:

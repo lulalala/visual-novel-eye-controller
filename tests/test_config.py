@@ -205,9 +205,10 @@ def test_paused_survives_a_dump_and_works_with_set(tmp_path):
 
 def test_language_can_be_set_through_set():
     assert config_from("--set", "app.language=en").app.language == "en"
+    assert config_from("--set", "app.language=ja").app.language == "ja"
     assert config_from("--set", "app.language=zh-TW").app.language == "zh-TW"
 
 
 def test_unknown_language_is_rejected():
-    with pytest.raises(ValueError, match="app.language must be one of auto, en, zh-TW"):
+    with pytest.raises(ValueError, match="app.language must be one of auto, en, ja, zh-TW"):
         config_from("--set", "app.language=fr")
