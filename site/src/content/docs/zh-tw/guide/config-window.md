@@ -36,7 +36,7 @@ eyeokuri 會學習你平常睜眼的程度和頭部的位置，並在你的姿�
 
 ## 變更語言
 
-當 eyeokuri 有對應的翻譯時，視窗會跟隨你的 Windows 顯示語言，否則使用英文。如果你想自己選擇語言，請在 `config.toml` 的 `[app]` 區段，把 `language` 設為 `"en"` 或 `"zh-TW"`。預設值 `"auto"` 會跟隨 Windows。變更會在你下次啟動視窗時生效。
+當 eyeokuri 有對應的翻譯時，視窗會跟隨你的 Windows 顯示語言，否則使用英文。如果你想自己選擇語言，請在 `config.toml` 的 `[app]` 區段，把 `language` 設為 `"en"`、`"ja"` 或 `"zh-TW"`。預設值 `"auto"` 會跟隨 Windows。變更會在你下次啟動視窗時生效。
 
 ## 儲存或取消
 

@@ -26,5 +26,18 @@ Your settings are saved in `%APPDATA%\eyeokuri\config.toml`. Upgrading or uninst
 - **Blink** (both eyes closed for at least 0.1 s): sends `Enter` when you reopen your eyes. Closing your eyes for more than 1 s cancels the blink.
 - **Shake your head** to pause or resume: turn past about 15° to one side, then past about 15° to the other side, within 1.5 s.
 - **Nod up or down** sends the `up` or `down` arrow key. It is off by default. You can turn it on with its checkbox in the main window.
+- **Wink with your left or right eye** (`wink_left`, `wink_right`) is off by default and sends nothing until you choose an output in its gesture window. A wink counts when one eye is at least 0.25 less open than the other, then both are level again 0.05–0.6 s later. A normal blink closes both eyes, so it doesn't count as a wink. Turning your head makes one eye look narrower to the camera, so winks count only with your head within 20° sideways and 10° up or down. Run the [wizard](../gesture-wizard/) to fit it to your face.
 
-Next, learn the [main window](../main-window/), then [edit a gesture](../edit-a-gesture/) or [set it up with the wizard](../gesture-wizard/).
+A shake often comes with a blink, so it can also advance one line.
+
+## Blink freely or on purpose
+
+By default, any closure of both eyes lasting 0.1–1 s counts, so a natural blink advances the text. If you'd rather blink freely and close your eyes on purpose to advance, raise the blink's minimum closed time to about 0.35–0.45 s in its [gesture window](../edit-a-gesture/), or run the [wizard](../gesture-wizard/) with a deliberate blink. Ordinary blinks lasted 0.17–0.34 s in our first test.
+
+## If the game doesn't respond
+
+eyeokuri sends keys with hardware scan codes, so DirectInput games receive them too. If the game runs as administrator, run eyeokuri as administrator as well, or Windows blocks the input.
+
+## Next steps
+
+Learn the [main window](../main-window/), then [edit a gesture](../edit-a-gesture/) or [set it up with the wizard](../gesture-wizard/). To change gestures in the config file, see [Edit gestures in the config file](../config-file/).

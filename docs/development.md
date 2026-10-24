@@ -1,6 +1,6 @@
 # Development
 
-This page is for people who change or build `eyeokuri`. For using the app, see the [README](../README.md).
+This page is for people who change or build `eyeokuri`. For using the app, see the [README](../README.md) and the [guide](https://lulalala.github.io/eyeokuri/).
 
 ## Project stages
 

@@ -126,7 +126,7 @@ Agents can't see the windows. Make the code changes this list needs (for example
 
 ## Phase 5: docs
 
-- `README.md`: one line saying the GUI follows the Windows display language, which languages exist, and the override key if phase 1 added one.
+- `site/src/content/docs/guide/config-window.md` (all locales): one line saying the GUI follows the Windows display language, which languages exist, and the override key if phase 1 added one.
 - `docs/development.md`: add `i18n.py` and `locales/` to the Layout section, and a short "Translate the GUI" task next to the existing translation steps that points here for how to add a language.
 - `AGENTS.md`: add a GUI rule to wrap new user-facing strings with `_()` following the rules in this file, and add the entry to every catalog in the same change.
 - Site docs: if phase 1 added a config key, document it in `site/src/content/docs/guide/config-window.md`.
@@ -144,7 +144,7 @@ Each language takes about half a day plus a native review and a layout check. Ma
    - `_STYLES`: only if sentences aren't joined by a space and ended by `.`.
    - `LANGUAGE_NAMES`: the language's name in itself.
 5. **Tests.** `tests/test_i18n.py` checks every code in `CATALOGS` by itself. Add the locale cases to the mapping test, and the code to `test_sentence_gap_and_stop_follow_the_language` if it has a `_STYLES` entry. In `tests/test_config.py`, add `app.language=<code>` to `test_language_can_be_set_through_set` and update the allowed list in `test_unknown_language_is_rejected`.
-6. **Text that lists languages:** `README.md` (GUI language paragraph and the `language = "<code>"` example), the `app.language` comments in `config.example.toml` and `AppConfig`, the Layout and "Translate the GUI" text in `docs/development.md`, and the `--language` help in `tools/capture_screenshots.py`. The default stays `"auto"`.
+6. **Text that lists languages:** `site/src/content/docs/guide/config-window.md` (the language section and the `language = "<code>"` example), the `app.language` comments in `config.example.toml` and `AppConfig`, the Layout and "Translate the GUI" text in `docs/development.md`, and the `--language` help in `tools/capture_screenshots.py`. The default stays `"auto"`.
 7. **Layout check.** Run Phase 4 for the new language and ask the user to look at every window. Check script-specific rendering too: for CJK languages, Tk falls back to another font for glyphs the UI font lacks, so on a system whose Windows language differs, shared Han characters can render with the wrong regional shapes (for `ja`, 直 and 骨). If they do, ask before changing fonts; the fix is choosing a UI font for that language, the way `theme.py` picks the log font with `pick_family`.
 8. **Website (optional).** Follow "Translate the site" in `docs/development.md` and `site/AGENTS.md`: screenshots with `tools/capture_screenshots.py --language <code>`, guide pages, sidebar `translations`, and a `site/src/i18n/home.ts` entry.
 

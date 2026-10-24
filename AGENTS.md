@@ -49,7 +49,7 @@
 1. An entry in `_default_gestures()` in `config.py`. Ask the user whether it starts enabled; there is no rule yet.
 2. A matching section in `config.example.toml` with identical values (`test_example_config_matches_defaults` checks this).
 3. Tests in `tests/test_triggers.py` driving synthetic 30 FPS `Observation` streams (`drive` helper): fires, each rejection reason, cooldown, face loss.
-4. The README, if users see the change.
+4. The site guide pages (`site/src/content/docs/guide/`, and every translated locale), if users see the change. The README only describes the app, how to install it and where the docs are, so change it only when those change.
 
 **Add a signal:** `SIGNALS` in `config.py`, `signal_value` in `triggers.py`, bound fields with units in `StepConfig`, `SIGNAL_PLOTS` in `gui/model.py`, the tables at the top of `tuning.py`, and `GestureTrigger.needs`.
 
@@ -65,7 +65,7 @@ Follow the [developer documentation writing standard](https://github.com/NateBJo
 - Address the reader as `you`; active voice, present tense, imperative for instructions. No `please`.
 - `must` = requirement, `can` = available action, `might` = uncertain, `should` = clear recommendation only.
 - Sentence-case headings. Task sections start with a verb ("Install the package"); concept sections are noun phrases.
-- README is user-facing: concrete numbers ("turn past ~15° to one side"), flag examples in step with the code.
+- The README is a short front page; usage lives in the site guide, `docs/command-line.md` and `config.example.toml`. Don't copy guide text into the README. Docs for users give concrete numbers ("turn past ~15° to one side") and flag examples in step with the code.
 
 ## Git
 
@@ -78,5 +78,5 @@ Follow the [developer documentation writing standard](https://github.com/NateBJo
 1. `.venv\Scripts\python -m pytest -q` passes, and new behavior has tests.
 2. `.venv\Scripts\eyeokuri --help` and `.venv\Scripts\eyeokuri-gui --help` run without error.
 3. Every new or changed config key has the same value in code defaults and `config.example.toml`, and works through `--set`.
-4. README and the Layout section of `docs/development.md` match the change.
+4. The site guide pages, the README (if it is affected) and the Layout section of `docs/development.md` match the change.
 5. The final message is 2–4 lines on what changed and what the user notices, then a list of what you could not test: real-camera behavior, real key output, and how GUI changes look. Never say a gesture "works" from unit tests; say it is unit-tested and needs a live check (`eyeokuri --preview` paused with `p`, then `eyeokuri` in a game).

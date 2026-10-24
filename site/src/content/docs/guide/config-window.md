@@ -36,7 +36,7 @@ eyeokuri learns your usual open-eye level and your usual head position, and keep
 
 ## Change the language
 
-The window follows your Windows display language when eyeokuri has a translation for it, and uses English otherwise. To pick a language yourself, set `language` in the `[app]` section of `config.toml` to `"en"` or `"zh-TW"`. The default, `"auto"`, follows Windows. The change applies the next time you start the window.
+The window follows your Windows display language when eyeokuri has a translation for it, and uses English otherwise. To pick a language yourself, set `language` in the `[app]` section of `config.toml` to `"en"`, `"ja"` or `"zh-TW"`. The default, `"auto"`, follows Windows. The change applies the next time you start the window.
 
 ## Save or cancel
 

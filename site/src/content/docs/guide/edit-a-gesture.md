@@ -14,6 +14,7 @@ The gear button (⚙) on a gesture's row opens its window. You change the gestur
 A gesture is a list of steps. Each step is a box on a plot of one signal over time, and a step counts the moment the signal enters its box. The signals are:
 
 - **eyes:** how open your eyes are. 1.0 is your usual open level.
+- **wink:** how open your right eye is minus your left, each relative to its usual level. It stays near 0 with both eyes open or both closed. Closing only your left eye takes it toward +1, and closing only your right eye toward −1.
 - **pitch:** head tilt in degrees. Positive is down.
 - **yaw:** head turn in degrees. Positive is your left.
 
@@ -53,7 +54,7 @@ Above the plot:
 
 Moving your head often makes you blink, and a turned or tilted head also changes how open your eyes look. The **Only while the head stays within** rows limit the head angle for the whole gesture. While your head is outside a limit, the gesture can't start, and one in progress is canceled. The log says why, for example `blink: canceled (head yaw +25° outside its limit)`.
 
-By default, a blink counts only when your head is within 20° of your usual pose sideways and 15° up or down. Remove the rows to count blinks at any head angle.
+By default, a blink counts only when your head is within 20° of your usual pose sideways and 10° up or down. Remove the rows to count blinks at any head angle.
 
 ## Choose what the gesture sends
 
