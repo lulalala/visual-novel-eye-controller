@@ -17,7 +17,7 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-The face landmark model (~4 MB) is downloaded on first run. The Windows executable from `build-windows.bat` includes it.
+The face landmark model (~4 MB) is downloaded on first run. The Windows installer from `build-windows.bat` includes it.
 
 ## Run the tests
 
@@ -25,15 +25,31 @@ The face landmark model (~4 MB) is downloaded on first run. The Windows executab
 pytest
 ```
 
-## Build a Windows executable
+## Build the Windows installer
 
-You can package `eyeokuri` so it runs on a Windows PC without Python. You need Python 3.11 or later on the build PC only.
+You can package `eyeokuri` so it runs on a Windows PC without Python. You need Python 3.11 or later on the build PC only, and [Inno Setup 6](https://jrsoftware.org/isinfo.php) for the installer (`winget install JRSoftware.InnoSetup`).
 
 1. Double-click `build-windows.bat`. The first build takes a few minutes because it sets up `build\venv`.
-2. Copy `build\eyeokuri-windows.zip` (~65 MB) to the other PC and unzip it.
-3. Run `eyeokuri.exe` in the unzipped folder. It opens a console window. Close the window or press `Ctrl+C` to stop it.
+2. Run `build\eyeokuri-setup.exe` on the other PC. It installs for the current user without asking for administrator rights, and adds eyeokuri to the Start menu.
 
-The build downloads the face model and packs it into the zip, so the other PC does not need to be online. The zip also contains `LICENSE` and `THIRD_PARTY_NOTICES.md`, which carries the model's Apache 2.0 license. The About window opens both. Windows might show an "unknown publisher" warning because the executable is not signed.
+The build also writes `build\eyeokuri-windows.zip`, the same app without an installer. Without Inno Setup, the build skips the installer and still writes the zip. Both run the GUI (`eyeokuri-gui`) without a console window; the command-line `eyeokuri` is not included.
+
+The build downloads the face model and packs it into the app, so the other PC does not need to be online. The app folder also contains `LICENSE` and `THIRD_PARTY_NOTICES.md`, which carries the model's Apache 2.0 license. The About window opens both. Windows might show an "unknown publisher" warning because the executable is not signed.
+
+The installed app keeps `config.toml` in `%APPDATA%\eyeokuri`, because its Start menu shortcut starts it there. Upgrading or uninstalling leaves the file alone.
+
+## Publish a release
+
+Pushing a version tag builds the installer and zip on GitHub (`.github/workflows/release.yml`) and attaches them to a draft release. The homepage's download buttons open the latest published release.
+
+1. Set `__version__` in `src/eyeokuri/__init__.py` (`0.2.0`) and commit it to `master`.
+2. Tag the commit with the same version and push the tag:
+   ```sh
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+   The workflow fails if the tag and `__version__` differ.
+3. When the workflow finishes, open the draft under **Releases**, edit the notes and select **Publish release**.
 
 ## Layout
 
@@ -75,8 +91,12 @@ site/             static site (Astro with Starlight)
   src/scripts/    home.js, the homepage demo
   src/styles/     home.css (homepage) and docs.css (docs theme)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
-tools/            capture_screenshots.py, which takes the site's GUI screenshots
-.github/workflows/  pages.yml, which builds site/ and publishes it to GitHub Pages on each push to master
+tools/            capture_screenshots.py, which takes the site's GUI screenshots;
+                  make_ico.py, which packs the icon PNGs into the .ico for the executable and installer
+build-windows.bat builds the Windows app, zip and installer under build\
+eyeokuri.iss      Inno Setup script for the installer
+.github/workflows/  pages.yml publishes site/ to GitHub Pages on each push to master;
+                    release.yml builds the Windows installer when a version tag is pushed
 docs/i18n/        one glossary per language (glossary.ja.tsv, glossary.zh-TW.tsv): columns en, the language code, note;
                   gui-plan.md, the rules for translating the GUI and the steps to add a language;
                   site-docs-plan.md, the steps to translate the site's docs into a language

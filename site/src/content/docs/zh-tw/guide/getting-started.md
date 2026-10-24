@@ -9,9 +9,11 @@ eyeokuri 會透過視訊鏡頭觀察你，當你眨眼時，就對遊戲送出 `
 
 ## 安裝
 
-從[最新版本](https://github.com/lulalala/visual-novel-eye-controller/releases/latest)下載 Windows 版。第一次執行時會下載約 4 MB 的臉部模型，所以你必須連線一次。
+從[最新版本](https://github.com/lulalala/visual-novel-eye-controller/releases/latest)下載 `eyeokuri-setup.exe` 並執行。它會把 eyeokuri 安裝到你的 Windows 帳戶，不需要系統管理員權限，並加到開始功能表。臉部模型已包含在內，所以離線也能使用。
 
 因為這個程式沒有數位簽章，Windows 可能會警告「不明的發行者」。請選擇 **其他資訊**，再選擇 **仍要執行**。
+
+你的設定會儲存在 `%APPDATA%\eyeokuri\config.toml`。升級或解除安裝 eyeokuri 都會保留設定。
 
 ## 開始閱讀
 

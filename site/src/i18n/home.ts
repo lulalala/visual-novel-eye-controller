@@ -48,7 +48,7 @@ export const home: Record<string, HomeText> = {
     heroLine2: "Next line.",
     sub: "Read your visual novel hands-free. eyeokuri turns a blink into the Enter key.",
     cta: "Download",
-    meta: ["Free", "Open source", "About 65 MB"],
+    meta: ["Free", "Open source", "About 70 MB"],
     demoLabel: "Interactive demo of eyeokuri in a visual novel",
     eyeLabel: "An anime eye that blinks",
     dialogLabel: "Advance the dialogue (blink, click, or press Space)",
@@ -77,15 +77,15 @@ export const home: Record<string, HomeText> = {
     start: {
       title: "Your hands are free now",
       steps: [
-        { title: "Download", text: "Free for Windows, about 65 MB. Any webcam works, even an Android phone as a webcam." },
+        { title: "Download", text: "Free for Windows, about 70 MB. Any webcam works, even an Android phone as a webcam." },
         {
           title: "Run it",
-          text: "The app is not signed, so Windows might warn about an unknown publisher. Select <b>More info</b>, then <b>Run anyway</b>.",
+          text: "Run the installer. The app is not signed, so Windows might warn about an unknown publisher. Select <b>More info</b>, then <b>Run anyway</b>.",
         },
         { title: "Adjust", text: "A wizard is available to learn your blink, or you can customize new gestures manually." },
       ],
       button: "Download for Windows",
-      trust: ["Camera frames never leave your PC", "Free and open source", "Online once, for a 4 MB face model"],
+      trust: ["Camera frames never leave your PC", "Free and open source", "Works offline, face model included"],
     },
     pass: {
       title: "Share with other gentlemen",
@@ -110,7 +110,7 @@ export const home: Record<string, HomeText> = {
     heroLine2: "抵達下一句。",
     sub: "眨眼就翻頁。用 eyeokuri，目送每一句台詞。",
     cta: "下載",
-    meta: ["免費", "開源", "約 65 MB"],
+    meta: ["免費", "開源", "約 70 MB"],
     demoLabel: "eyeokuri 在視覺小說中的互動示範",
     eyeLabel: "一隻會眨眼的動漫風眼睛",
     dialogLabel: "推進對話（眨眼、點擊或按空白鍵）",
@@ -139,15 +139,15 @@ export const home: Record<string, HomeText> = {
     start: {
       title: "實現雙手自由",
       steps: [
-        { title: "下載", text: "Windows 版免費，約 65 MB。任何視訊鏡頭都能用，連 Android 手機當鏡頭也行。" },
+        { title: "下載", text: "Windows 版免費，約 70 MB。任何視訊鏡頭都能用，連 Android 手機當鏡頭也行。" },
         {
           title: "執行",
-          text: "這個程式沒有數位簽章，所以 Windows 可能會警告「不明的發行者」。選擇<b>其他資訊</b>，再按<b>仍要執行</b>。",
+          text: "執行安裝程式。這個程式沒有數位簽章，所以 Windows 可能會警告「不明的發行者」。選擇<b>其他資訊</b>，再按<b>仍要執行</b>。",
         },
         { title: "調整", text: "內建精靈可以學習你的眨眼方式，你也可以手動自訂新動作。" },
       ],
       button: "下載 Windows 版",
-      trust: ["鏡頭畫面絕不離開你的電腦", "免費且開源", "只連網一次，下載 4 MB 的臉部模型"],
+      trust: ["鏡頭畫面絕不離開你的電腦", "免費且開源", "離線也能用，已內含臉部模型"],
     },
     pass: {
       title: "好東西就是要跟其他紳士分享",
@@ -173,7 +173,7 @@ export const home: Record<string, HomeText> = {
     heroLine2: "次のセリフへ。",
     sub: "ビジュアルノベルを手ぶらで読もう。eyeokuriはまばたきをEnterキーに変えます。",
     cta: "ダウンロード",
-    meta: ["無料", "オープンソース", "約65 MB"],
+    meta: ["無料", "オープンソース", "約70 MB"],
     demoLabel: "ビジュアルノベルで動くeyeokuriのデモ(操作できます)",
     eyeLabel: "まばたきするアニメ調の目",
     dialogLabel: "セリフを進める(まばたき、クリック、スペースキー)",
@@ -202,15 +202,15 @@ export const home: Record<string, HomeText> = {
     start: {
       title: "両手が空きました。使い道はご自由に",
       steps: [
-        { title: "ダウンロード", text: "Windows用で無料、約65 MB。Webカメラならなんでも動きます。AndroidスマホをWebカメラにしてもOK。" },
+        { title: "ダウンロード", text: "Windows用で無料、約70 MB。Webカメラならなんでも動きます。AndroidスマホをWebカメラにしてもOK。" },
         {
           title: "実行",
-          text: "このアプリは署名がないため、Windowsに「不明な発行元」と警告されることがあります。<b>詳細情報</b>を選んで、<b>実行</b>を押してください。",
+          text: "インストーラーを実行します。このアプリは署名がないため、Windowsに「不明な発行元」と警告されることがあります。<b>詳細情報</b>を選んで、<b>実行</b>を押してください。",
         },
         { title: "調整", text: "ウィザードがあなたのまばたきを学習します。好きなジェスチャーを手動で作ることもできます。" },
       ],
       button: "Windows版をダウンロード",
-      trust: ["カメラ映像はPCの外に出ません", "無料のオープンソース", "ネット接続は初回だけ(4 MBの顔モデルをダウンロード)"],
+      trust: ["カメラ映像はPCの外に出ません", "無料のオープンソース", "オフラインで動作(顔モデル同梱)"],
     },
     pass: {
       title: "紳士諸君に布教しよう",

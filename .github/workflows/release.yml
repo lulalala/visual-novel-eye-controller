@@ -1,0 +1,36 @@
+# Builds the Windows installer and zip when a version tag (v0.1.0) is pushed, and attaches them to a draft release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Check the tag matches the app version
+        shell: pwsh
+        run: |
+          $version = python -c "import sys; sys.path.insert(0, 'src'); import eyeokuri; print(eyeokuri.__version__)"
+          if ("v$version" -ne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME doesn't match __version__ $version in src/eyeokuri/__init__.py" }
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - name: Build
+        shell: cmd
+        run: build-windows.bat
+      - name: Create the draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME build/eyeokuri-setup.exe build/eyeokuri-windows.zip --draft --generate-notes --title "eyeokuri $($env:GITHUB_REF_NAME.TrimStart('v'))"

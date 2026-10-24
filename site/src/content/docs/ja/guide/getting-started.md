@@ -9,9 +9,11 @@ description: アイ送り（eyeokuri）をインストールし、目を開い�
 
 ## インストールする
 
-[最新リリース](https://github.com/lulalala/visual-novel-eye-controller/releases/latest)から Windows 版をダウンロードしてください。初回の起動時に約 4 MB の顔モデルをダウンロードするため、一度だけオンラインにする必要があります。
+[最新リリース](https://github.com/lulalala/visual-novel-eye-controller/releases/latest)から `eyeokuri-setup.exe` をダウンロードして実行してください。管理者権限なしで、あなたの Windows アカウントにアイ送りをインストールし、スタートメニューに追加します。顔モデルが含まれているので、オフラインでも動作します。
 
 アプリに署名がないため、Windows が不明な発行元について警告することがあります。その場合は **詳細情報** を選び、**実行** を選んでください。
+
+設定は `%APPDATA%\eyeokuri\config.toml` に保存されます。アップグレードやアンインストールをしても残ります。
 
 ## 読み始める
 
