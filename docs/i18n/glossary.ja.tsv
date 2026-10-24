@@ -1,8 +1,8 @@
 en	ja	note
-eyeokuri	eyeokuri	Never translated; always lowercase.
+eyeokuri	アイ送り
 visual novel	ビジュアルノベル	
 galgame	ギャルゲー	
-eroge	エロゲ	Not used on the site yet; only if the tone calls for it.
+eroge	エロゲ	Used in the homepage keywords only, next to ギャルゲー.
 gesture	ジェスチャー	Decided with the user. Covers blink, nod and head shake.
 blink	まばたき	
 wink	ウィンク	wink_left = 左ウィンク, wink_right = 右ウィンク.
@@ -47,3 +47,7 @@ tab	タブ	全般 / 詳細設定.
 live view	ライブ映像	The camera picker shows each camera live.
 Help (menu)	ヘルプ	The Windows menu name.
 register	です/ます for sentences, noun phrases for buttons and labels	Decided with the user, as Windows does.
+spread the word	布教しよう	Homepage only; otaku slang for sharing something you love.
+backlog (unplayed games)	積みゲー	Homepage footer only.
+demo dialog voice	ツンデレ (あなた, 〜んだからね, バカ!)	Decided with the user: classic tsundere with a few VN in-jokes (フラグ, セーブ). Addresses the player as あなた.
+homepage voice (non-dialog)	Light otaku slang plus game-UI gags	Decided with the user. Trust bullets and install steps stay plain.
