@@ -92,6 +92,7 @@ site/             static site (Astro with Starlight)
   src/styles/     home.css (homepage) and docs.css (docs theme)
   src/content/docs/  docs pages in Markdown; translations go in ja/ and zh-tw/
 tools/            capture_screenshots.py, which takes the site's GUI screenshots;
+                  make_og_images.py, which renders the homepage link-preview cards (site/public/og*.png);
                   make_ico.py, which packs the icon PNGs into the .ico for the executable and installer
 build-windows.bat builds the Windows app, zip and installer under build\
 eyeokuri.iss      Inno Setup script for the installer
@@ -135,6 +136,17 @@ The docs are set up for English, Japanese (`ja`) and Traditional Chinese for Tai
 - To translate a docs page, copy it to the same path under `site/src/content/docs/<language>/` and translate it.
 - Screenshots show the GUI, so each language needs its own. Take them with `tools/capture_screenshots.py` (see [Take the site screenshots](#take-the-site-screenshots)), and reference `assets/screenshots/<language>/<name>.png` from the translated page.
 - To translate the homepage, add the language to `site/src/i18n/home.ts`, then add `site/src/pages/<language>/index.astro` that renders `<Home locale="<language>" />`.
+
+## Render the link-preview cards
+
+`tools/make_og_images.py` renders the 1200×630 cards that Messenger, X and Discord show when someone shares the homepage. It reads each language's headline and tagline from `site/src/i18n/home.ts` and writes `site/public/og.png` (English) and `og-<language>.png`. It needs Microsoft Edge and an internet connection for the web font.
+
+```sh
+.venv\Scripts\python tools\make_og_images.py
+```
+
+- Run it again when a language's `heroLine1`, `heroLine2` or `sub` changes, or when you add a language.
+- Look at the images before you commit them; a long headline might need a smaller size in `HEADLINE_PX`.
 
 ## Take the site screenshots
 

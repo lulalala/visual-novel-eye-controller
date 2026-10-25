@@ -34,6 +34,9 @@ const docsPath = `${path(locale)}guide/getting-started/`;
 const alternates = Astro.site
   ? Object.keys(home).map((l) => ({ l, href: new URL(path(l), Astro.site).href }))
   : [];
+// Link previews (Messenger, X, Discord) need absolute URLs; the 1200x630 cards in public/ come from tools/make_og_images.py.
+const pageUrl = Astro.site ? new URL(path(locale), Astro.site).href : undefined;
+const ogImage = Astro.site ? new URL(`${base}/${locale === "en" ? "og" : `og-${locale}`}.png`, Astro.site).href : undefined;
 ---
 <!doctype html>
 <html lang={t.lang}>
@@ -45,7 +48,14 @@ const alternates = Astro.site
 <meta property="og:type" content="website">
 <meta property="og:title" content={t.title}>
 <meta property="og:description" content={t.ogDescription}>
-<meta name="twitter:card" content="summary">
+<meta property="og:site_name" content="eyeokuri">
+{pageUrl && <meta property="og:url" content={pageUrl} />}
+{ogImage && <meta property="og:image" content={ogImage} />}
+{ogImage && <meta property="og:image:width" content="1200" />}
+{ogImage && <meta property="og:image:height" content="630" />}
+{ogImage && <meta property="og:image:alt" content={t.title} />}
+<meta name="twitter:card" content="summary_large_image">
+{ogImage && <meta name="twitter:image" content={ogImage} />}
 <meta name="keywords" content={t.keywords}>
 <meta name="theme-color" content="#F8F9FF">
 <link rel="icon" href={`${base}/logo.svg`} type="image/svg+xml">
