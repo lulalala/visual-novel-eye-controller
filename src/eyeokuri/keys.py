@@ -5,13 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 MODIFIERS = ("ctrl", "shift", "alt", "win")
+_LAST_F_KEY = 24
 
 # Key name -> Windows virtual-key code. Win32Output turns the code into a
 # scan code for the current keyboard layout, so "a" is whichever key types a.
 KEY_VK: dict[str, int] = {
     **{chr(c): ord(chr(c).upper()) for c in range(ord("a"), ord("z") + 1)},
     **{str(d): 0x30 + d for d in range(10)},
-    **{f"f{n}": 0x6F + n for n in range(1, 25)},
+    **{f"f{n}": 0x6F + n for n in range(1, _LAST_F_KEY + 1)},
     "enter": 0x0D,
     "space": 0x20,
     "tab": 0x09,
@@ -39,8 +40,11 @@ EXTENDED_KEYS = frozenset({
     "delete", "insert", "home", "end", "page_up", "page_down", "left", "up", "right", "down", "win",
 })
 
-_KEY_HELP = "a-z, 0-9, f1-f24, enter, space, tab, escape, backspace, delete, insert, home, end, " \
-    "page_up, page_down, up, down, left, right, ctrl, shift, alt, win"
+# Built from KEY_VK, so a new key shows up in the error message too.
+_KEY_HELP = ", ".join([
+    "a-z", "0-9", f"f1-f{_LAST_F_KEY}",
+    *(k for k in KEY_VK if len(k) > 1 and not (k[0] == "f" and k[1:].isdigit())),
+])
 
 
 @dataclass(frozen=True)

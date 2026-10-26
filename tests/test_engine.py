@@ -4,6 +4,7 @@ import pytest
 
 from eyeokuri.config import Config, apply_overrides
 from eyeokuri.engine import Engine
+from eyeokuri.outputs import APP_OUTPUTS, MOUSE_OUTPUTS
 from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
 
 FPS = 30
@@ -87,6 +88,18 @@ def test_unknown_output_is_rejected_when_the_config_is_applied():
     config = apply_overrides(Config(), {"gestures": {"blink": {"output": "nonsense"}}})
     with pytest.raises(ValueError, match="gestures.blink.output"):
         make(calibrate(), config)
+
+
+def test_unknown_output_message_lists_the_mouse_outputs():
+    config = apply_overrides(Config(), {"gestures": {"blink": {"output": "nonsense"}}})
+    with pytest.raises(ValueError) as e:
+        make(calibrate(), config)
+    assert all(name in str(e.value) for name in MOUSE_OUTPUTS)
+
+
+def test_every_app_output_has_an_action():
+    engine, *_ = make(calibrate())
+    assert set(engine.app_actions) == APP_OUTPUTS
 
 
 def test_head_shake_pauses_and_blinks_are_then_ignored():

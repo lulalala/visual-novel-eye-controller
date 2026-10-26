@@ -52,6 +52,16 @@ def test_common_outputs_are_all_valid():
             check_output_name(bad)
 
 
+def test_unknown_key_message_names_every_key():
+    with pytest.raises(ValueError) as e:
+        parse_key("pgdn")
+    message = str(e.value)
+    assert "a-z, 0-9, f1-f24" in message
+    for key in KEY_VK:
+        if len(key) > 1 and not key[1:].isdigit():
+            assert key in message
+
+
 def test_letter_and_digit_codes_are_windows_virtual_keys():
     assert KEY_VK["a"] == 0x41
     assert KEY_VK["z"] == 0x5A

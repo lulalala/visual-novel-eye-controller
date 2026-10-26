@@ -10,7 +10,7 @@ from eyeokuri.eyes import EyeStateTracker, Observation
 from eyeokuri.feedback import play_sound
 from eyeokuri.head import HeadTracker
 from eyeokuri.outputs import (
-    APP_OUTPUTS, APP_PREFIX, Output, check_output_name, create_output,
+    APP_OUTPUTS, APP_PREFIX, MOUSE_OUTPUTS, Output, check_output_name, create_output,
 )
 from eyeokuri.pause import PauseSwitch
 from eyeokuri.sources import Source
@@ -33,8 +33,8 @@ def validate_outputs(config: Config) -> None:
                 check_output_name(output)
             except ValueError as e:
                 raise ValueError(
-                    f"gestures.{name}.output: {e}; mouse outputs are left_click, right_click, "
-                    "wheel_down, and \"\" sends nothing"
+                    f"gestures.{name}.output: {e}; mouse outputs are {', '.join(MOUSE_OUTPUTS)}, "
+                    "and \"\" sends nothing"
                 ) from None
 
 
@@ -88,6 +88,8 @@ class Engine:
         # Only read here: afterwards the engine owns the paused state, and
         # set_config() leaves it alone.
         self.pause = PauseSwitch(self._on_pause_change, paused=config.app.paused)
+        # What each of outputs.APP_OUTPUTS does.
+        self.app_actions: dict[str, Callable[[], None]] = {"app:toggle_pause": self.pause.toggle}
         self.fps = 0.0
         self.last_fire_at = -1e9
         self._prev: float | None = None
@@ -194,8 +196,8 @@ class Engine:
         if not mapped or mapped.startswith(APP_PREFIX):
             # No output: only a step of other gestures. Otherwise an app-level output.
             self._log(f"{event.trigger}: {event.detail}")
-            if mapped == "app:toggle_pause":
-                self.pause.toggle()
+            if mapped:
+                self.app_actions[mapped]()
             return False
         if self.pause.paused:
             # Log what would have been sent, so you can try gestures while paused.
