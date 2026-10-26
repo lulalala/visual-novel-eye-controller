@@ -46,7 +46,7 @@ class WizardWindow:
         self.script = script(self.name)
         self.takes: list[Take | None] = [None] * len(self.script)
         self.answers: dict[int, str] = {}
-        """Your answer to "should this fire?" (DO or the near miss), by page."""
+        """Your answer to "should this count as the gesture too?" (DO or the near miss), by page."""
         self.fitted: Fit | None = None
         self.results: dict[int, Replay] = {}
         """The fitted gesture replayed over each recorded take, by page."""
@@ -137,7 +137,9 @@ class WizardWindow:
         kind, what = self.script[self.page]
         self.counter.configure(text=_("Take") + f" {self.page + 1} / {len(self.script)}")
         self.heading.configure(text=_(what))
-        outcome = "" if kind in _ASK_KINDS else _("Should fire.") if kind == DO else _("Shouldn't fire.")
+        # A near miss says why it's asked for, so the question below makes sense.
+        outcome = (_("You might do this while reading. Recording it helps the wizard tell it apart from the gesture.")
+                   if kind in _ASK_KINDS else _("Should fire.") if kind == DO else _("Shouldn't fire."))
         # The first page also says what the wizard does, since it has no page of its own.
         intro = _("Record a few takes, and the wizard fits this gesture to them.") + gap() if self.page == 0 else ""
         self.subheading.configure(text=intro + outcome)
@@ -147,18 +149,19 @@ class WizardWindow:
         self.record_button.pack(side="left")
         self.status = ttk.Label(row, font=self._bold)
         self.status.pack(side="left", padx=(12, 0))
-        if kind in _ASK_KINDS:
-            ask = ttk.Frame(self.content)
-            ask.pack(fill="x", pady=(10, 0))
-            ttk.Label(ask, text=_("Should this fire?"), style="Wizard.TLabel").pack(side="left")
-            self.answer = tk.StringVar(value=self.answers.get(self.page, ""))
-            for value, text in ((DO, _("Yes")), (kind, _("No"))):
-                ttk.Radiobutton(ask, text=text, value=value, variable=self.answer, style="Wizard.TRadiobutton",
-                                command=self._on_answer).pack(side="left", padx=(10, 0))
         self.plot = PlotEditor(self.content, lambda _i, _k, _v: None)
         self.plot.canvas.pack(fill="both", expand=True, pady=(12, 0))
         self.result = ttk.Label(self.content, style="Wizard.TLabel", wraplength=_WIZARD_WRAP, justify="left")
         self.result.pack(anchor="w", pady=(8, 0))
+        # Just above Next, which it enables, and after the result you answer it from.
+        if kind in _ASK_KINDS:
+            ask = ttk.Frame(self.content)
+            ask.pack(fill="x", pady=(8, 0))
+            ttk.Label(ask, text=_("Should this count as the gesture too?"), style="Wizard.TLabel").pack(side="left")
+            self.answer = tk.StringVar(value=self.answers.get(self.page, ""))
+            for value, text in ((DO, _("Yes")), (kind, _("No"))):
+                ttk.Radiobutton(ask, text=text, value=value, variable=self.answer, style="Wizard.TRadiobutton",
+                                command=self._on_answer).pack(side="left", padx=(10, 0))
         # The focused button takes Space, so you can record without the mouse.
         self.record_button.focus_set()
         self._refresh_take()
@@ -188,10 +191,9 @@ class WizardWindow:
             ready = take is not None and answered and not recording
             self.next_button.configure(text=_("Next"), state="normal" if ready else "disabled",
                                        style="Wizard.Accent.TButton" if ready else "Wizard.TButton")
-        if recording or take is None:
+        # Unanswered, the question just below is the reason Next is off.
+        if recording or take is None or not answered:
             self.result.configure(text="")
-        elif not answered:
-            self.result.configure(text=_("Choose Yes or No."), foreground=theme.TRACE)
         else:
             result = self.results[self.page]
             fired = result.fired_at is not None
