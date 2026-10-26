@@ -177,6 +177,13 @@ def test_every_gesture_suggests_takes_that_fire_and_near_misses():
         assert kinds[0] == DO and len(kinds) > 1
 
 
+def test_every_built_in_gesture_has_its_own_wizard_script():
+    # The generic script would also pass the test above, so check the table itself.
+    from eyeokuri import tuning
+
+    assert set(Config().gestures) <= set(tuning._SCRIPTS)
+
+
 def test_script_asks_for_the_gesture_several_times_then_each_near_miss_once():
     kinds = [kind for kind, _ in script("blink", do_takes=3)]
     assert kinds == [DO, DO, DO, TOO_QUICK, TOO_SLOW]

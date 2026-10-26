@@ -63,34 +63,39 @@ def script(name: str, do_takes: int = DO_TAKES) -> list[tuple[str, str]]:
     return [s for s in steps if s[0] == DO] * do_takes + [s for s in steps if s[0] != DO]
 
 
+_READ = (OTHER, N_("Read the screen normally for a few seconds."))
+# (kind, what to do) for each built-in gesture; every one in config._default_gestures() needs an entry.
+_SCRIPTS = {
+    "blink": [
+        (DO, N_("Blink once, the way you want to advance the text.")),
+        (TOO_QUICK, N_("Blink once quickly, the way you blink without thinking.")),
+        (TOO_SLOW, N_("Close your eyes for a few seconds, as if resting them.")),
+    ],
+    "wink_left": [
+        (DO, N_("Wink your left eye once.")),
+        (TOO_SLOW, N_("Close your left eye for a few seconds, as if resting it.")),
+        (OTHER, N_("Blink both eyes a few times, the way you blink without thinking.")),
+    ],
+    "wink_right": [
+        (DO, N_("Wink your right eye once.")),
+        (TOO_SLOW, N_("Close your right eye for a few seconds, as if resting it.")),
+        (OTHER, N_("Blink both eyes a few times, the way you blink without thinking.")),
+    ],
+    "head_shake": [
+        (DO, N_("Shake your head once.")),
+        (TOO_SLOW, N_("Turn your head slowly to one side, wait, then slowly to the other, as if looking around the room.")),
+        (OTHER, N_("Look around the screen naturally.")),
+    ],
+    "nod_down": [(DO, N_("Nod down once.")), (TOO_SLOW, N_("Tilt your head down and hold it for a few seconds, as if reading the bottom of the screen.")), _READ],
+    "nod_up": [(DO, N_("Nod up once.")), (TOO_SLOW, N_("Tilt your head up and hold it for a few seconds, as if looking above the screen.")), _READ],
+}
+# For gestures you add.
+_GENERIC_SCRIPT = [(DO, N_("Do the gesture once.")), (TOO_SLOW, N_("Do the gesture slowly.")), _READ]
+
+
 def suggestions(name: str) -> list[tuple[str, str]]:
     """(kind, what to do) for takes worth recording for this gesture."""
-    read = (OTHER, N_("Read the screen normally for a few seconds."))
-    known = {
-        "blink": [
-            (DO, N_("Blink once, the way you want to advance the text.")),
-            (TOO_QUICK, N_("Blink once quickly, the way you blink without thinking.")),
-            (TOO_SLOW, N_("Close your eyes for a few seconds, as if resting them.")),
-        ],
-        "wink_left": [
-            (DO, N_("Wink your left eye once.")),
-            (TOO_SLOW, N_("Close your left eye for a few seconds, as if resting it.")),
-            (OTHER, N_("Blink both eyes a few times, the way you blink without thinking.")),
-        ],
-        "wink_right": [
-            (DO, N_("Wink your right eye once.")),
-            (TOO_SLOW, N_("Close your right eye for a few seconds, as if resting it.")),
-            (OTHER, N_("Blink both eyes a few times, the way you blink without thinking.")),
-        ],
-        "head_shake": [
-            (DO, N_("Shake your head once.")),
-            (TOO_SLOW, N_("Turn your head slowly to one side, wait, then slowly to the other, as if looking around the room.")),
-            (OTHER, N_("Look around the screen naturally.")),
-        ],
-        "nod_down": [(DO, N_("Nod down once.")), (TOO_SLOW, N_("Tilt your head down and hold it for a few seconds, as if reading the bottom of the screen.")), read],
-        "nod_up": [(DO, N_("Nod up once.")), (TOO_SLOW, N_("Tilt your head up and hold it for a few seconds, as if looking above the screen.")), read],
-    }
-    return known.get(name, [(DO, N_("Do the gesture once.")), (TOO_SLOW, N_("Do the gesture slowly.")), read])
+    return list(_SCRIPTS.get(name, _GENERIC_SCRIPT))
 
 
 def can_tune(gesture: GestureConfig) -> bool:

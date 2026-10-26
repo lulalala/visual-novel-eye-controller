@@ -48,8 +48,9 @@
 **Add a built-in gesture** (no new trigger code needed for existing signals), all in one change:
 1. An entry in `_default_gestures()` in `config.py`. Ask the user whether it starts enabled; there is no rule yet.
 2. A matching section in `config.example.toml` with identical values (`test_example_config_matches_defaults` checks this).
-3. Tests in `tests/test_triggers.py` driving synthetic 30 FPS `Observation` streams (`drive` helper): fires, each rejection reason, cooldown, face loss.
-4. The site guide pages (`site/src/content/docs/guide/`, and every translated locale), if users see the change. The README only describes the app, how to install it and where the docs are, so change it only when those change.
+3. The wizard's takes for it in `_SCRIPTS` in `tuning.py`: the gesture, and the near misses it should tell apart (`test_every_built_in_gesture_has_its_own_wizard_script` checks this). Add new prompt strings to every catalog in `locales/`.
+4. Tests in `tests/test_triggers.py` driving synthetic 30 FPS `Observation` streams (`drive` helper): fires, each rejection reason, cooldown, face loss.
+5. The site guide pages (`site/src/content/docs/guide/`, and every translated locale), if users see the change. The README only describes the app, how to install it and where the docs are, so change it only when those change.
 
 **Add a signal:** `SIGNALS` in `config.py`, `signal_value` in `triggers.py`, bound fields with units in `StepConfig`, `SIGNAL_PLOTS` in `gui/model.py`, the tables at the top of `tuning.py`, and `GestureTrigger.needs`.
 
