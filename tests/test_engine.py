@@ -111,6 +111,21 @@ def test_new_config_takes_effect_on_the_next_step_and_keeps_calibration():
     assert engine.eyes is tracker
 
 
+def test_invalid_new_config_is_logged_and_the_old_one_stays_in_use():
+    samples = calibrate() + blink()
+    engine, output, messages, _ = make(samples)
+    run(engine, 80)
+    tracker, triggers = engine.eyes, engine.triggers
+    bad = apply_overrides(Config(), {"gestures": {"blink": {"output": "nonsense"}},
+                                     "eyes": {"warmup_s": 1.0}})
+    engine.set_config(bad)
+    run(engine, len(samples) - 80)
+    assert any(m.startswith("Settings not applied: gestures.blink.output") for m in messages)
+    assert engine.config == Config()
+    assert engine.eyes is tracker and engine.triggers is triggers
+    assert output.sent == ["enter"]
+
+
 def test_changed_eye_settings_restart_calibration():
     engine, *_ = make(calibrate(10))
     tracker = engine.eyes

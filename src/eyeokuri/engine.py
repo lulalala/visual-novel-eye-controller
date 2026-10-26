@@ -58,7 +58,8 @@ class Engine:
     and the GUI both drive it by calling step() once per frame.
 
     set_config(), toggle_pause() and set_suspended() may be called from
-    another thread: they take effect at the start of the next step().
+    another thread: they take effect at the start of the next step(). Settings
+    that set_config() gets but that aren't valid are logged and not applied.
 
     Suspended means the front end is using the signals itself (editing
     settings, recording takes): the pipeline keeps producing observations,
@@ -116,6 +117,8 @@ class Engine:
         return [f"{t.name}: {t.status()}" for t in self.triggers]
 
     def _apply(self, config: Config) -> None:
+        # Checked before anything changes, so bad settings leave the engine as it was.
+        check_config(config)
         old = self.config
         self.config = config
         if old is not None and self._own_source and config.camera != old.camera:
@@ -135,7 +138,6 @@ class Engine:
         )
         if self._own_output and self._output is None:
             self._output = create_output(self._log)
-        validate_outputs(config)
         self._outputs = {name: g.output for name, g in config.gestures.items()}
 
     def _on_fire(self, event: TriggerEvent, output_name: str) -> None:
@@ -154,7 +156,11 @@ class Engine:
     def step(self) -> Frame:
         pending, self._pending = self._pending, None
         if pending is not None:
-            self._apply(pending)
+            try:
+                self._apply(pending)
+            except ValueError as e:
+                # From another thread, so raising would stop the engine; keep the settings in use.
+                self._log(f"Settings not applied: {e}")
         if self._pause_requested:
             self._pause_requested = False
             self.pause.toggle()
