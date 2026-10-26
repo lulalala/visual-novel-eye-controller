@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 from eyeokuri import i18n, theme
 from eyeokuri.config import CATALOGS, Config
-from eyeokuri.engine import check_config
 from eyeokuri.gui.camera import CameraPicker
+from eyeokuri.gui.live_edit import LiveEdit
 from eyeokuri.gui.model import fmt
 from eyeokuri.gui.tkutil import place_over
 from eyeokuri.i18n import N_, _
@@ -19,8 +19,6 @@ if TYPE_CHECKING:
     from eyeokuri.gui.main_window import MainWindow
 
 
-# Edits apply once they stop for this long, so typing "12" doesn't open camera 1 first.
-_APPLY_DELAY_MS = 400
 # Settings that stay in the config file but not on the General tab. They only
 # decide which frames the eye baseline learns from, not when a gesture fires.
 _HIDDEN_GENERAL = {("eyes", "close_ratio"), ("eyes", "open_ratio")}
@@ -63,11 +61,7 @@ class ConfigWindow:
         self.win.withdraw()
         self.win.title(_("eyeokuri config"))
         self.win.protocol("WM_DELETE_WINDOW", self._close_box)
-        self._field_errors: dict[str, str] = {}
         self.camera_picker: CameraPicker | None = None
-        # Cancel goes back to these.
-        self._opened_with = app.config
-        self._apply_id: str | None = None
         self.language = app.config.app.language
         self.values = {
             section: {f.name: getattr(getattr(app.config, section), f.name) for f in fields(getattr(app.config, section))}
@@ -96,17 +90,14 @@ class ConfigWindow:
         ttk.Button(bottom, text=_("Cancel"), command=self.cancel).pack(side="right")
         self.ok_button = ttk.Button(bottom, text=_("OK"), style="Accent.TButton", command=self.ok)
         self.ok_button.pack(side="right", padx=6)
+        self.edit = LiveEdit(app, self.win, self.message, self.ok_button, self._edited)
         place_over(self.win, app.root)
 
-    def build_config(self) -> Config:
-        """The settings in use with these edits; raises ValueError if they aren't valid."""
-        if self._field_errors:
-            raise ValueError(next(iter(self._field_errors.values())))
+    def _edited(self) -> Config:
+        """The settings in use with these edits."""
         base = self.app.config
-        config = replace(base, app=replace(base.app, language=self.language),
-                         **{s: replace(getattr(base, s), **v) for s, v in self.values.items()})
-        check_config(config)
-        return config
+        return replace(base, app=replace(base.app, language=self.language),
+                       **{s: replace(getattr(base, s), **v) for s, v in self.values.items()})
 
     def _build_language(self, tab: ttk.Frame, row: int) -> int:
         """The language picker row; returns the next free row."""
@@ -185,46 +176,21 @@ class ConfigWindow:
         label = f"{section}.{key}"
         try:
             self.values[section][key] = kind(text.strip())
-            self._field_errors.pop(label, None)
+            self.edit.errors.pop(label, None)
         except ValueError:
-            self._field_errors[label] = (_("Not a whole number:") if kind is int else _("Not a number:")) + f" {label} = {text!r}"
+            self.edit.errors[label] = (_("Not a whole number:") if kind is int else _("Not a number:")) + f" {label} = {text!r}"
         self._refresh()
 
     def _refresh(self) -> None:
         """Validates the edits, then applies them once they stop changing."""
-        if self._apply_id is not None:
-            self.win.after_cancel(self._apply_id)
-            self._apply_id = None
-        try:
-            self.build_config()
-            self.message.configure(text="")
-            self.ok_button.configure(state="normal")
-            self._apply_id = self.win.after(_APPLY_DELAY_MS, self._apply)
-        except ValueError as e:
-            self.message.configure(text=str(e), foreground=theme.BAD)
-            self.ok_button.configure(state="disabled")
-
-    def _apply(self) -> None:
-        """Puts valid edits in use; invalid ones wait until you fix them."""
-        if self._apply_id is not None:
-            self.win.after_cancel(self._apply_id)
-            self._apply_id = None
-        try:
-            config = self.build_config()
-        except ValueError:
-            return
-        if config != self.app.config:
-            self.app.apply_config(config)
+        self.edit.refresh()
 
     def ok(self) -> None:
         """Saves and closes; if saving fails, the window stays open with your edits."""
-        try:
-            config = self.build_config()
-            self.app.save_config(config)
-        except (ValueError, OSError) as e:
-            self.message.configure(text=str(e), foreground=theme.BAD)
+        config = self.edit.save()
+        if config is None:
             return
-        if config.app.language != self._opened_with.app.language:
+        if config.app.language != self.edit.opened_with.app.language:
             # In the new language, since that's the one the user wants to read.
             notice = i18n.translate_to(_LANGUAGE_NOTICE, i18n.resolve_language(config.app.language))
             messagebox.showinfo("eyeokuri", notice, parent=self.win)
@@ -232,24 +198,16 @@ class ConfigWindow:
 
     def cancel(self) -> None:
         """Goes back to the settings in use when the window opened, and closes."""
-        if self.app.config != self._opened_with:
-            self.app.apply_config(self._opened_with)
+        self.edit.revert()
         self._close()
 
     def _close_box(self) -> None:
         """The window's close button cancels, but asks first so one click can't undo your changes."""
-        try:
-            changed = self.build_config() != self._opened_with
-        except ValueError:
-            changed = True
-        if changed and not messagebox.askyesno(
-                _("eyeokuri config"), _("Discard your changes?"), icon="warning", parent=self.win):
-            return
-        self.cancel()
+        if self.edit.may_discard(_("eyeokuri config")):
+            self.cancel()
 
     def _close(self) -> None:
-        if self._apply_id is not None:
-            self.win.after_cancel(self._apply_id)
+        self.edit.close()
         if self.camera_picker is not None and self.camera_picker.win.winfo_exists():
             self.camera_picker.close()
         self.app.config_window = None

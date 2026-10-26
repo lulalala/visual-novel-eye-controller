@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Any
 
 from eyeokuri import theme
 from eyeokuri.config import GUARD_SIGNALS, SIGNALS, Config, GestureConfig
-from eyeokuri.engine import check_config
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
     RECORD_S, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step, users_of,
 )
+from eyeokuri.gui.live_edit import LiveEdit
 from eyeokuri.gui.plot import PlotEditor
 from eyeokuri.gui.tkutil import place_over
 from eyeokuri.i18n import _
@@ -28,8 +28,6 @@ if TYPE_CHECKING:
 
 
 _LIVE_REFRESH_MS = 250
-# Edits apply once they stop for this long, so typing "12" doesn't apply 1 first.
-_APPLY_DELAY_MS = 400
 
 
 class GestureWindow:
@@ -44,10 +42,6 @@ class GestureWindow:
         self.builtin = name in Config().gestures
         self.model = gesture_model(gesture or app.config.gestures[name])
         self._suppress = False
-        self._field_errors: dict[str, str] = {}
-        # Cancel goes back to these.
-        self._opened_with = app.config
-        self._apply_id: str | None = None
 
         self.win = tk.Toplevel(app.root)
         self.win.withdraw()
@@ -71,6 +65,7 @@ class GestureWindow:
         ttk.Button(bottom, text=_("Cancel"), command=self.cancel).pack(side="right")
         self.ok_button = ttk.Button(bottom, text=_("OK"), style="Accent.TButton", command=self.ok)
         self.ok_button.pack(side="right", padx=6)
+        self.edit = LiveEdit(app, self.win, self.message, self.ok_button, self._edited)
 
         self._load_fields()
         place_over(self.win, app.root)
@@ -79,14 +74,13 @@ class GestureWindow:
     # Model
 
     def build_config(self) -> Config:
-        """The settings in use with this gesture's edits; raises ValueError if they aren't valid.
-        A new gesture goes after the others."""
-        if self._field_errors:
-            raise ValueError(next(iter(self._field_errors.values())))
+        """The settings in use with this gesture's edits; raises ValueError if they aren't valid."""
+        return self.edit.config()
+
+    def _edited(self) -> Config:
+        """The settings in use with this gesture's edits. A new gesture goes after the others."""
         base = self.app.config
-        config = replace(base, gestures={**base.gestures, self.name: gesture_config(self.model)})
-        check_config(config)
-        return config
+        return replace(base, gestures={**base.gestures, self.name: gesture_config(self.model)})
 
     # Fields
 
@@ -156,7 +150,7 @@ class GestureWindow:
         for key, var in self.gesture_vars.items():
             var.set(fmt(m[key]))
         self._suppress = False
-        self._field_errors = {}
+        self.edit.errors.clear()
         self._build_steps()
         self._build_guards()
         self._refresh()
@@ -210,9 +204,9 @@ class GestureWindow:
         try:
             value = None if text == "" and optional else float(text or 0)
         except ValueError:
-            self._field_errors[label] = _("Not a number:") + f" {label} = {text!r}"
+            self.edit.errors[label] = _("Not a number:") + f" {label} = {text!r}"
             return
-        self._field_errors.pop(label, None)
+        self.edit.errors.pop(label, None)
         target[key] = value
 
     # Steps table
@@ -343,7 +337,7 @@ class GestureWindow:
         steps = self.model["steps"]
         if len(steps) > 1:
             del steps[i]
-            self._field_errors = {}
+            self.edit.errors.clear()
             self._build_steps()
             self._refresh()
 
@@ -380,18 +374,7 @@ class GestureWindow:
     def _refresh(self) -> None:
         """Validates the edits, re-runs the gesture on the live signal and redraws,
         then applies the edits once they stop changing."""
-        if self._apply_id is not None:
-            self.win.after_cancel(self._apply_id)
-            self._apply_id = None
-        try:
-            config: Config | None = self.build_config()
-            self.message.configure(text="")
-            self.ok_button.configure(state="normal")
-            self._apply_id = self.win.after(_APPLY_DELAY_MS, self._apply)
-        except ValueError as e:
-            config = None
-            self.message.configure(text=str(e), foreground=theme.BAD)
-            self.ok_button.configure(state="disabled")
+        config = self.edit.refresh()
         # The wizard fits boxes, so it needs valid settings where every step has one.
         tunable = config is not None and can_tune(config.gestures[self.name])
         self.wizard_button.configure(state="normal" if tunable else "disabled")
@@ -420,22 +403,10 @@ class GestureWindow:
 
     # Buttons
 
-    def _apply(self) -> None:
-        """Puts valid edits in use; invalid ones wait until you fix them."""
-        if self._apply_id is not None:
-            self.win.after_cancel(self._apply_id)
-            self._apply_id = None
-        try:
-            config = self.build_config()
-        except ValueError:
-            return
-        if config != self.app.config:
-            self.app.apply_config(config)
-
     def _delete(self) -> None:
         if self.builtin:
             return
-        users = users_of(self._opened_with.gestures, self.name)
+        users = users_of(self.edit.opened_with.gestures, self.name)
         if users:
             messagebox.showerror(_("Delete gesture"), _("Other gestures use this one as a step. Remove it from them first:")
                                  + f"\n\n{', '.join(users)}", parent=self.win)
@@ -445,11 +416,12 @@ class GestureWindow:
         if self.new:
             self.cancel()
             return
-        gestures = {n: g for n, g in self._opened_with.gestures.items() if n != self.name}
+        opened_with = self.edit.opened_with
+        gestures = {n: g for n, g in opened_with.gestures.items() if n != self.name}
         try:
-            self.app.save_config(replace(self._opened_with, gestures=gestures))
+            self.app.save_config(replace(opened_with, gestures=gestures))
         except OSError as e:
-            self.message.configure(text=str(e), foreground=theme.BAD)
+            self.edit.show_error(str(e))
             return
         self.app.worker.log(f"{self.name}: deleted")
         self._close()
@@ -463,40 +435,28 @@ class GestureWindow:
 
     def ok(self) -> None:
         """Saves and closes; if saving fails, the window stays open with your edits."""
-        try:
-            config = self.build_config()
-            self.app.save_config(config)
-        except (ValueError, OSError) as e:
-            self.message.configure(text=str(e), foreground=theme.BAD)
-            return
-        self._close()
+        if self.edit.save() is not None:
+            self._close()
 
     def cancel(self) -> None:
         """Goes back to the settings in use when the window opened, and closes."""
-        if self.app.config != self._opened_with:
-            self.app.apply_config(self._opened_with)
+        self.edit.revert()
         self._close()
 
     def _close_box(self) -> None:
         """The window's close button cancels, but asks first so one click can't undo your tuning."""
-        try:
-            changed = self.new or self.build_config() != self._opened_with
-        except ValueError:
-            changed = True
-        if changed and not messagebox.askyesno(
-                f"{self.name} – eyeokuri", _("Discard your changes?"), icon="warning", parent=self.win):
-            return
-        self.cancel()
+        # A new gesture is lost when it closes, even unchanged.
+        if self.edit.may_discard(f"{self.name} – eyeokuri", changed=self.new):
+            self.cancel()
 
     def use_fit(self, gesture: GestureConfig, takes: list[Take]) -> None:
         """Puts the wizard's result in the editor and applies it; OK saves it."""
         self.model = gesture_model(gesture)
         self._load_fields()
-        self._apply()
+        self.edit.apply()
 
     def _close(self) -> None:
-        if self._apply_id is not None:
-            self.win.after_cancel(self._apply_id)
+        self.edit.close()
         if self.app.wizard is not None and self.app.wizard.owner is self:
             self.app.wizard.close()
         self.app.gesture_window = None
