@@ -48,6 +48,18 @@ SIGNAL_PLOTS = {
                       N_("Head yaw: + = turned to your left")),
 }
 GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
+# A gesture that sent its output: Engine logs "<name>: <detail> -> <output>".
+_FIRED = re.compile(r" -> [^\s()]+$")
+
+
+def log_tag(message: str) -> str:
+    """The log window's tag for a log line: ``fire`` for a gesture that sent
+    its output, ``reject`` for one that didn't and why, in parentheses."""
+    if _FIRED.search(message):
+        return "fire"
+    if message.endswith(")") and " (" in message:
+        return "reject"
+    return ""
 
 
 def fmt(value: float | None) -> str:

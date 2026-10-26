@@ -4,6 +4,7 @@ import pytest
 
 from eyeokuri.config import Config, apply_overrides
 from eyeokuri.engine import Engine
+from eyeokuri.gui.model import log_tag
 from eyeokuri.outputs import APP_OUTPUTS, MOUSE_OUTPUTS
 from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
 
@@ -137,6 +138,39 @@ def test_invalid_new_config_is_logged_and_the_old_one_stays_in_use():
     assert engine.config == Config()
     assert engine.eyes is tracker and engine.triggers is triggers
     assert output.sent == ["enter"]
+
+
+def _tags(messages):
+    return {m: log_tag(m) for m in messages}
+
+
+def test_log_window_colors_a_sent_output_as_fired():
+    engine, _, messages, _ = make(calibrate() + blink())
+    run(engine, len(calibrate() + blink()))
+    sent = [m for m in messages if m.endswith("-> enter")]
+    assert sent and all(log_tag(m) == "fire" for m in sent)
+
+
+def test_log_window_colors_rejections_and_paused_outputs_as_rejected():
+    quick = [(0.05, 0.0)] * 2 + [(0.3, 0.0)] * 30
+    samples = calibrate() + quick + shake() + blink()
+    engine, _, messages, _ = make(samples)
+    run(engine, len(samples))
+    tags = _tags(messages)
+    assert [t for m, t in tags.items() if "too short" in m] == ["reject"]
+    assert [t for m, t in tags.items() if m.endswith("(paused, not sent)")] == ["reject"]
+    assert tags["Paused"] == ""
+    assert all(t == "" for m, t in tags.items() if m.startswith("head_shake: "))
+
+
+def test_log_window_leaves_settings_errors_plain_even_with_arrows():
+    loop = {"a": {"steps": [{"gesture": "b"}]}, "b": {"steps": [{"gesture": "a"}]}}
+    engine, _, messages, _ = make(calibrate(2))
+    engine.set_config(apply_overrides(Config(), {"gestures": loop}))
+    engine.step()
+    errors = [m for m in messages if m.startswith("Settings not applied: ")]
+    assert errors and " -> " in errors[0]
+    assert log_tag(errors[0]) != "fire"
 
 
 def test_changed_eye_settings_restart_calibration():

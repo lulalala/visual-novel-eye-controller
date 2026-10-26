@@ -16,7 +16,7 @@ from eyeokuri.gui.about import AboutWindow
 from eyeokuri.gui.camera import CameraWindow
 from eyeokuri.gui.config_window import ConfigWindow
 from eyeokuri.gui.gesture_window import GestureWindow
-from eyeokuri.gui.model import GESTURE_NAME, view_size
+from eyeokuri.gui.model import GESTURE_NAME, log_tag, view_size
 from eyeokuri.gui.name_dialog import ask_text
 from eyeokuri.gui.tkutil import menu_bar_height
 from eyeokuri.gui.wizard import WizardWindow
@@ -189,12 +189,7 @@ class MainWindow:
         self.root.after(_POLL_MS, self._poll)
 
     def _append_log(self, message: str) -> None:
-        if " -> " in message and "not sent" not in message:
-            tag = "fire"
-        elif message.endswith(")") and "(" in message:
-            tag = "reject"
-        else:
-            tag = ""
+        tag = log_tag(message)
         at_end = self.log_text.yview()[1] > 0.999
         self.log_text.configure(state="normal")
         self.log_text.insert("end", time.strftime("%H:%M:%S  "), "time")
