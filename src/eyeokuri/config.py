@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from eyeokuri.i18n import CATALOGS
+from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE
 
 
 @dataclass(frozen=True)
@@ -54,9 +55,47 @@ class HeadConfig:
     warmup_s: float = 2.0
 
 
-SIGNALS = ("eyes", "wink", "pitch", "yaw")
-# Signals measured relative to your usual level (the _ratio bounds); the rest are degrees.
-RATIO_SIGNALS = ("eyes", "wink")
+@dataclass(frozen=True)
+class SignalSpec:
+    """What a step's signal is. triggers.signal_value() reads it from an Observation."""
+
+    unit: str
+    """ratio (relative to your usual level) or deg: the suffix of a step's bound fields."""
+    needs: str
+    """What the source must provide for it (see eyeokuri.sources)."""
+    rest: float
+    """Where the signal sits while you just read."""
+    min_reach: float
+    """tuning.fit() keeps a step's edge at least this far from rest, so noise doesn't count."""
+    gap: float
+    """tuning.fit() keeps this much space between an edge and a box around rest (the hysteresis)."""
+    guard: bool = False
+    """A guard (a head limit) can use it."""
+
+    @property
+    def symbol(self) -> str:
+        """Shown after a value."""
+        return "°" if self.unit == "deg" else ""
+
+    def show(self, value: float, signed: bool = False) -> str:
+        """The value as the log and the wizard show it: ratios to 0.01, angles to whole degrees."""
+        places = 2 if self.unit == "ratio" else 0
+        return f"{value:{'+' if signed else ''}.{places}f}{self.symbol}"
+
+    def round(self, value: float) -> float:
+        """The value as precise as show() shows it."""
+        return round(value, 2) if self.unit == "ratio" else float(round(value))
+
+
+# Everything a step can watch. Adding one also needs signal_value() in
+# triggers.py and a plot lane (SIGNAL_PLOTS in gui/model.py).
+SIGNALS: dict[str, SignalSpec] = {
+    "eyes": SignalSpec("ratio", EYE_OPENNESS, rest=1.0, min_reach=0.15, gap=0.1),
+    "wink": SignalSpec("ratio", EYE_OPENNESS, rest=0.0, min_reach=0.2, gap=0.1),
+    "pitch": SignalSpec("deg", HEAD_POSE, rest=0.0, min_reach=5.0, gap=3.0, guard=True),
+    "yaw": SignalSpec("deg", HEAD_POSE, rest=0.0, min_reach=5.0, gap=3.0, guard=True),
+}
+GUARD_SIGNALS = tuple(name for name, spec in SIGNALS.items() if spec.guard)
 
 
 @dataclass(frozen=True)
@@ -83,12 +122,12 @@ class StepConfig:
     @property
     def unit(self) -> str:
         """The suffix of this step's bound fields: ratio for eyes and wink, deg for the head."""
-        return "ratio" if self.signal in RATIO_SIGNALS else "deg"
+        return SIGNALS[self.signal].unit if self.signal in SIGNALS else "deg"
 
     @property
     def bounds(self) -> tuple[float | None, float | None]:
         """(above, below) of the box, from the fields its signal uses."""
-        if self.signal in RATIO_SIGNALS:
+        if self.unit == "ratio":
             return self.above_ratio, self.below_ratio
         return self.above_deg, self.below_deg
 

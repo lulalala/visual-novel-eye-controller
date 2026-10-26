@@ -11,9 +11,9 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable, Protocol
 
-from eyeokuri.config import RATIO_SIGNALS, SIGNALS, Config, GestureConfig, StepConfig
+from eyeokuri.config import GUARD_SIGNALS, SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
-from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Source
+from eyeokuri.sources import Source
 
 
 @dataclass(frozen=True)
@@ -117,7 +117,7 @@ class GestureTrigger:
         self._watchers = {i: StepWatcher(s) for i, s in enumerate(config.steps) if s.signal}
         self._gestures = {i: gestures[s.gesture] for i, s in enumerate(config.steps) if s.gesture}
         self._guards = config.guards
-        needs = {EYE_OPENNESS if s.signal in RATIO_SIGNALS else HEAD_POSE for s in config.steps if s.signal}
+        needs = {SIGNALS[s.signal].needs for s in config.steps if s.signal}
         for gesture in self._gestures.values():
             needs |= gesture.needs
         self.needs = frozenset(needs)
@@ -170,7 +170,7 @@ class GestureTrigger:
                 continue
             above, below = guard.bounds
             if (above is not None and value <= above) or (below is not None and value >= below):
-                return f"head {guard.signal} {value:+.0f}° outside its limit"
+                return f"head {guard.signal} {SIGNALS[guard.signal].show(value, signed=True)} outside its limit"
         return ""
 
     def _next(self, remaining: tuple[int, ...]) -> tuple[int, ...]:
@@ -257,10 +257,10 @@ class GestureTrigger:
         for signal, value in self._values.items():
             if value is None:
                 parts.append(f"no {signal}")
-            elif signal in RATIO_SIGNALS:
-                parts.append(f"{signal} {value:+.2f}" if signal == "wink" else f"eyes {value:.2f}")
             else:
-                parts.append(f"{signal} {value:+.0f}°")
+                # A signal that rests at 0 goes both ways, so it gets a sign.
+                spec = SIGNALS[signal]
+                parts.append(f"{signal} {spec.show(value, signed=spec.rest == 0)}")
         if len(self._steps) > 1 and self._partials:
             matched = len(self._steps) - min(len(p.remaining) for p in self._partials)
             parts.append(f"{matched}/{len(self._steps)} steps")
@@ -346,8 +346,8 @@ def _validate(name: str, config: GestureConfig) -> None:
             )
     for i, guard in enumerate(config.guards):
         gk = f"{key}.guards[{i}]"
-        if guard.signal not in ("pitch", "yaw"):
-            raise ValueError(f"{gk}.signal must be pitch or yaw, not {guard.signal!r}")
+        if guard.signal not in GUARD_SIGNALS:
+            raise ValueError(f"{gk}.signal must be {' or '.join(GUARD_SIGNALS)}, not {guard.signal!r}")
         if guard.gesture or guard.above_ratio is not None or guard.below_ratio is not None:
             raise ValueError(f"{gk}: a guard uses only signal, above_deg and below_deg")
         if guard.after_min_s or guard.after_max_s or guard.hold_s:

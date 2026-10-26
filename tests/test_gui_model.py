@@ -30,13 +30,11 @@ def test_plot_table_covers_every_signal():
     assert set(SIGNAL_PLOTS) == set(SIGNALS)
 
 
-def test_plot_highlights_the_same_rest_value_that_tuning_uses():
-    from eyeokuri import tuning
-
+def test_plot_has_a_grid_line_at_each_signals_rest_value():
     for signal, plot in SIGNAL_PLOTS.items():
-        assert plot.zero == tuning._REST[signal]
-        assert plot.lo < plot.zero < plot.hi
-        assert plot.zero in plot.grid
+        rest = SIGNALS[signal].rest
+        assert plot.lo < rest < plot.hi
+        assert rest in plot.grid
 
 
 def test_new_step_has_a_box_for_each_signal():

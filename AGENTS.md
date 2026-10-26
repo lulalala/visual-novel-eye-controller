@@ -52,7 +52,7 @@
 4. Tests in `tests/test_triggers.py` driving synthetic 30 FPS `Observation` streams (`drive` helper): fires, each rejection reason, cooldown, face loss.
 5. The site guide pages (`site/src/content/docs/guide/`, and every translated locale), if users see the change. The README only describes the app, how to install it and where the docs are, so change it only when those change.
 
-**Add a signal:** `SIGNALS` in `config.py`, `signal_value` in `triggers.py`, bound fields with units in `StepConfig`, `SIGNAL_PLOTS` in `gui/model.py`, the tables at the top of `tuning.py`, and `GestureTrigger.needs`.
+**Add a signal:** a `SignalSpec` in `SIGNALS` in `config.py` (its unit, the source capability it needs, its rest value and the limits `tuning.fit()` keeps), `signal_value` in `triggers.py`, and a lane in `SIGNAL_PLOTS` in `gui/model.py`. A new unit also needs its bound fields in `StepConfig`.
 
 **Add a key name:** its virtual-key code in `KEY_VK` (plus `EXTENDED_KEYS` if Windows sends it with `0xE0`); check `PynputOutput` finds it (rename in `_PYNPUT_NAMES` if needed) and `from_tk_event` maps its Tk keysym. **Add a mouse output:** `MOUSE_OUTPUTS`, implemented in both `Win32Output` and `PynputOutput`.
 

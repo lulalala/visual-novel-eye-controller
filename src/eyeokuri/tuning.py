@@ -6,7 +6,7 @@ import math
 import statistics
 from dataclasses import dataclass, replace
 
-from eyeokuri.config import RATIO_SIGNALS, Config, GestureConfig, StepConfig
+from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.i18n import N_, _, gap, stop
 from eyeokuri.triggers import GestureTrigger, Replay, replay, signal_value
@@ -20,16 +20,11 @@ KIND_LABELS = {DO: N_("Should fire"), TOO_QUICK: N_("Too quick"), TOO_SLOW: N_("
 # How many times the wizard asks you to do the gesture itself.
 DO_TAKES = 3
 
-# Where each signal sits while you just read.
-_REST = {"eyes": 1.0, "wink": 0.0, "pitch": 0.0, "yaw": 0.0}
+# Each signal's rest value, minimum reach and gap are in config.SIGNALS.
 # A step's edge goes this share of the way from rest to your weakest take's peak.
 REACH = 0.6
-# An edge stays at least this far from rest, so small movements and noise don't count.
-_MIN_REACH = {"eyes": 0.15, "wink": 0.2, "pitch": 5.0, "yaw": 5.0}
 # The wizard's plot cuts a take to where it gets this share of the way to its peak.
 TRIM_SHARE = 0.5
-# Space kept between a step's edge and the edge of a box around rest (the hysteresis).
-_GAP = {"eyes": 0.1, "wink": 0.1, "pitch": 3.0, "yaw": 3.0}
 # A take that moves less than this share of your typical take is a miss and left out.
 _MISS = 0.4
 # Time limits without a counterexample: the minimum at this share of your
@@ -108,11 +103,12 @@ def trim(observations: list[Observation], signals: set[str], pad_s: float = 0.2)
     ``TRIM_SHARE`` of the way to the take's peak, plus ``pad_s`` on each side,
     with times counted from the cut. A take with no movement is kept whole."""
     moved = []
-    for s in signals & _REST.keys():
-        away = [(o.timestamp, abs(v - _REST[s])) for o in observations if (v := signal_value(s, o)) is not None]
+    for s in signals & SIGNALS.keys():
+        spec = SIGNALS[s]
+        away = [(o.timestamp, abs(v - spec.rest)) for o in observations if (v := signal_value(s, o)) is not None]
         peak = max((d for _, d in away), default=0.0)
         # A half blink or a glance before the real movement isn't part of it.
-        least = max(_MIN_REACH[s], TRIM_SHARE * peak)
+        least = max(spec.min_reach, TRIM_SHARE * peak)
         moved += [t for t, d in away if d >= least]
     if not moved:
         return 0.0, observations
@@ -125,7 +121,7 @@ def _excursion(step: StepConfig) -> tuple[str, int] | None:
     """(field, direction) of the edge you cross moving away from rest, or
     None for a box around rest (the "eyes open again" or "back to center" steps)."""
     unit = step.unit
-    rest = _REST[step.signal]
+    rest = SIGNALS[step.signal].rest
     above, below = step.bounds
     if above is not None and above >= rest:
         return f"above_{unit}", 1
@@ -139,7 +135,7 @@ def _step_label(i: int, signal: str) -> str:
 
 
 def _show(signal: str, value: float) -> str:
-    return f"{value:.2f}" if signal in RATIO_SIGNALS else f"{value:.0f}°"
+    return SIGNALS[signal].show(value)
 
 
 def _peak(away: list[float]) -> float:
@@ -165,7 +161,9 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
         if edge is None:
             continue
         key, d = edge
-        signal, rest = step.signal, _REST[step.signal]
+        signal = step.signal
+        spec = SIGNALS[signal]
+        rest = spec.rest
         peaks = []
         for n, take in takes:
             values = _away(take, signal, rest, d)
@@ -174,21 +172,21 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
         if not peaks:
             continue
         typical = statistics.median(p for _, p in peaks)
-        if typical < _MIN_REACH[signal]:
+        if typical < spec.min_reach:
             warnings.append(_step_label(i, signal) + " " + _("Your takes hardly moved, so the edge stays.")
                             + gap() + _("Redo them, and move further."))
             continue
         used = [p for n, p in peaks if p >= _MISS * typical]
         missed |= {n for n, p in peaks if p < _MISS * typical}
         weakest = min(used)
-        reach = max(REACH * weakest, _MIN_REACH[signal])
+        reach = max(REACH * weakest, spec.min_reach)
         # Stay outside every box around rest on this side, so jitter at its
         # edge can't complete the gesture.
         for other in gesture.steps:
             if other.signal == signal and _excursion(other) is None:
                 inner = getattr(other, f"{'below' if d > 0 else 'above'}_{other.unit}")
                 if inner is not None:
-                    reach = max(reach, d * (inner - rest) + _GAP[signal])
+                    reach = max(reach, d * (inner - rest) + spec.gap)
         # A take that shouldn't fire but moves further than the edge: raise the
         # edge between it and your weakest take, if that leaves room.
         reached = [(n, _peak(v)) for n, t in avoid if (v := _away(t, signal, rest, d))]
@@ -197,8 +195,8 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
             reach = max(reach, (max(p for _, p in blockers) + weakest) / 2)
         far = getattr(step, f"{'below' if d > 0 else 'above'}_{step.unit}")
         if far is not None:
-            reach = min(reach, d * (far - rest) - _GAP[signal])
-        value = round(rest + d * reach, 2) if signal in RATIO_SIGNALS else float(round(rest + d * reach))
+            reach = min(reach, d * (far - rest) - spec.gap)
+        value = spec.round(rest + d * reach)
         old = getattr(step, key)
         if value != old:
             # A short sentence, then labeled values, so a translation never has to reorder them.

@@ -9,7 +9,7 @@ from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Any
 
 from eyeokuri import theme
-from eyeokuri.config import SIGNALS, Config, GestureConfig
+from eyeokuri.config import GUARD_SIGNALS, SIGNALS, Config, GestureConfig
 from eyeokuri.engine import check_config
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
@@ -237,7 +237,7 @@ class GestureWindow:
             kind.bind("<<ComboboxSelected>>", lambda _e, i=i, w=kind: self._on_kind(i, w.get()))
             kind.grid(row=r, column=1, padx=3)
             is_signal = step["kind"] in SIGNALS
-            unit = SIGNAL_PLOTS[step["kind"]].unit if is_signal else ""
+            unit = SIGNALS[step["kind"]].symbol if is_signal else ""
             first = i == 0 and not m["any_order"]
             cells = (("above", 2, True, is_signal), ("below", 4, True, is_signal),
                      ("after_min_s", 6, False, not first), ("after_max_s", 7, False, not first),
@@ -270,7 +270,7 @@ class GestureWindow:
         for i, guard in enumerate(guards):
             r = row + 1 + i
             tk.Label(frame, text="•", width=2).grid(row=r, column=0, padx=3, pady=2)
-            kind = ttk.Combobox(frame, state="readonly", width=18, values=("pitch", "yaw"))
+            kind = ttk.Combobox(frame, state="readonly", width=18, values=GUARD_SIGNALS)
             kind.set(guard["kind"])
             kind.bind("<<ComboboxSelected>>", lambda _e, i=i, w=kind: self._on_guard_kind(i, w.get()))
             kind.grid(row=r, column=1, padx=3)
@@ -302,7 +302,8 @@ class GestureWindow:
     def _add_guard(self) -> None:
         guards = self.model["guards"]
         used = {g["kind"] for g in guards}
-        kind = next((k for k in ("yaw", "pitch") if k not in used), "yaw")
+        # yaw before pitch: turning the head away is the usual reason for a limit.
+        kind = next((k for k in reversed(GUARD_SIGNALS) if k not in used), GUARD_SIGNALS[-1])
         guards.append({"kind": kind, "above": -20.0, "below": 20.0})
         self._build_guards()
         self._refresh()

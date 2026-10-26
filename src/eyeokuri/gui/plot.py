@@ -7,7 +7,7 @@ from tkinter import font as tkfont
 from typing import Any, Callable
 
 from eyeokuri import theme
-from eyeokuri.config import RATIO_SIGNALS, SIGNALS
+from eyeokuri.config import SIGNALS
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import RECORD_S, SIGNAL_PLOTS
 from eyeokuri.i18n import _
@@ -90,8 +90,8 @@ class PlotEditor:
                           font="TkSmallCaptionFont")
             for v in axis.grid:
                 c.create_line(self.L, y(v, li), width - self.R, y(v, li),
-                              fill=theme.ZERO if v == axis.zero else theme.GRID)
-                label = f"{v:.2f}" if sig in RATIO_SIGNALS else f"{v:g}{axis.unit}"
+                              fill=theme.ZERO if v == SIGNALS[sig].rest else theme.GRID)
+                label = SIGNALS[sig].show(v)
                 c.create_text(self.L - 6, y(v, li), anchor="e", text=label, fill=theme.MUTED, font="TkSmallCaptionFont")
 
         # Each step's box. A box after the first starts at the moment the
@@ -127,7 +127,7 @@ class PlotEditor:
                                dash="" if anchored else (4, 3), fill=tint(color, 0.86 if anchored else 0.94))
             c.create_rectangle(bx + 3, y_top + 3, bx + 19, y_top + 19, fill=color, outline="")
             c.create_text(bx + 11, y_top + 11, text=str(i + 1), fill="white", font="TkSmallCaptionFont")
-            unit = SIGNAL_PLOTS[step["kind"]].unit
+            unit = SIGNALS[step["kind"]].symbol
             if step["above"] is not None:
                 self._edge(bx, y_bot, bx + bw, y_bot, color, "above", i, None)
                 c.create_text(bx + bw - 4, y_bot + 9, anchor="e", fill=color, font="TkSmallCaptionFont",

@@ -1,7 +1,8 @@
 import pytest
 
 from eyeokuri.app import build_config, parse_args
-from eyeokuri.config import Config, StepConfig, dump_config, load_config
+from eyeokuri.config import GUARD_SIGNALS, SIGNALS, Config, StepConfig, dump_config, load_config
+from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE
 
 
 def config_from(*argv):
@@ -191,6 +192,23 @@ def test_step_unit_and_bounds_follow_the_signal():
     head = StepConfig(signal="yaw", above_deg=-5.0, below_deg=5.0)
     assert (eyes.unit, eyes.bounds) == ("ratio", (0.75, None))
     assert (head.unit, head.bounds) == ("deg", (-5.0, 5.0))
+
+
+def test_every_signal_has_a_unit_a_source_and_fitting_limits():
+    for spec in SIGNALS.values():
+        assert spec.unit in ("ratio", "deg")
+        assert spec.needs in (EYE_OPENNESS, HEAD_POSE)
+        assert spec.min_reach > 0 and spec.gap > 0
+    assert GUARD_SIGNALS == ("pitch", "yaw")
+
+
+def test_signal_values_show_ratios_to_hundredths_and_angles_in_whole_degrees():
+    assert SIGNALS["eyes"].show(0.625) == "0.62"
+    assert SIGNALS["wink"].show(0.3, signed=True) == "+0.30"
+    assert SIGNALS["yaw"].show(-12.4, signed=True) == "-12°"
+    assert SIGNALS["pitch"].show(7.6) == "8°"
+    assert SIGNALS["eyes"].round(0.6249) == 0.62
+    assert SIGNALS["yaw"].round(12.6) == 13.0
 
 
 def test_paused_survives_a_dump_and_works_with_set(tmp_path):

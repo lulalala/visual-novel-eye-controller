@@ -212,14 +212,6 @@ def test_trim_keeps_a_take_without_movement_whole():
     assert trim(take.observations, {"eyes"}) == (0.0, take.observations)
 
 
-def test_tuning_tables_cover_every_signal():
-    # Adding a signal to config.SIGNALS needs a rest value, a minimum reach and a gap here too.
-    from eyeokuri import tuning
-    from eyeokuri.config import SIGNALS
-
-    assert set(tuning._REST) == set(tuning._MIN_REACH) == set(tuning._GAP) == set(SIGNALS)
-
-
 def test_wink_fits_its_edge_to_your_winks_and_not_your_blinks():
     def take(kind, value, frames):
         values = [0.0] * 15 + [value] * frames + [0.0] * 30
