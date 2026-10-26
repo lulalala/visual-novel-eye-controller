@@ -84,11 +84,11 @@ def suggestions(name: str) -> list[tuple[str, str]]:
         ],
         "head_shake": [
             (DO, N_("Shake your head once.")),
-            (TOO_SLOW, N_("Turn slowly to one side, wait, then slowly to the other.")),
+            (TOO_SLOW, N_("Turn your head slowly to one side, wait, then slowly to the other.")),
             (OTHER, N_("Look around the screen naturally.")),
         ],
-        "nod_down": [(DO, N_("Nod down once.")), (TOO_SLOW, N_("Look down for a few seconds.")), read],
-        "nod_up": [(DO, N_("Nod up once.")), (TOO_SLOW, N_("Look up for a few seconds.")), read],
+        "nod_down": [(DO, N_("Nod down once.")), (TOO_SLOW, N_("Tilt your head down and hold it there for a few seconds.")), read],
+        "nod_up": [(DO, N_("Nod up once.")), (TOO_SLOW, N_("Tilt your head up and hold it there for a few seconds.")), read],
     }
     return known.get(name, [(DO, N_("Do the gesture once.")), (TOO_SLOW, N_("Do the gesture slowly.")), read])
 
