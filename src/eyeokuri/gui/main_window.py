@@ -22,6 +22,7 @@ from eyeokuri.gui.tkutil import menu_bar_height
 from eyeokuri.gui.wizard import WizardWindow
 from eyeokuri.gui.worker import Worker
 from eyeokuri.i18n import _
+from eyeokuri.labels import show_gesture
 
 
 _POLL_MS = 15
@@ -115,7 +116,7 @@ class MainWindow:
         ttk.Separator(self.rows).grid(row=2, column=0, columnspan=4, sticky="ew", pady=4)
         self._row_controls = [pause_toggle]
         for r, (name, gesture) in enumerate(self.config.gestures.items(), 3):
-            ttk.Label(self.rows, text=name).grid(row=r, column=0, sticky="w", padx=4)
+            ttk.Label(self.rows, text=show_gesture(name)).grid(row=r, column=0, sticky="w", padx=4)
             ttk.Label(self.rows, text=gesture.output or _("(none)"),
                       foreground=theme.INK if gesture.output else theme.MUTED).grid(row=r, column=1, sticky="w", padx=4)
             var = tk.BooleanVar(value=gesture.enabled)
@@ -139,7 +140,7 @@ class MainWindow:
         except (ValueError, OSError) as e:
             var.set(not enabled)
             failed = _("Couldn't turn on this gesture:") if enabled else _("Couldn't turn off this gesture:")
-            messagebox.showerror("eyeokuri", f"{failed}\n\n{name}\n\n{e}", parent=self.root)
+            messagebox.showerror("eyeokuri", f"{failed}\n\n{show_gesture(name)}\n\n{e}", parent=self.root)
             return
         self.worker.log(f"{name}: {'on' if enabled else 'off'}")
 

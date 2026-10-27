@@ -10,6 +10,8 @@ nod	うなずき
 shake your head	首を振る	The pause gesture.
 head turn	首を回す	yaw; positive is your left.
 tilt (head up/down)	上を向く / 下を向く	pitch; positive is head tilted down (下を向く).
+Head tilt / Head turn (signal labels)	頭の上下 / 頭の左右	The pitch and yaw signals in the GUI, shown with the ID: 頭の上下（pitch）.
+Nod up / Nod down (gesture labels)	上にうなずく / 下にうなずく	nod_up and nod_down in the GUI. Built-in gesture and signal labels are followed by the ID in full-width parentheses.
 webcam	Webカメラ	
 camera	カメラ	Short form after Webカメラ has been introduced.
 frame (camera image)	映像 / フレーム	映像 in user-facing copy (カメラ映像); フレーム in technical docs and log messages.

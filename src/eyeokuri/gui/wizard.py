@@ -16,6 +16,7 @@ from eyeokuri.gui.plot import PlotEditor, tint
 from eyeokuri.gui.tkutil import place_over, scaled_font
 from eyeokuri.gui.worker import MAX_TAKE_S
 from eyeokuri.i18n import _, gap, stop
+from eyeokuri.labels import show_gesture
 from eyeokuri.triggers import Replay, signal_value
 from eyeokuri.tuning import DO, KIND_LABELS, TOO_QUICK, TOO_SLOW, Fit, Take, fit, script, trim
 
@@ -59,7 +60,7 @@ class WizardWindow:
         parent = owner.win
         self.win = tk.Toplevel(parent)
         self.win.withdraw()
-        self.win.title(_("Gesture wizard –") + f" {self.name}")
+        self.win.title(_("Gesture wizard –") + f" {show_gesture(self.name)}")
         self.win.transient(parent)
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         # Gestures are off while you record, so your takes send nothing to other windows.

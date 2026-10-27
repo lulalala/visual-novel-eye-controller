@@ -79,7 +79,7 @@ def test_messages_use_the_take_numbers_you_saw():
 def test_takes_without_movement_leave_the_edges_alone():
     result = fit(Config(), "blink", [blink_take(DO, 0) for _ in range(5)])
     assert result.gesture.steps[0].below_ratio == 0.6
-    assert any(n.startswith("Step 1 · eyes: Your takes hardly moved") for n in result.warnings)
+    assert any(n.startswith("Step 1 · Eyes: Your takes hardly moved") for n in result.warnings)
 
 
 def test_an_edge_stays_clear_of_the_box_around_rest():

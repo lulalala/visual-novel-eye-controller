@@ -12,13 +12,14 @@ from eyeokuri import theme
 from eyeokuri.config import GUARD_SIGNALS, SIGNALS, Config, GestureConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    RECORD_S, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step, users_of,
+    RECORD_S, SIGNAL_PLOTS, fmt, gesture_config, gesture_model, new_step, show_choice, step_choices, users_of,
 )
 from eyeokuri.gui.live_edit import LiveEdit
 from eyeokuri.gui.plot import PlotEditor
-from eyeokuri.gui.tkutil import place_over
+from eyeokuri.gui.tkutil import id_box, place_over
 from eyeokuri.i18n import _
 from eyeokuri.keys import from_tk_event
+from eyeokuri.labels import show_gesture, show_signal
 from eyeokuri.outputs import APP_OUTPUTS, OUTPUT_NAMES
 from eyeokuri.triggers import Replay, replay
 from eyeokuri.tuning import Take, can_tune
@@ -45,7 +46,8 @@ class GestureWindow:
 
         self.win = tk.Toplevel(app.root)
         self.win.withdraw()
-        self.win.title(f"{name} – eyeokuri")
+        self.title = f"{show_gesture(name)} – eyeokuri"
+        self.win.title(self.title)
         self.win.protocol("WM_DELETE_WINDOW", self._close_box)
         self.win.columnconfigure(0, weight=1)
         self.win.rowconfigure(0, weight=1)
@@ -220,16 +222,15 @@ class GestureWindow:
         for col, text in enumerate(headers):
             ttk.Label(frame, text=text, foreground=theme.MUTED).grid(row=0, column=col, sticky="w", padx=3)
         m = self.model
-        kinds = [*SIGNALS, *(f"gesture: {n}" for n in self.app.config.gestures if n != self.name)]
+        choices = step_choices(self.app.config.gestures, self.name)
         for i, step in enumerate(m["steps"]):
             r = i + 1
             color = theme.STEP_COLORS[i % len(theme.STEP_COLORS)]
             tk.Label(frame, text=str(i + 1), background=color, foreground="white", width=2).grid(
                 row=r, column=0, padx=3, pady=2)
-            kind = ttk.Combobox(frame, state="readonly", width=18, values=kinds)
-            kind.set(f"gesture: {step['gesture']}" if step["kind"] == "gesture" else step["kind"])
-            kind.bind("<<ComboboxSelected>>", lambda _e, i=i, w=kind: self._on_kind(i, w.get()))
-            kind.grid(row=r, column=1, padx=3)
+            id_box(frame, choices, show_choice, (step["kind"], step["gesture"]),
+                   lambda c, i=i: self._on_kind(i, c)).grid(
+                row=r, column=1, sticky="ew", padx=3)
             is_signal = step["kind"] in SIGNALS
             unit = SIGNALS[step["kind"]].symbol if is_signal else ""
             first = i == 0 and not m["any_order"]
@@ -264,10 +265,8 @@ class GestureWindow:
         for i, guard in enumerate(guards):
             r = row + 1 + i
             tk.Label(frame, text="•", width=2).grid(row=r, column=0, padx=3, pady=2)
-            kind = ttk.Combobox(frame, state="readonly", width=18, values=GUARD_SIGNALS)
-            kind.set(guard["kind"])
-            kind.bind("<<ComboboxSelected>>", lambda _e, i=i, w=kind: self._on_guard_kind(i, w.get()))
-            kind.grid(row=r, column=1, padx=3)
+            id_box(frame, GUARD_SIGNALS, show_signal, guard["kind"], lambda k, i=i: self._on_guard_kind(i, k)).grid(
+                row=r, column=1, sticky="ew", padx=3)
             for key, col in (("above", 2), ("below", 4)):
                 var = tk.StringVar(value=fmt(guard[key]))
                 var.trace_add("write", lambda *_a, i=i, k=key: self._on_guard_number(i, k))
@@ -307,13 +306,11 @@ class GestureWindow:
         self._build_guards()
         self._refresh()
 
-    def _on_kind(self, i: int, value: str) -> None:
+    def _on_kind(self, i: int, choice: tuple[str, str]) -> None:
         steps = self.model["steps"]
         old = steps[i]
-        if value.startswith("gesture: "):
-            new = {**new_step("gesture"), "gesture": value.removeprefix("gesture: ")}
-        else:
-            new = new_step(value)
+        kind, gesture = choice
+        new = {**new_step(kind), "gesture": gesture}
         new["after_min_s"], new["after_max_s"] = old["after_min_s"], old["after_max_s"]
         steps[i] = new
         self._build_steps()
@@ -409,9 +406,9 @@ class GestureWindow:
         users = users_of(self.edit.opened_with.gestures, self.name)
         if users:
             messagebox.showerror(_("Delete gesture"), _("Other gestures use this one as a step. Remove it from them first:")
-                                 + f"\n\n{', '.join(users)}", parent=self.win)
+                                 + f"\n\n{', '.join(map(show_gesture, users))}", parent=self.win)
             return
-        if not messagebox.askyesno(_("Delete gesture"), _("Delete this gesture?") + f"\n\n{self.name}", parent=self.win):
+        if not messagebox.askyesno(_("Delete gesture"), _("Delete this gesture?") + f"\n\n{show_gesture(self.name)}", parent=self.win):
             return
         if self.new:
             self.cancel()
@@ -446,7 +443,7 @@ class GestureWindow:
     def _close_box(self) -> None:
         """The window's close button cancels, but asks first so one click can't undo your tuning."""
         # A new gesture is lost when it closes, even unchanged.
-        if self.edit.may_discard(f"{self.name} – eyeokuri", changed=self.new):
+        if self.edit.may_discard(self.title, changed=self.new):
             self.cancel()
 
     def use_fit(self, gesture: GestureConfig, takes: list[Take]) -> None:

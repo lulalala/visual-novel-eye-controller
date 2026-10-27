@@ -63,6 +63,7 @@ src/eyeokuri/
   head.py         Signals -> head yaw/pitch relative to your usual pose
   triggers.py     Observation -> step boxes entered -> gestures -> TriggerEvent
   i18n.py         GUI translations: _(), N_(), language detection (no Tk; the command line stays English)
+  labels.py       what the GUI shows for a built-in gesture or signal ID: a translated label, plus the ID
   locales/        one catalog per GUI language ({"English text": "translated text"}), e.g. ja.py, zh_tw.py
   keys.py         key names and combinations ("ctrl+s"): parsing and press order
   outputs.py      TriggerEvent -> key/mouse input
@@ -167,7 +168,7 @@ The docs are set up for English, Japanese (`ja`) and Traditional Chinese for Tai
 The GUI follows the Windows display language (`app.language = "auto"`) and has Japanese (`ja`) and Traditional Chinese (`zh-TW`) catalogs. Log lines, `ValueError` messages and the command line stay English. The rules for writing translatable strings are in `docs/i18n/gui-plan.md`.
 
 - To add a string, wrap it with `_("...")` (or `N_("...")` in a module-level constant, and `_(value)` where it shows), then add the entry to every catalog in `eyeokuri/locales/`. `tests/test_i18n.py` fails when a catalog has a missing or stale entry.
-- To add a language, copy `locales/ja.py`, add it to `CATALOGS` in `i18n.py`, add the Windows locale names to `_LOCALE_LANGUAGES` (and the sentence gap and full stop to `_STYLES` if the language needs them), and add `docs/i18n/glossary.<language>.tsv`. Ask a native speaker to review the catalog before release.
+- To add a language, copy `locales/ja.py`, add it to `CATALOGS` in `i18n.py`, add the Windows locale names to `_LOCALE_LANGUAGES` (and its punctuation to `_STYLES` if it isn't the English kind), and add `docs/i18n/glossary.<language>.tsv`. Ask a native speaker to review the catalog before release.
 
 ## Extend eyeokuri
 

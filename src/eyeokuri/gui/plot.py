@@ -9,7 +9,7 @@ from typing import Any, Callable
 from eyeokuri import theme
 from eyeokuri.config import SIGNALS
 from eyeokuri.eyes import Observation
-from eyeokuri.gui.model import RECORD_S, SIGNAL_PLOTS
+from eyeokuri.gui.model import RECORD_S, SIGNAL_PLOTS, lane_title
 from eyeokuri.i18n import _
 from eyeokuri.triggers import Replay, signal_value
 
@@ -86,7 +86,7 @@ class PlotEditor:
             t += tick
         for li, sig in enumerate(lanes):
             axis = SIGNAL_PLOTS[sig]
-            c.create_text(self.L, lane_top(li) - 10, anchor="w", text=_(axis.hint), fill=theme.MUTED,
+            c.create_text(self.L, lane_top(li) - 10, anchor="w", text=lane_title(sig), fill=theme.MUTED,
                           font="TkSmallCaptionFont")
             for v in axis.grid:
                 c.create_line(self.L, y(v, li), width - self.R, y(v, li),

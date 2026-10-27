@@ -8,9 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from eyeokuri.config import CameraConfig, GestureConfig, StepConfig
+from eyeokuri.config import SIGNALS, CameraConfig, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
-from eyeokuri.i18n import N_
+from eyeokuri.i18n import N_, _, colon
+from eyeokuri.labels import show_gesture, show_signal
 from eyeokuri.triggers import Replay
 from eyeokuri.tuning import DO, Take, trim
 
@@ -32,19 +33,20 @@ class SignalPlot:
     snap: float
     """A dragged edge snaps to a multiple of this."""
     hint: str
+    """What the signal measures, after its label above the lane."""
     new_box: tuple[float | None, float | None]
     """(above, below) of a step you add for this signal."""
 
 
 SIGNAL_PLOTS = {
     "eyes": SignalPlot(0.0, 1.3, (0.0, 0.25, 0.5, 0.75, 1.0, 1.25), 0.01,
-                       N_("Eyes: openness, 1.0 = your usual open level"), (None, 0.55)),
+                       N_("openness, 1.0 = your usual open level"), (None, 0.55)),
     "wink": SignalPlot(-1.0, 1.0, (-1.0, -0.5, 0.0, 0.5, 1.0), 0.01,
-                       N_("Wink: right eye minus left, + = left eye closed"), (0.25, None)),
+                       N_("right eye minus left, + = left eye closed"), (0.25, None)),
     "pitch": SignalPlot(-40.0, 50.0, (-40, -20, 0, 20, 40, 50), 0.5,
-                        N_("Head pitch: + = tilted down"), (12.0, None)),
+                        N_("+ = tilted down"), (12.0, None)),
     "yaw": SignalPlot(-60.0, 60.0, (-60, -40, -20, 0, 20, 40, 60), 0.5,
-                      N_("Head yaw: + = turned to your left"), (15.0, None)),
+                      N_("+ = turned to your left"), (15.0, None)),
 }
 GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 # A gesture that sent its output: Engine logs "<name>: <detail> -> <output>".
@@ -113,6 +115,23 @@ def new_step(kind: str) -> dict[str, Any]:
     above, below = SIGNAL_PLOTS[kind].new_box if kind in SIGNAL_PLOTS else (None, None)
     return {"kind": kind, "gesture": "", "above": above, "below": below,
             "after_min_s": 0.0, "after_max_s": 1.0, "hold_s": 0.0}
+
+
+def lane_title(signal: str) -> str:
+    """The text above a signal's lane in the plot: its label, then what it measures."""
+    return show_signal(signal) + colon() + _(SIGNAL_PLOTS[signal].hint)
+
+
+def step_choices(gestures: dict[str, GestureConfig], name: str) -> list[tuple[str, str]]:
+    """What a step of gesture ``name`` can watch, as the model's (kind, gesture):
+    each signal, then each other gesture."""
+    return [(s, "") for s in SIGNALS] + [("gesture", n) for n in gestures if n != name]
+
+
+def show_choice(choice: tuple[str, str]) -> str:
+    """A step_choices() entry as the Signal column shows it."""
+    kind, gesture = choice
+    return _("Gesture: ") + show_gesture(gesture) if kind == "gesture" else show_signal(kind)
 
 
 def users_of(gestures: dict[str, GestureConfig], name: str) -> list[str]:

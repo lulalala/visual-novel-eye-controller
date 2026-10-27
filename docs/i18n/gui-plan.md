@@ -34,7 +34,7 @@ Keep in English. The user decided this; don't translate these without asking:
 
 - Trigger reasons and every log line, including the GUI's own `worker.log()` lines. They are shared with the CLI and `--log`, and tests match their text. The gesture window and wizard show a trigger reason after a translated label (`✕ Doesn't fire: <reason>`); that mix is expected.
 - `ValueError` messages from `config.py`, `triggers.py` and `keys.py`, which the config and gesture windows show as errors.
-- Identifiers: gesture names (`blink`, `nod_down`, user-defined names), config keys on the Advanced tab (`baseline_window_s`), signal names in comboboxes (`eyes`, `pitch`, `yaw`), key names (`Enter`, `ctrl+s`) and units (`s`, `°`).
+- Identifiers: names of gestures you add, config keys on the Advanced tab (`baseline_window_s`), key names (`Enter`, `ctrl+s`) and units (`s`, `°`). Built-in gestures and signals are the exception: `labels.py` shows a translated label followed by the ID (`まばたき（blink）`), so you can still find the ID in the log and config file. Show a gesture or signal ID with `show_gesture()` or `show_signal()`, and a combobox of IDs with `id_box()` in `gui/tkutil.py`.
 - `config.example.toml` and the comments written by `dump_config()`.
 
 ## Rules for every translatable string
@@ -45,7 +45,7 @@ Phase 0 already rewrote the sentences to follow these rules. Keep new strings to
 2. **Values go after the sentence, not inside it.** Use a label ending in a colon (`Now: 0.62`), or a sentence followed by the value on its own line (`Delete this gesture?\n\nblink`). Don't add `{name}` placeholders.
 3. **A noun followed by a number is fine**: `Step 2`, `Take 2 / 5`, `Camera 1`. Translate the noun (`_("Step")`) and append the number.
 4. **Each branch of a conditional is its own complete string.** Write `_("Couldn't turn on this gesture:") if enabled else _("Couldn't turn off this gesture:")`, never `"turn " + ("on" if enabled else "off")`.
-5. **Punctuation belongs to the translated string.** Include the colon in `_("Now:")`, so zh-TW and ja can use a full-width `：`. Where code joins sentences or ends one after a value, use `gap()` and `stop()` from `i18n.py` instead of `" "` and `"."`; they follow the language's `_STYLES` entry. Don't capitalize, lowercase or add a period to a translated string in code (`.capitalize()`, `[:1].upper()`); store it the way it's shown.
+5. **Punctuation belongs to the translated string.** Include the colon in `_("Now:")`, so zh-TW and ja can use a full-width `：`. Where code joins sentences or ends one after a value, use `gap()` and `stop()` from `i18n.py` instead of `" "` and `"."`, `aside()` for parentheses after a word, and `colon()` after a label built in code; they follow the language's `_STYLES` entry. Don't capitalize, lowercase or add a period to a translated string in code (`.capitalize()`, `[:1].upper()`); store it the way it's shown.
 6. **No plural forms.** Write counts as a label: `Too-slow takes that still fire: 2.`
 7. **Mark strings in module-level constants with `N_()`** (returns its argument unchanged) and call `_(value)` where you display them. This covers `KIND_LABELS`, `SIGNAL_PLOTS` hints, `_GENERAL_HELP`, `suggestions()` and section headings. Constants are built at import time, before the language is set, so `_()` in a constant would always return English.
 
@@ -58,7 +58,7 @@ Add `src/eyeokuri/i18n.py`. It has no Tk imports, because `tuning.py` uses it to
 - Catalogs are plain Python dicts, `{"English text": "translated text"}`, one module per language (`locales/zh_tw.py`, `locales/ja.py`). Import them statically from `i18n.py` (a `CATALOGS` dict), so PyInstaller bundles them without `hiddenimports` or `--add-data`. Don't use stdlib `gettext`: it needs compiled `.mo` files and adds a build step.
 - Three tables in `i18n.py` describe a language, besides its catalog:
   - `_LOCALE_LANGUAGES` maps Windows locale names to a catalog code (`ja_JP` → `ja`, `zh_TW` and `zh_HK` → `zh-TW`). A locale with no entry gets English.
-  - `_STYLES` holds `(gap between sentences, full stop)`. The default is `(" ", ".")`; Chinese and Japanese use `("", "。")`.
+  - `_STYLES` holds a `_Style`: the gap between sentences, the full stop, an aside after a word and the colon after a label. The default is `_Style(" ", ".", " ({})", ": ")`; Chinese and Japanese use `_Style("", "。", "（{}）", "：")`.
   - `LANGUAGE_NAMES` holds the language's name in itself for the Language dropdown (`日本語`). It is never translated.
 - Detect the language from the Windows UI language. Call `ctypes.windll.kernel32.GetUserDefaultUILanguage()` lazily inside a function, and map the LANGID with `locale.windows_locale` (`0x0404` → `zh_TW`). Fall back to English on other platforms or unknown languages. Match the region: `zh_CN` gets English until there's a `zh-CN` catalog.
 - The CLI never calls `set_language()`, so it stays English.
@@ -141,7 +141,7 @@ Each language takes about half a day plus a native review and a layout check. Ma
 4. **Register it** in `src/eyeokuri/i18n.py`:
    - `CATALOGS`: the import and `"<code>": <module>.CATALOG`.
    - `_LOCALE_LANGUAGES`: every Windows locale name that should get it (`locale.windows_locale` values, such as `ja_JP`).
-   - `_STYLES`: only if sentences aren't joined by a space and ended by `.`.
+   - `_STYLES`: only if sentences aren't joined by a space and ended by `.`, or asides and colons aren't ` (…)` and `: `.
    - `LANGUAGE_NAMES`: the language's name in itself.
 5. **Tests.** `tests/test_i18n.py` checks every code in `CATALOGS` by itself. Add the locale cases to the mapping test, and the code to `test_sentence_gap_and_stop_follow_the_language` if it has a `_STYLES` entry. In `tests/test_config.py`, add `app.language=<code>` to `test_language_can_be_set_through_set` and update the allowed list in `test_unknown_language_is_rejected`.
 6. **Text that lists languages:** `site/src/content/docs/guide/config-window.md` (the language section and the `language = "<code>"` example), the `app.language` comments in `config.example.toml` and `AppConfig`, the Layout and "Translate the GUI" text in `docs/development.md`, and the `--language` help in `tools/capture_screenshots.py`. The default stays `"auto"`.

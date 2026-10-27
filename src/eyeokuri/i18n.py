@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import locale
 import sys
+from typing import NamedTuple
 
 from eyeokuri.locales import ja, zh_tw
 
@@ -20,14 +21,27 @@ _LOCALE_LANGUAGES = {
     "zh_HK": "zh-TW",
 }
 
-# Language code -> (gap between sentences, full stop). Chinese and Japanese have no space after a sentence and end with 。.
-_STYLES = {"ja": ("", "。"), "zh-TW": ("", "。")}
+
+class _Style(NamedTuple):
+    """Punctuation that code adds around values, which the catalog can't hold."""
+
+    gap: str
+    stop: str
+    aside: str
+    colon: str
+
+
+_DEFAULT_STYLE = _Style(gap=" ", stop=".", aside=" ({})", colon=": ")
+# Chinese and Japanese have no space after a sentence and use full-width punctuation.
+_FULL_WIDTH = _Style(gap="", stop="。", aside="（{}）", colon="：")
+# Language code -> its style, when it isn't the default.
+_STYLES = {"ja": _FULL_WIDTH, "zh-TW": _FULL_WIDTH}
 
 # Language code -> the language's name in itself, for the language picker. Not translated.
 LANGUAGE_NAMES = {"en": "English", "ja": "日本語", "zh-TW": "繁體中文"}
 
 _active: dict[str, str] = {}
-_style = (" ", ".")
+_style = _DEFAULT_STYLE
 
 
 def _(text: str) -> str:
@@ -49,17 +63,27 @@ def set_language(code: str) -> None:
     """Pick a catalog by code (a key of CATALOGS); any other code, such as "en", selects English."""
     global _active, _style
     _active = CATALOGS.get(code, {})
-    _style = _STYLES.get(code, (" ", ".")) if code in CATALOGS else (" ", ".")
+    _style = _STYLES.get(code, _DEFAULT_STYLE) if code in CATALOGS else _DEFAULT_STYLE
 
 
 def gap() -> str:
     """What goes between two sentences: a space, or nothing in Chinese and Japanese."""
-    return _style[0]
+    return _style.gap
 
 
 def stop() -> str:
     """The full stop that ends a sentence after a value, which the catalog can't hold."""
-    return _style[1]
+    return _style.stop
+
+
+def aside(text: str) -> str:
+    """text in parentheses, to go right after a word: " (yaw)", or "（yaw）" in Chinese and Japanese."""
+    return _style.aside.format(text)
+
+
+def colon() -> str:
+    """What goes after a label built in code, before what it labels: ": ", or "：" in Chinese and Japanese."""
+    return _style.colon
 
 
 def language_for_locale(name: str) -> str:

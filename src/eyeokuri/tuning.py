@@ -8,7 +8,8 @@ from dataclasses import dataclass, replace
 
 from eyeokuri.config import SIGNALS, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
-from eyeokuri.i18n import N_, _, gap, stop
+from eyeokuri.i18n import N_, _, colon, gap, stop
+from eyeokuri.labels import show_signal
 from eyeokuri.triggers import GestureTrigger, Replay, replay, signal_value
 
 # What a take is: the gesture as you mean it, or a near miss that must not fire.
@@ -131,7 +132,7 @@ def _excursion(step: StepConfig) -> tuple[str, int] | None:
 
 
 def _step_label(i: int, signal: str) -> str:
-    return _("Step") + f" {i + 1} · {signal}:"
+    return _("Step") + f" {i + 1} · " + show_signal(signal) + colon()
 
 
 def _show(signal: str, value: float) -> str:
@@ -173,7 +174,7 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
             continue
         typical = statistics.median(p for _, p in peaks)
         if typical < spec.min_reach:
-            warnings.append(_step_label(i, signal) + " " + _("Your takes hardly moved, so the edge stays.")
+            warnings.append(_step_label(i, signal) + _("Your takes hardly moved, so the edge stays.")
                             + gap() + _("Redo them, and move further."))
             continue
         used = [p for n, p in peaks if p >= _MISS * typical]
@@ -200,7 +201,7 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
         old = getattr(step, key)
         if value != old:
             # A short sentence, then labeled values, so a translation never has to reorder them.
-            changes.append(_step_label(i, signal) + " " + _("Edge moved.") + gap()
+            changes.append(_step_label(i, signal) + _("Edge moved.") + gap()
                            + _("Now:") + f" {_show(signal, value)}" + stop() + gap()
                            + _("Was:") + f" {_show(signal, old)}" + stop() + gap()
                            + _("Your weakest take:") + f" {_show(signal, rest + d * weakest)}" + stop()
@@ -208,7 +209,7 @@ def _fit_edges(gesture: GestureConfig, takes: list[tuple[int, Take]], changes: l
                               + f" {', '.join(str(n) for n, _n in blockers)}" + stop() if blockers else ""))
             steps[i] = replace(step, **{key: value})
         if reach > weakest:
-            warnings.append(_step_label(i, signal) + " "
+            warnings.append(_step_label(i, signal)
                             + _("Your weakest take didn't reach the edge, which can't be closer to rest, so that take won't fire.")
                             + gap() + _("Move further when you do the gesture."))
     for n in sorted(missed):

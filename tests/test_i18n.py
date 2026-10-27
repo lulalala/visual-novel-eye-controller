@@ -104,3 +104,9 @@ def test_sentence_gap_and_stop_follow_the_language():
     assert (i18n.gap(), i18n.stop()) == ("", "。")
     set_language("en")
     assert (i18n.gap(), i18n.stop()) == (" ", ".")
+
+
+def test_aside_and_colon_follow_the_language():
+    assert (i18n.aside("yaw"), i18n.colon()) == (" (yaw)", ": ")
+    set_language("ja")
+    assert (i18n.aside("yaw"), i18n.colon()) == ("（yaw）", "：")

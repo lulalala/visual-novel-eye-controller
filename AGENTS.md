@@ -30,7 +30,7 @@
 - Editor windows (gesture, config, wizard) edit a working copy and apply it live with `Engine.set_config()`; OK saves with `dump_config()`, Cancel restores what was in use when the window opened (`LiveEdit` in `gui/live_edit.py` does this for the gesture and config windows). Only one is open at a time, and gestures are suspended while it is.
 - `app.paused` is read only at startup; `set_config()` must not change the live paused state.
 - The gesture window gets match results from `triggers.replay()`, and the wizard fits limits with `tuning.fit()`. Don't reimplement matching or fitting in a window.
-- Logic that needs no widgets goes in `gui/model.py` or `tuning.py` (no Tk imports), so it is unit-tested. One window per module; windows import `MainWindow` only under `TYPE_CHECKING`.
+- Logic that needs no widgets goes in a module without Tk imports (`gui/model.py`, `tuning.py`, `labels.py`), so it is unit-tested. One window per module; windows import `MainWindow` only under `TYPE_CHECKING`.
 - **Translations.** Wrap every new user-facing GUI string with `_()` (`N_()` in module-level constants) following the rules in `docs/i18n/gui-plan.md`, and add the entry to every catalog in `locales/` in the same change. Log lines and `ValueError` messages stay English.
 - **Layout: align to columns.** Rows that belong together share one grid so their entries line up (head limits use the steps table's columns). An add button sits directly under the column it extends. This is the most frequent correction in this repo.
 
@@ -49,10 +49,11 @@
 1. An entry in `_default_gestures()` in `config.py`. Ask the user whether it starts enabled; there is no rule yet.
 2. A matching section in `config.example.toml` with identical values (`test_example_config_matches_defaults` checks this).
 3. The wizard's takes for it in `_SCRIPTS` in `tuning.py`: the gesture, and the near misses it should tell apart (`test_every_built_in_gesture_has_its_own_wizard_script` checks this). Add new prompt strings to every catalog in `locales/`.
-4. Tests in `tests/test_triggers.py` driving synthetic 30 FPS `Observation` streams (`drive` helper): fires, each rejection reason, cooldown, face loss.
-5. The site guide pages (`site/src/content/docs/guide/`, and every translated locale), if users see the change. The README only describes the app, how to install it and where the docs are, so change it only when those change.
+4. Its label in `_GESTURES` in `labels.py`, and in every catalog (`test_every_built_in_gesture_and_signal_has_a_label` checks this).
+5. Tests in `tests/test_triggers.py` driving synthetic 30 FPS `Observation` streams (`drive` helper): fires, each rejection reason, cooldown, face loss.
+6. The site guide pages (`site/src/content/docs/guide/`, and every translated locale), if users see the change. The README only describes the app, how to install it and where the docs are, so change it only when those change.
 
-**Add a signal:** a `SignalSpec` in `SIGNALS` in `config.py` (its unit, the source capability it needs, its rest value and the limits `tuning.fit()` keeps), `signal_value` in `triggers.py`, and a lane in `SIGNAL_PLOTS` in `gui/model.py`. A new unit also needs its bound fields in `StepConfig`.
+**Add a signal:** a `SignalSpec` in `SIGNALS` in `config.py` (its unit, the source capability it needs, its rest value and the limits `tuning.fit()` keeps), `signal_value` in `triggers.py`, a lane in `SIGNAL_PLOTS` in `gui/model.py`, and a label in `_SIGNALS` in `labels.py` (and every catalog). A new unit also needs its bound fields in `StepConfig`.
 
 **Add a key name:** its virtual-key code in `KEY_VK` (plus `EXTENDED_KEYS` if Windows sends it with `0xE0`); check `PynputOutput` finds it (rename in `_PYNPUT_NAMES` if needed) and `from_tk_event` maps its Tk keysym. **Add a mouse output:** `MOUSE_OUTPUTS`, implemented in both `Win32Output` and `PynputOutput`.
 

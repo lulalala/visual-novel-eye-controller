@@ -3,10 +3,11 @@ import pytest
 from eyeokuri.config import SIGNALS, CameraConfig, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    GESTURE_NAME, RECORD_S, SIGNAL_PLOTS, find_notice_file, fmt, gesture_config, gesture_model, new_step, users_of, view_size,
-    wizard_traces,
+    GESTURE_NAME, RECORD_S, SIGNAL_PLOTS, find_notice_file, fmt, gesture_config, gesture_model, lane_title, new_step,
+    show_choice, step_choices, users_of, view_size, wizard_traces,
 )
 from eyeokuri.gui.worker import state_text
+from eyeokuri.i18n import set_language
 from eyeokuri.triggers import Replay
 from eyeokuri.tuning import DO, Take
 
@@ -77,6 +78,35 @@ def test_users_of_lists_the_gestures_that_use_one_as_a_step():
     assert users_of(gestures, "blink") == ["blink_then_nod", "double_blink"]
     assert users_of(gestures, "nod_down") == ["blink_then_nod"]
     assert users_of(gestures, "head_shake") == []
+
+
+def test_a_step_can_watch_each_signal_or_another_gesture():
+    choices = step_choices(Config().gestures, "blink")
+    assert choices[:len(SIGNALS)] == [(s, "") for s in SIGNALS]
+    assert ("gesture", "nod_down") in choices
+    assert ("gesture", "blink") not in choices
+
+
+def test_step_choices_match_the_steps_they_set():
+    gesture = gesture_model(GestureConfig(steps=[StepConfig(signal="yaw", above_deg=15.0), StepConfig(gesture="blink")]))
+    choices = step_choices(Config().gestures, "head_shake")
+    assert [(s["kind"], s["gesture"]) for s in gesture["steps"]] == [("yaw", ""), ("gesture", "blink")]
+    assert all((s["kind"], s["gesture"]) in choices for s in gesture["steps"])
+
+
+def test_step_choices_show_labels():
+    assert show_choice(("yaw", "")) == "Head turn (yaw)"
+    assert show_choice(("gesture", "nod_down")) == "Gesture: Nod down"
+    assert show_choice(("gesture", "double_blink")) == "Gesture: double_blink"
+
+
+def test_lane_title_is_the_signal_label_then_what_it_measures():
+    assert lane_title("yaw") == "Head turn (yaw): + = turned to your left"
+    set_language("ja")
+    try:
+        assert lane_title("yaw") == "頭の左右（yaw）：+ = 自分から見て左を向いている"
+    finally:
+        set_language("en")
 
 
 def test_camera_view_is_the_camera_frame_size():

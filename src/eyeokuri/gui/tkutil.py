@@ -1,10 +1,14 @@
-"""Tk helpers: window placement and size, and fonts."""
+"""Tk helpers: window placement and size, fonts, and a combobox of IDs."""
 
 from __future__ import annotations
 
+import math
 import sys
 import tkinter as tk
+from collections.abc import Callable
+from typing import TypeVar
 from tkinter import font as tkfont
+from tkinter import ttk
 
 
 def place_over(win: tk.Toplevel, anchor: tk.Misc) -> None:
@@ -128,3 +132,20 @@ def scaled_font(name: str, by: float) -> tkfont.Font:
     font = tkfont.nametofont(name).copy()
     font.configure(size=round(font.cget("size") * by))
     return font
+
+
+T = TypeVar("T")
+
+
+def id_box(parent: tk.Misc, ids: list[T], show: Callable[[T], str], current: T,
+           on_pick: Callable[[T], None], min_width: int = 18) -> ttk.Combobox:
+    """A read-only combobox that lists ``show(id)`` for each ID and calls
+    ``on_pick`` with the ID you pick. Wide enough for its longest entry."""
+    shown = [show(i) for i in ids]
+    font = tkfont.nametofont("TkTextFont")
+    # Combobox width counts "0" characters; CJK text is about twice as wide.
+    width = max([min_width, *(math.ceil(font.measure(s) / font.measure("0")) + 1 for s in shown)])
+    box = ttk.Combobox(parent, state="readonly", width=width, values=shown)
+    box.set(show(current))
+    box.bind("<<ComboboxSelected>>", lambda _e: on_pick(ids[box.current()]))
+    return box

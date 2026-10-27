@@ -10,6 +10,8 @@ nod	點頭
 shake your head	搖頭	The pause gesture.
 head turn	轉頭	yaw; positive is your left.
 tilt (head up/down)	抬頭 / 低頭	pitch; positive is head tilted down (低頭).
+Head tilt / Head turn (signal labels)	頭部俯仰 / 頭部左右轉	The pitch and yaw signals in the GUI, shown with the ID: 頭部俯仰（pitch）.
+Nod up / Nod down (gesture labels)	往上點頭 / 往下點頭	nod_up and nod_down in the GUI. Built-in gesture and signal labels are followed by the ID in full-width parentheses.
 webcam	視訊鏡頭	Not 網路攝影機 or 攝影機.
 camera	鏡頭	Short form after 視訊鏡頭 has been introduced.
 frame (camera image)	畫面 / 影格	畫面 in user-facing copy (鏡頭畫面); 影格 in technical docs and log messages.
