@@ -93,6 +93,7 @@ CATALOG: dict[str, str] = {
     "Output": "輸出",
     "Press a key…": "按下一個按鍵…",
     "Press a key now (click to cancel)": "現在按下按鍵（點一下可取消）",
+    "Hold until it fires again": "按住不放，直到再次觸發",
     "Steps in any order": "步驟順序不拘",
     "Within": "時限",
     "Cooldown": "冷卻時間",

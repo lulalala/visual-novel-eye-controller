@@ -34,3 +34,5 @@ Each gesture's `output` (in `[gestures.NAME]`) is empty, which sends nothing, or
 
 - Keystroke and mouse outputs, listed in `OUTPUT_NAMES` in `outputs.py`: `enter`, `space`, `mouse_left_click`, `mouse_right_click`, `mouse_wheel_down`, `up`, `down`. `Engine` sends these to the foreground window.
 - App-level outputs, listed in `APP_OUTPUTS` and named with an `app_` prefix: currently only `app_pause_toggle`. `Engine.step()` handles these itself.
+
+`output_mode` says how a keystroke or mouse output is sent: `press` sends it once, and `toggle` holds it down (`Output.down()`) until the gesture fires again (`Output.up()`). A held output is down for every app, so `Engine` also lets go of it on pause, suspend, new settings, face loss and `close()`. Two gestures can't share a held key: letting go for one would end the other's press or hold.

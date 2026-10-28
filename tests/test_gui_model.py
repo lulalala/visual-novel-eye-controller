@@ -26,6 +26,11 @@ def test_gesture_steps_survive_the_editor_round_trip():
     assert gesture_config(gesture_model(gesture)) == gesture
 
 
+def test_output_mode_survives_the_editor_round_trip():
+    gesture = GestureConfig(steps=[StepConfig(signal="eyes", below_ratio=0.5)], output="ctrl", output_mode="toggle")
+    assert gesture_config(gesture_model(gesture)) == gesture
+
+
 def test_plot_table_covers_every_signal():
     # Adding a signal to config.SIGNALS needs a plot lane too.
     assert set(SIGNAL_PLOTS) == set(SIGNALS)

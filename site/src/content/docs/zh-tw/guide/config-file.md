@@ -48,6 +48,7 @@ output = "enter"
 | `cooldown_s` | 動作觸發之後，在這段時間內不能再次觸發。 |
 | `enabled` | 開啟或關閉動作。 |
 | `output` | 動作送出什麼。 |
+| `output_mode` | `press`（預設）送出一次輸出；`toggle` 會按住輸出，直到動作再次觸發。 |
 
 這些名稱也會出現在[動作視窗](../edit-a-gesture/#變更範圍)的欄和列。
 
@@ -66,6 +67,15 @@ output = "enter"
 - 滑鼠輸入：`mouse_left_click`、`mouse_right_click` 或 `mouse_wheel_down`。
 - `app_pause_toggle`：暫停或繼續 eyeokuri。
 - `""`：不送出任何東西。
+
+要按住輸出直到動作再次觸發，請設定 `output_mode = "toggle"`。eyeokuri 什麼時候放開，請見[按住按鍵](../edit-a-gesture/#按住按鍵)。下面這個眨單眼動作會按住 `ctrl`（許多遊戲用它跳過文字），直到你再眨一次：
+
+```toml
+[gestures.wink_left]
+enabled = true
+output = "ctrl"
+output_mode = "toggle"   # 再眨一次就放開
+```
 
 ## 組合動作
 

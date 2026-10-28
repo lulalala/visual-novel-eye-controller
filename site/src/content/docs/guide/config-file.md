@@ -48,6 +48,7 @@ A gesture also has these fields:
 | `cooldown_s` | The time after the gesture fires during which it can't fire again. |
 | `enabled` | Turns the gesture on or off. |
 | `output` | What the gesture sends. |
+| `output_mode` | `press` (the default) sends the output once; `toggle` holds it down until the gesture fires again. |
 
 The same names appear as the columns and rows of the [gesture window](../edit-a-gesture/#change-a-limit).
 
@@ -66,6 +67,15 @@ By default, a blink counts only when your head is within 20° of your usual pose
 - A mouse input: `mouse_left_click`, `mouse_right_click` or `mouse_wheel_down`.
 - `app_pause_toggle`, which pauses or resumes eyeokuri.
 - `""`, which sends nothing.
+
+To hold the output down until the gesture fires again, set `output_mode = "toggle"`. [Hold a key down](../edit-a-gesture/#hold-a-key-down) explains when eyeokuri lets go. This wink holds `ctrl`, which skips text in many games, until you wink again:
+
+```toml
+[gestures.wink_left]
+enabled = true
+output = "ctrl"
+output_mode = "toggle"   # wink again to let go
+```
 
 ## Combine gestures
 

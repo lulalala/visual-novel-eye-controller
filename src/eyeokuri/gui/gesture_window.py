@@ -115,6 +115,10 @@ class GestureWindow:
         self.capture_button = ttk.Button(top, text=_("Press a key…"), command=self._toggle_capture)
         self.capture_button.pack(side="left", padx=(4, 0))
         self._capturing = False
+        # output_mode: toggle when checked, press when not.
+        self.hold = tk.BooleanVar()
+        ttk.Checkbutton(top, text=_("Hold until it fires again"), variable=self.hold,
+                        command=self._on_gesture_field).pack(side="left", padx=(14, 0))
         self.any_order = tk.BooleanVar()
         ttk.Checkbutton(top, text=_("Steps in any order"), variable=self.any_order,
                         command=self._on_gesture_field).pack(side="left", padx=(14, 0))
@@ -148,6 +152,7 @@ class GestureWindow:
         self._suppress = True
         self._stop_capture()
         self.output_var.set(m["output"] or "(none)")
+        self.hold.set(m["output_mode"] == "toggle")
         self.any_order.set(m["any_order"])
         for key, var in self.gesture_vars.items():
             var.set(fmt(m[key]))
@@ -164,6 +169,7 @@ class GestureWindow:
         output = self.output_var.get().strip().lower()
         # Invalid text is stored too; build_config() reports it, and nothing applies until it's fixed.
         m["output"] = "" if output in ("", "(none)") else output
+        m["output_mode"] = "toggle" if self.hold.get() else "press"
         if m["any_order"] != self.any_order.get():
             m["any_order"] = self.any_order.get()
             self._build_steps()

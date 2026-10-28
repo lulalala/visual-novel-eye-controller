@@ -39,11 +39,15 @@ warmup_s = 2.0
 #   gesture      instead of signal: another gesture's name; counts when it fires
 # A gesture also has: guards (boxes on pitch or yaw that the head must stay
 # inside; leaving one cancels the gesture), any_order, within_s (first step to last, 0 = no
-# limit), cooldown_s and output.
+# limit), cooldown_s, output and output_mode.
 # Outputs: a key (a-z, 0-9, f1-f24, enter, space, tab, escape, backspace, delete, insert,
 # home, end, page_up, page_down, up, down, left, right), optionally after modifiers
 # ctrl, shift, alt or win (ctrl+s, shift+tab); mouse_left_click, mouse_right_click,
 # mouse_wheel_down; app_pause_toggle; or "" to send nothing.
+# output_mode: "press" (the default) sends the output once. "toggle" holds a key,
+# key combination or mouse button down when the gesture fires and lets go when it
+# fires again, for games that skip text while ctrl is held. It also lets go when
+# you pause, when your face leaves the camera and when eyeokuri stops.
 
 [gestures.blink]
 # Close your eyes, then open them again. 0.1 lets natural blinks advance;

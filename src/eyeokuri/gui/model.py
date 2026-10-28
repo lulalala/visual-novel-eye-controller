@@ -49,8 +49,9 @@ SIGNAL_PLOTS = {
                       N_("+ = turned to your left"), (15.0, None)),
 }
 GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
-# A gesture that sent its output: Engine logs "<name>: <detail> -> <output>".
-_FIRED = re.compile(r" -> [^\s()]+$")
+# A gesture that sent its output: Engine logs "<name>: <detail> -> <output>",
+# with " held" or " released" after it for a toggle gesture.
+_FIRED = re.compile(r" -> [^\s()]+( held| released)?$")
 
 
 def log_tag(message: str) -> str:
@@ -85,7 +86,8 @@ def gesture_model(gesture: GestureConfig) -> dict[str, Any]:
     guards = [{"kind": g.signal, "above": g.above_deg, "below": g.below_deg} for g in gesture.guards]
     return {
         "guards": guards,
-        "enabled": gesture.enabled, "output": gesture.output, "any_order": gesture.any_order,
+        "enabled": gesture.enabled, "output": gesture.output, "output_mode": gesture.output_mode,
+        "any_order": gesture.any_order,
         "within_s": gesture.within_s, "cooldown_s": gesture.cooldown_s, "steps": steps,
     }
 
@@ -108,6 +110,7 @@ def gesture_config(model: dict[str, Any]) -> GestureConfig:
     return GestureConfig(
         enabled=model["enabled"], steps=steps, guards=guards, any_order=model["any_order"],
         within_s=model["within_s"], cooldown_s=model["cooldown_s"], output=model["output"],
+        output_mode=model["output_mode"],
     )
 
 

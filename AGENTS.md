@@ -16,7 +16,7 @@
    - Every setting belongs to one step, so changing it never affects another step or gesture. Hysteresis is two boxes (a nod enters past 12° and returns inside ±8°).
    - When one movement matches several gestures, each fires. No arbitration.
    - Each step maps to one box and each limit to one draggable edge in the GUI plot. Keep new step fields drawable that way.
-2. Outputs are a key name from `KEY_VK` (optionally with modifiers, `ctrl+s`), a `MOUSE_OUTPUTS` name (`mouse_` prefix), or an `APP_OUTPUTS` name (`app_` prefix, only `app_pause_toggle`), which `Engine.step()` handles itself: a new one goes in `APP_OUTPUTS` with its action in `Engine.app_actions`. The prefixes keep these names from clashing with key names.
+2. Outputs are a key name from `KEY_VK` (optionally with modifiers, `ctrl+s`), a `MOUSE_OUTPUTS` name (`mouse_` prefix), or an `APP_OUTPUTS` name (`app_` prefix, only `app_pause_toggle`), which `Engine.step()` handles itself: a new one goes in `APP_OUTPUTS` with its action in `Engine.app_actions`. The prefixes keep these names from clashing with key names. `output_mode = "toggle"` holds a key or mouse button down until the gesture fires again; `Engine` owns the held outputs and lets go of them in `_release_held()`, also on pause, suspend, new settings, face loss and `close()`.
 3. Triggers are pure state machines: `Observation` in, `TriggerEvent | None` out. No camera, OS or wall-clock access; use `obs.timestamp` only, so they stay testable.
 4. A trigger that loses the face (`not obs.face_present` or a `None` head value) must `reset()` and cancel any half-done gesture.
 5. Head signs: **positive pitch = head tilted down**, **positive yaw = your left**. Easy to get backwards; `signal_value` in `triggers.py` is the reference.

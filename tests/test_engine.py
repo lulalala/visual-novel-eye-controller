@@ -25,6 +25,8 @@ class ScriptedSource:
         eyes, yaw = self._samples[self._i]
         t = self._i / FPS
         self._i += 1
+        if eyes is None:
+            return Signals(t, face_present=False)
         return Signals(t, face_present=True, eye_openness=(eyes, eyes), head_yaw_deg=yaw, head_pitch_deg=0.0)
 
     def debug_view(self):
@@ -37,9 +39,16 @@ class ScriptedSource:
 class RecordingOutput:
     def __init__(self):
         self.sent = []
+        self.held = []
 
     def send(self, name):
         self.sent.append(name)
+
+    def down(self, name):
+        self.held.append(("down", name))
+
+    def up(self, name):
+        self.held.append(("up", name))
 
 
 def calibrate(frames=90):
@@ -241,3 +250,124 @@ def test_new_config_keeps_the_live_paused_state():
     engine.set_config(Config())
     engine.step()
     assert engine.paused
+
+
+def hold_on_blink(output="ctrl", **gestures):
+    return apply_overrides(Config(), {"gestures": {
+        "blink": {"output": output, "output_mode": "toggle"}, **gestures,
+    }})
+
+
+def test_toggle_gesture_holds_its_output_until_it_fires_again():
+    samples = calibrate() + blink() + blink()
+    engine, output, messages, sounds = make(samples, hold_on_blink())
+    frames = run(engine, len(calibrate() + blink()))
+    assert output.held == [("down", "ctrl")]
+    assert any(m.endswith("-> ctrl held") for m in messages)
+    frames += run(engine, len(blink()))
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert output.sent == []
+    assert sum(f.fired for f in frames) == 2
+    assert any(m.endswith("-> ctrl released") for m in messages)
+    assert sounds == ["trigger", "trigger"]
+
+
+def test_toggle_holds_a_mouse_button():
+    samples = calibrate() + blink()
+    engine, output, *_ = make(samples, hold_on_blink("mouse_left_click"))
+    run(engine, len(samples))
+    assert output.held == [("down", "mouse_left_click")]
+
+
+def test_pausing_lets_go_of_a_held_output():
+    samples = calibrate() + blink() + shake()
+    engine, output, messages, _ = make(samples, hold_on_blink())
+    run(engine, len(samples))
+    assert engine.paused
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert messages.index("Paused") < messages.index("Released ctrl: paused")
+
+
+def test_toggle_gesture_while_paused_holds_nothing():
+    config = apply_overrides(hold_on_blink(), {"app": {"paused": True}})
+    samples = calibrate() + blink()
+    engine, output, messages, _ = make(samples, config)
+    run(engine, len(samples))
+    assert output.held == []
+    assert any(m.endswith("-> ctrl (paused, not sent)") for m in messages)
+
+
+def test_losing_the_face_lets_go_of_a_held_output():
+    samples = calibrate() + blink() + [(None, None)] * 3
+    engine, output, messages, _ = make(samples, hold_on_blink())
+    run(engine, len(samples))
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert messages.count("Released ctrl: no face") == 1
+
+
+def test_suspending_lets_go_of_a_held_output():
+    samples = calibrate() + blink() + [(0.3, 0.0)]
+    engine, output, messages, _ = make(samples, hold_on_blink())
+    run(engine, len(samples) - 1)
+    engine.set_suspended(True)
+    engine.step()
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert "Released ctrl: gestures off" in messages
+
+
+def test_new_settings_let_go_of_a_held_output():
+    samples = calibrate() + blink() + [(0.3, 0.0)]
+    engine, output, messages, _ = make(samples, hold_on_blink())
+    run(engine, len(samples) - 1)
+    engine.set_config(hold_on_blink("shift"))
+    engine.step()
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert "Released ctrl: settings changed" in messages
+
+
+def test_closing_lets_go_of_a_held_output():
+    samples = calibrate() + blink()
+    engine, output, messages, _ = make(samples, hold_on_blink())
+    run(engine, len(samples))
+    engine.close()
+    engine.close()
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert messages.count("Released ctrl: stopping") == 1
+
+
+def test_log_window_colors_held_and_released_as_fired_and_a_release_plain():
+    samples = calibrate() + blink() + blink() + blink() + shake()
+    engine, _, messages, _ = make(samples, hold_on_blink())
+    run(engine, len(samples))
+    tags = _tags(messages)
+    fired = [m for m in messages if m.endswith((" held", " released"))]
+    assert len(fired) == 3 and all(tags[m] == "fire" for m in fired)
+    assert tags["Released ctrl: paused"] == ""
+
+
+@pytest.mark.parametrize("output", ["", "app_pause_toggle", "mouse_wheel_down"])
+def test_toggle_needs_an_output_that_can_be_held(output):
+    with pytest.raises(ValueError, match="gestures.blink.output_mode toggle needs a key"):
+        make(calibrate(), hold_on_blink(output))
+
+
+def test_unknown_output_mode_is_rejected():
+    config = apply_overrides(Config(), {"gestures": {"blink": {"output_mode": "hold"}}})
+    with pytest.raises(ValueError, match="gestures.blink.output_mode must be one of press, toggle, not 'hold'"):
+        make(calibrate(), config)
+
+
+@pytest.mark.parametrize("other", [
+    {"output": "ctrl+s"},
+    {"output": "ctrl", "output_mode": "toggle"},
+    {"output": "shift+ctrl", "output_mode": "toggle"},
+])
+def test_a_held_key_cannot_be_part_of_another_output(other):
+    config = hold_on_blink(nod_up=other)
+    with pytest.raises(ValueError, match="gestures.blink holds ctrl down, so gestures.nod_up.output"):
+        make(calibrate(), config)
+
+
+def test_held_keys_may_differ_between_gestures():
+    config = hold_on_blink(nod_up={"output": "shift", "output_mode": "toggle"})
+    make(calibrate(), config)

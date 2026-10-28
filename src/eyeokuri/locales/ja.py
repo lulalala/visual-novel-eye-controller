@@ -93,6 +93,7 @@ CATALOG: dict[str, str] = {
     "Output": "出力",
     "Press a key…": "キーを押してください…",
     "Press a key now (click to cancel)": "今すぐキーを押してください（クリックでキャンセル）",
+    "Hold until it fires again": "次に反応するまで押し続ける",
     "Steps in any order": "ステップの順序は問わない",
     "Within": "制限時間",
     "Cooldown": "クールダウン",

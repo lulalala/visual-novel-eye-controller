@@ -10,7 +10,7 @@ from eyeokuri.eyes import EyeStateTracker, Observation
 from eyeokuri.feedback import play_sound
 from eyeokuri.head import HeadTracker
 from eyeokuri.outputs import (
-    APP_OUTPUTS, MOUSE_OUTPUTS, Output, check_output_name, create_output,
+    APP_OUTPUTS, MOUSE_BUTTONS, MOUSE_OUTPUTS, OUTPUT_MODES, Output, check_output_name, create_output, pressed_by,
 )
 from eyeokuri.pause import PauseSwitch
 from eyeokuri.sources import Source
@@ -19,16 +19,44 @@ from eyeokuri.triggers import Trigger, TriggerEvent, create_triggers, supported_
 
 def validate_outputs(config: Config) -> None:
     for name, gesture in config.gestures.items():
-        output = gesture.output
-        if output == "" or output in APP_OUTPUTS:
-            continue
-        try:
-            check_output_name(output)
-        except ValueError as e:
+        output, mode = gesture.output, gesture.output_mode
+        if mode not in OUTPUT_MODES:
+            raise ValueError(f"gestures.{name}.output_mode must be one of {', '.join(OUTPUT_MODES)}, not {mode!r}")
+        if output != "" and output not in APP_OUTPUTS:
+            try:
+                check_output_name(output)
+            except ValueError as e:
+                raise ValueError(
+                    f"gestures.{name}.output: {e}; mouse outputs are {', '.join(MOUSE_OUTPUTS)}, "
+                    f"app outputs are {', '.join(sorted(APP_OUTPUTS))}, and \"\" sends nothing"
+                ) from None
+        if mode == "toggle" and not _can_hold(output):
             raise ValueError(
-                f"gestures.{name}.output: {e}; mouse outputs are {', '.join(MOUSE_OUTPUTS)}, "
-                f"app outputs are {', '.join(sorted(APP_OUTPUTS))}, and \"\" sends nothing"
-            ) from None
+                f"gestures.{name}.output_mode toggle needs a key, key combination, "
+                f"{' or '.join(MOUSE_BUTTONS)} as the output, not {output!r}"
+            )
+    _check_held_outputs_are_not_shared(config)
+
+
+def _can_hold(output: str) -> bool:
+    return output in MOUSE_BUTTONS or not (output == "" or output in APP_OUTPUTS or output in MOUSE_OUTPUTS)
+
+
+def _check_held_outputs_are_not_shared(config: Config) -> None:
+    """Letting go of a key that another output also uses would end that output's
+    press or hold early, so a held key belongs to one gesture only."""
+    sending = {n: g for n, g in config.gestures.items() if g.output != "" and g.output not in APP_OUTPUTS}
+    for name, gesture in sending.items():
+        if gesture.output_mode != "toggle":
+            continue
+        held = pressed_by(gesture.output)
+        for other, other_gesture in sending.items():
+            shared = held & pressed_by(other_gesture.output)
+            if other != name and shared:
+                raise ValueError(
+                    f"gestures.{name} holds {', '.join(sorted(shared))} down, so gestures.{other}.output "
+                    f"can't use it too ({other_gesture.output!r}); pick outputs without shared keys"
+                )
 
 
 def check_config(config: Config) -> None:
@@ -58,6 +86,10 @@ class Engine:
     settings, recording takes): the pipeline keeps producing observations,
     but gestures neither match nor send anything. Unlike pause, no gesture
     can end it.
+
+    A held output (output_mode = "toggle") is down for the whole system, not
+    just the game, so the engine lets go of it on pause, suspend, new
+    settings, face loss and close() as well as when the gesture fires again.
     """
 
     def __init__(
@@ -78,6 +110,8 @@ class Engine:
             source = OpenCVSource(config.camera, log)
         self.source = source
         self._output = output
+        # Outputs that toggle gestures hold down, in the order they went down.
+        self._held: list[str] = []
         # Only read here: afterwards the engine owns the paused state, and
         # set_config() leaves it alone.
         self.pause = PauseSwitch(self._on_pause_change, paused=config.app.paused)
@@ -114,6 +148,8 @@ class Engine:
     def _apply(self, config: Config) -> None:
         # Checked before anything changes, so bad settings leave the engine as it was.
         check_config(config)
+        # The gesture that held an output might now send something else.
+        self._release_held("settings changed")
         old = self.config
         self.config = config
         if old is not None and self._own_source and config.camera != old.camera:
@@ -134,6 +170,14 @@ class Engine:
         if self._own_output and self._output is None:
             self._output = create_output(self._log)
         self._outputs = {name: g.output for name, g in config.gestures.items()}
+        self._toggles = {name for name, g in config.gestures.items() if g.output_mode == "toggle"}
+
+    def _release_held(self, reason: str) -> None:
+        while self._held:
+            name = self._held.pop()
+            assert self._output is not None
+            self._output.up(name)
+            self._log(f"Released {name}: {reason}")
 
     def _on_fire(self, event: TriggerEvent, output_name: str) -> None:
         self.last_fire_at = event.timestamp
@@ -144,6 +188,8 @@ class Engine:
 
     def _on_pause_change(self, paused: bool) -> None:
         self._log("Paused" if paused else "Resumed")
+        if paused:
+            self._release_held("paused")
         assert self.config is not None
         if self.config.feedback.sound:
             self._sound("pause" if paused else "resume")
@@ -166,6 +212,8 @@ class Engine:
             for trigger in self.triggers:
                 trigger.reset()
             self._log("Gestures off" if requested else "Gestures on")
+            if requested:
+                self._release_held("gestures off")
 
         signals = self.source.read()
         now = signals.timestamp
@@ -175,6 +223,9 @@ class Engine:
 
         head_yaw, head_pitch = self.head.update(signals)
         obs = replace(self.eyes.update(signals), head_yaw=head_yaw, head_pitch=head_pitch)
+        if not obs.face_present:
+            # Nobody is there to fire the gesture again and let go.
+            self._release_held("no face")
 
         fired = False
         for trigger in () if self.suspended else self.triggers:
@@ -197,10 +248,20 @@ class Engine:
             self._log(f"{event.trigger}: {event.detail} -> {mapped} (paused, not sent)")
             return False
         assert self._output is not None
-        self._output.send(mapped)
-        self._on_fire(event, mapped)
+        if event.action not in self._toggles:
+            self._output.send(mapped)
+            self._on_fire(event, mapped)
+        elif mapped in self._held:
+            self._held.remove(mapped)
+            self._output.up(mapped)
+            self._on_fire(event, f"{mapped} released")
+        else:
+            self._output.down(mapped)
+            self._held.append(mapped)
+            self._on_fire(event, f"{mapped} held")
         return True
 
     def close(self) -> None:
+        self._release_held("stopping")
         if self._own_source:
             self.source.close()

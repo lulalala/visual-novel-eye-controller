@@ -128,6 +128,12 @@ class SilentOutput:
     def send(self, name: str) -> None:
         pass
 
+    def down(self, name: str) -> None:
+        pass
+
+    def up(self, name: str) -> None:
+        pass
+
 
 # Screen capture
 

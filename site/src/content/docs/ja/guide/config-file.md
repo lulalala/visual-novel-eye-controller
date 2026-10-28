@@ -48,6 +48,7 @@ output = "enter"
 | `cooldown_s` | ジェスチャーが反応したあと、再び反応できない時間です。 |
 | `enabled` | ジェスチャーをオンまたはオフにします。 |
 | `output` | ジェスチャーが送る内容です。 |
+| `output_mode` | `press`（初期設定）は出力を 1 回送ります。`toggle` は、ジェスチャーが再び反応するまで出力を押し続けます。 |
 
 これらの名前は、[ジェスチャーのウィンドウ](../edit-a-gesture/#範囲を変更する)の列や行にも表示されます。
 
@@ -66,6 +67,15 @@ output = "enter"
 - マウス入力：`mouse_left_click`、`mouse_right_click`、`mouse_wheel_down`。
 - `app_pause_toggle`：アイ送りを一時停止または再開します。
 - `""`：何も送りません。
+
+ジェスチャーが再び反応するまで出力を押し続けるには、`output_mode = "toggle"` を指定します。アイ送りがキーを離すタイミングは、[キーを押し続ける](../edit-a-gesture/#キーを押し続ける)を参照してください。次のウィンクは、多くのゲームでテキストをスキップする `ctrl` を、もう一度ウィンクするまで押し続けます。
+
+```toml
+[gestures.wink_left]
+enabled = true
+output = "ctrl"
+output_mode = "toggle"   # もう一度ウィンクすると離す
+```
 
 ## ジェスチャーを組み合わせる
 

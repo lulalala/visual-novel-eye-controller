@@ -66,6 +66,16 @@ By default, a blink counts only when your head is within 20° of your usual pose
 - `app_pause_toggle`, which pauses or resumes eyeokuri.
 - `(none)`, which sends nothing. Use it for a gesture that other gestures use as a step.
 
+## Hold a key down
+
+Some games skip text while you hold `ctrl`. Select **Hold until it fires again** to make the gesture hold its output down instead of pressing it once:
+
+- When the gesture fires, eyeokuri presses the output and keeps it down. The log says `blink: ... -> ctrl held`.
+- When it fires again, eyeokuri lets go (`-> ctrl released`).
+- eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
+
+You can hold a key, a key combination, `mouse_left_click` or `mouse_right_click`. A held key is down for every app, not only the game: if you switch windows while it's held, what you type there gets `ctrl` too. Another gesture's output can't use a key that this gesture holds. If you end eyeokuri from Task Manager while a key is held, press that key once to release it.
+
 ## Save or cancel
 
 eyeokuri uses your changes as soon as you make them. They aren't saved until you finish:
