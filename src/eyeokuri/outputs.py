@@ -11,7 +11,7 @@ import sys
 import time
 from typing import Callable, Protocol
 
-from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, KeyCombo, parse_key, press_order
+from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, parse_key
 
 MOUSE_OUTPUTS = ("mouse_left_click", "mouse_right_click", "mouse_wheel_down")
 # Outputs the app handles itself instead of sending input. Like the mouse
@@ -25,6 +25,8 @@ OUTPUT_NAMES = (
 
 # Some engines poll key state once per frame, so hold keys down briefly.
 _PRESS_DURATION_S = 0.03
+# MOUSEEVENTF_ (down, up) flags for each mouse button.
+_WIN32_BUTTONS = {"mouse_left_click": (0x0002, 0x0004), "mouse_right_click": (0x0008, 0x0010)}
 
 
 def _print_stderr(message: str) -> None:
@@ -32,7 +34,14 @@ def _print_stderr(message: str) -> None:
 
 
 class Output(Protocol):
-    def send(self, name: str) -> None: ...
+    def send(self, name: str) -> None:
+        """Presses and releases a key, combination or mouse output."""
+
+    def down(self, name: str) -> None:
+        """Presses a key, combination or mouse button and leaves it down."""
+
+    def up(self, name: str) -> None:
+        """Releases what down() pressed, modifiers last."""
 
 
 def check_output_name(name: str) -> None:
@@ -94,23 +103,27 @@ class Win32Output:
         self._scans: dict[str, int] = {}
 
     def send(self, name: str) -> None:
-        if name == "mouse_left_click":
-            self._mouse(0x0002)  # MOUSEEVENTF_LEFTDOWN
-            time.sleep(_PRESS_DURATION_S)
-            self._mouse(0x0004)  # MOUSEEVENTF_LEFTUP
-        elif name == "mouse_right_click":
-            self._mouse(0x0008)  # MOUSEEVENTF_RIGHTDOWN
-            time.sleep(_PRESS_DURATION_S)
-            self._mouse(0x0010)  # MOUSEEVENTF_RIGHTUP
-        elif name == "mouse_wheel_down":
+        if name == "mouse_wheel_down":
             # MOUSEEVENTF_WHEEL; one notch = WHEEL_DELTA (120), negative = towards user.
             self._mouse(0x0800, data=-120 & 0xFFFFFFFF)
+            return
+        self.down(name)
+        time.sleep(_PRESS_DURATION_S)
+        self.up(name)
+
+    def down(self, name: str) -> None:
+        if name in _WIN32_BUTTONS:
+            self._mouse(_WIN32_BUTTONS[name][0])
         else:
-            combo = parse_key(name)
-            for key, down in press_order(combo):
-                self._key(self._scan(key), up=not down, extended=key in EXTENDED_KEYS)
-                if key == combo.key and down:
-                    time.sleep(_PRESS_DURATION_S)
+            for key in parse_key(name).keys:
+                self._key(key, up=False)
+
+    def up(self, name: str) -> None:
+        if name in _WIN32_BUTTONS:
+            self._mouse(_WIN32_BUTTONS[name][1])
+        else:
+            for key in reversed(parse_key(name).keys):
+                self._key(key, up=True)
 
     def _scan(self, key: str) -> int:
         # Asks the current layout which key types this letter, so "a" is a on AZERTY too.
@@ -118,9 +131,9 @@ class Win32Output:
             self._scans[key] = self._user32.MapVirtualKeyW(KEY_VK[key], 0) & 0xFF  # MAPVK_VK_TO_VSC
         return self._scans[key]
 
-    def _key(self, scan: int, up: bool, extended: bool = False) -> None:
-        flags = 0x0008 | (0x0002 if up else 0) | (0x0001 if extended else 0)
-        inp = self._INPUT(type=1, ki=self._KEYBDINPUT(wVk=0, wScan=scan, dwFlags=flags))
+    def _key(self, key: str, up: bool) -> None:
+        flags = 0x0008 | (0x0002 if up else 0) | (0x0001 if key in EXTENDED_KEYS else 0)
+        inp = self._INPUT(type=1, ki=self._KEYBDINPUT(wVk=0, wScan=self._scan(key), dwFlags=flags))
         self._send(inp)
 
     def _mouse(self, flags: int, data: int = 0) -> None:
@@ -152,29 +165,38 @@ class PynputOutput:
         self._buttons = {"mouse_left_click": mouse.Button.left, "mouse_right_click": mouse.Button.right}
 
     def send(self, name: str) -> None:
-        if name in self._buttons:
-            button = self._buttons[name]
-            self._mouse.press(button)
-            time.sleep(_PRESS_DURATION_S)
-            self._mouse.release(button)
-        elif name == "mouse_wheel_down":
+        if name == "mouse_wheel_down":
             self._mouse.scroll(0, -1)
-        else:
-            self._send_keys(parse_key(name))
-
-    def _send_keys(self, combo: KeyCombo) -> None:
-        keys = {k: self._pynput_key(k) for k in (*combo.modifiers, combo.key)}
-        missing = [k for k, v in keys.items() if v is None]
-        if missing:
-            self._log(f"Can't send {combo}: {', '.join(missing)} is not available on this system.")
             return
-        for key, down in press_order(combo):
-            if down:
-                self._keyboard.press(keys[key])
-                if key == combo.key:
-                    time.sleep(_PRESS_DURATION_S)
-            else:
-                self._keyboard.release(keys[key])
+        self.down(name)
+        time.sleep(_PRESS_DURATION_S)
+        self.up(name)
+
+    def down(self, name: str) -> None:
+        if name in self._buttons:
+            self._mouse.press(self._buttons[name])
+        else:
+            for key in self._keys(name, report=True):
+                self._keyboard.press(key)
+
+    def up(self, name: str) -> None:
+        if name in self._buttons:
+            self._mouse.release(self._buttons[name])
+        else:
+            for key in reversed(self._keys(name, report=False)):
+                self._keyboard.release(key)
+
+    def _keys(self, name: str, report: bool) -> list[object]:
+        """pynput's keys for a key name, in press order; none if one is missing
+        (reported on the way down, so up() doesn't repeat it)."""
+        combo = parse_key(name)
+        keys = [self._pynput_key(k) for k in combo.keys]
+        missing = [k for k, v in zip(combo.keys, keys) if v is None]
+        if missing:
+            if report:
+                self._log(f"Can't send {combo}: {', '.join(missing)} is not available on this system.")
+            return []
+        return keys
 
     def _pynput_key(self, key: str) -> object | None:
         if len(key) == 1:

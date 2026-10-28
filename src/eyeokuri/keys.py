@@ -53,7 +53,12 @@ class KeyCombo:
     key: str
 
     def __str__(self) -> str:
-        return "+".join((*self.modifiers, self.key))
+        return "+".join(self.keys)
+
+    @property
+    def keys(self) -> tuple[str, ...]:
+        """Every key in the order to press them: modifiers, then the key. Release in reverse."""
+        return (*self.modifiers, self.key)
 
 
 def parse_key(text: str) -> KeyCombo:
@@ -73,16 +78,6 @@ def parse_key(text: str) -> KeyCombo:
     if len(set(parts)) != len(parts):
         raise ValueError(f"key {text!r} repeats a key")
     return KeyCombo(tuple(modifiers), key)
-
-
-def press_order(combo: KeyCombo) -> list[tuple[str, bool]]:
-    """(key, down) events: modifiers down, key down and up, modifiers up in reverse."""
-    return [
-        *((m, True) for m in combo.modifiers),
-        (combo.key, True),
-        (combo.key, False),
-        *((m, False) for m in reversed(combo.modifiers)),
-    ]
 
 
 _TK_KEYSYMS = {

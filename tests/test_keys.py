@@ -1,6 +1,6 @@
 import pytest
 
-from eyeokuri.keys import KEY_VK, KeyCombo, from_tk_event, parse_key, press_order
+from eyeokuri.keys import KEY_VK, KeyCombo, from_tk_event, parse_key
 from eyeokuri.outputs import MOUSE_OUTPUTS, OUTPUT_NAMES, check_output_name
 
 
@@ -37,10 +37,9 @@ def test_repeated_modifier_is_rejected():
         parse_key("ctrl+ctrl+s")
 
 
-def test_press_order_wraps_key_in_modifiers():
-    assert press_order(parse_key("ctrl+shift+z")) == [
-        ("ctrl", True), ("shift", True), ("z", True), ("z", False), ("shift", False), ("ctrl", False),
-    ]
+def test_combination_presses_modifiers_first():
+    assert parse_key("ctrl+shift+z").keys == ("ctrl", "shift", "z")
+    assert parse_key("enter").keys == ("enter",)
 
 
 def test_common_outputs_are_all_valid():
