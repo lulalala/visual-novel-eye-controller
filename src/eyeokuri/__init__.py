@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import sys
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 if sys.platform == "win32":
     # Media Foundation's hardware conversion makes opening the camera take
