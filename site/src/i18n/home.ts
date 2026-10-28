@@ -32,6 +32,7 @@ export interface HomeText {
   footer: string;
   footerReleases: string;
   footerCredits: string;
+  footerPrivacy: string;
 }
 
 export const home: Record<string, HomeText> = {
@@ -96,6 +97,7 @@ export const home: Record<string, HomeText> = {
     footer: "eyeokuri · open source · made for people who read a lot",
     footerReleases: "All releases",
     footerCredits: "Credits",
+    footerPrivacy: "Privacy",
   },
   "zh-tw": {
     lang: "zh-TW",
@@ -158,6 +160,7 @@ export const home: Record<string, HomeText> = {
     footer: "eyeokuri，獻給閱讀量爆表的你",
     footerReleases: "所有版本",
     footerCredits: "致謝",
+    footerPrivacy: "隱私權政策",
   },
   ja: {
     lang: "ja",
@@ -221,5 +224,6 @@ export const home: Record<string, HomeText> = {
     footer: "eyeokuri · オープンソース · 積みゲーを崩すあなたのために",
     footerReleases: "すべてのリリース",
     footerCredits: "クレジット",
+    footerPrivacy: "プライバシーポリシー",
   },
 };
