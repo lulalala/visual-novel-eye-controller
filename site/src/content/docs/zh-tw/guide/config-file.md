@@ -63,8 +63,8 @@ output = "enter"
 
 - 按鍵：`a`–`z`、`0`–`9`、`f1`–`f24`、`enter`、`space`、`tab`、`escape`、`backspace`、`delete`、`insert`、`home`、`end`、`page_up`、`page_down`、`up`、`down`、`left` 或 `right`。
 - 加上一個或多個修飾鍵（`ctrl`、`shift`、`alt`、`win`）的按鍵，用 `+` 連接，例如 `ctrl+s` 或 `shift+tab`。
-- 滑鼠輸入：`left_click`、`right_click` 或 `wheel_down`。
-- `app:toggle_pause`：暫停或繼續 eyeokuri。
+- 滑鼠輸入：`mouse_left_click`、`mouse_right_click` 或 `mouse_wheel_down`。
+- `app_pause_toggle`：暫停或繼續 eyeokuri。
 - `""`：不送出任何東西。
 
 ## 組合動作

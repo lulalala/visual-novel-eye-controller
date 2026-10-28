@@ -47,7 +47,7 @@ def test_common_outputs_are_all_valid():
     for name in OUTPUT_NAMES:
         assert name in MOUSE_OUTPUTS or name in KEY_VK
         check_output_name(name)
-    for bad in ("app:toggle_pause", ""):
+    for bad in ("app_pause_toggle", ""):
         with pytest.raises(ValueError):
             check_output_name(bad)
 

@@ -62,8 +62,8 @@ description: ジェスチャーのウィンドウで、しきい値、タイミ�
 
 - キー。たとえば `enter`、`space`、`up`、`f5`、`a` です。
 - 修飾キー（`ctrl`、`shift`、`alt`、`win`）付きのキー。`+` でつなぎます。たとえば `ctrl+s` です。
-- マウス入力：`left_click`、`right_click`、`wheel_down` のいずれかです。
-- `app:toggle_pause`：アイ送りの一時停止と再開を切り替えます。
+- マウス入力：`mouse_left_click`、`mouse_right_click`、`mouse_wheel_down` のいずれかです。
+- `app_pause_toggle`：アイ送りの一時停止と再開を切り替えます。
 - **（なし）**：何も送りません。ほかのジェスチャーがステップとして使うジェスチャーに使ってください。
 
 ## 保存またはキャンセルする

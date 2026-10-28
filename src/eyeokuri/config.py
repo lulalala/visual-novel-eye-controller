@@ -149,8 +149,8 @@ class GestureConfig:
     cooldown_s: float = 1.0
     # A key (a-z, 0-9, f1-f24, enter, space, tab, escape, page_down, up, ...),
     # optionally after modifiers (ctrl+s, shift+tab); or a mouse input:
-    # left_click, right_click, wheel_down. App-level outputs: app:toggle_pause. Empty: send nothing (for a gesture
-    # that is only a step of another gesture).
+    # mouse_left_click, mouse_right_click, mouse_wheel_down. App-level outputs: app_pause_toggle.
+    # Empty: send nothing (for a gesture that is only a step of another gesture).
     output: str = ""
 
 
@@ -193,7 +193,7 @@ def _default_gestures() -> dict[str, GestureConfig]:
         ),
         "head_shake": GestureConfig(
             steps=[StepConfig(signal="yaw", above_deg=15.0), StepConfig(signal="yaw", below_deg=-15.0)],
-            any_order=True, within_s=1.5, cooldown_s=1.5, output="app:toggle_pause",
+            any_order=True, within_s=1.5, cooldown_s=1.5, output="app_pause_toggle",
         ),
         "nod_up": GestureConfig(
             enabled=False,

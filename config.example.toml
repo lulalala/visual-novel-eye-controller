@@ -42,8 +42,8 @@ warmup_s = 2.0
 # limit), cooldown_s and output.
 # Outputs: a key (a-z, 0-9, f1-f24, enter, space, tab, escape, backspace, delete, insert,
 # home, end, page_up, page_down, up, down, left, right), optionally after modifiers
-# ctrl, shift, alt or win (ctrl+s, shift+tab); left_click, right_click, wheel_down;
-# app:toggle_pause; or "" to send nothing.
+# ctrl, shift, alt or win (ctrl+s, shift+tab); mouse_left_click, mouse_right_click,
+# mouse_wheel_down; app_pause_toggle; or "" to send nothing.
 
 [gestures.blink]
 # Close your eyes, then open them again. 0.1 lets natural blinks advance;
@@ -100,7 +100,7 @@ steps = [
 any_order = true
 within_s = 1.5
 cooldown_s = 1.5
-output = "app:toggle_pause"
+output = "app_pause_toggle"
 
 [gestures.nod_up]
 # Tilt past 12°, then come back within 8° of center within 0.8 s

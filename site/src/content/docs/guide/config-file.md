@@ -63,8 +63,8 @@ By default, a blink counts only when your head is within 20° of your usual pose
 
 - A key: `a`–`z`, `0`–`9`, `f1`–`f24`, `enter`, `space`, `tab`, `escape`, `backspace`, `delete`, `insert`, `home`, `end`, `page_up`, `page_down`, `up`, `down`, `left` or `right`.
 - A key after one or more modifiers (`ctrl`, `shift`, `alt`, `win`), joined with `+`, for example `ctrl+s` or `shift+tab`.
-- A mouse input: `left_click`, `right_click` or `wheel_down`.
-- `app:toggle_pause`, which pauses or resumes eyeokuri.
+- A mouse input: `mouse_left_click`, `mouse_right_click` or `mouse_wheel_down`.
+- `app_pause_toggle`, which pauses or resumes eyeokuri.
 - `""`, which sends nothing.
 
 ## Combine gestures

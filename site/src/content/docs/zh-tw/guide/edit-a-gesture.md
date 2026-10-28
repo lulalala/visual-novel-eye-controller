@@ -62,8 +62,8 @@ description: 在動作視窗中變更動作的門檻、時間、頭部範圍和�
 
 - 一個按鍵，例如 `enter`、`space`、`up`、`f5` 或 `a`。
 - 加上修飾鍵（`ctrl`、`shift`、`alt`、`win`）的按鍵，用 `+` 連接，例如 `ctrl+s`。
-- 滑鼠輸入：`left_click`、`right_click` 或 `wheel_down`。
-- `app:toggle_pause`，用來暫停或繼續 eyeokuri。
+- 滑鼠輸入：`mouse_left_click`、`mouse_right_click` 或 `mouse_wheel_down`。
+- `app_pause_toggle`，用來暫停或繼續 eyeokuri。
 - `(none)`，什麼都不送出。給被其他動作當成步驟的動作使用。
 
 ## 儲存或取消

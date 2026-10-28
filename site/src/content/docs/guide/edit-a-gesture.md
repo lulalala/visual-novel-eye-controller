@@ -62,8 +62,8 @@ By default, a blink counts only when your head is within 20° of your usual pose
 
 - A key, such as `enter`, `space`, `up`, `f5` or `a`.
 - A key with modifiers (`ctrl`, `shift`, `alt`, `win`), joined with `+`, such as `ctrl+s`.
-- A mouse input: `left_click`, `right_click` or `wheel_down`.
-- `app:toggle_pause`, which pauses or resumes eyeokuri.
+- A mouse input: `mouse_left_click`, `mouse_right_click` or `mouse_wheel_down`.
+- `app_pause_toggle`, which pauses or resumes eyeokuri.
 - `(none)`, which sends nothing. Use it for a gesture that other gestures use as a step.
 
 ## Save or cancel

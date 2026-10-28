@@ -16,7 +16,7 @@ def test_defaults():
         "blink": "enter",
         "wink_left": "",
         "wink_right": "",
-        "head_shake": "app:toggle_pause",
+        "head_shake": "app_pause_toggle",
         "nod_up": "up",
         "nod_down": "down",
     }
@@ -123,9 +123,17 @@ def test_blink_key_flag_rejects_unknown_key(capsys):
     assert "unknown key 'zz'" in capsys.readouterr().err
 
 
-def test_invalid_app_output_is_rejected():
-    with pytest.raises(ValueError, match="gestures.blink.output"):
-        config_from("--set", "gestures.blink.output=app:notacommand")
+def test_app_output_is_accepted():
+    config = config_from("--set", "gestures.blink.output=app_pause_toggle")
+    assert config.gestures["blink"].output == "app_pause_toggle"
+
+
+@pytest.mark.parametrize("old", ["app:toggle_pause", "left_click", "right_click", "wheel_down"])
+def test_old_output_name_is_rejected_with_the_new_names(old):
+    with pytest.raises(ValueError, match="gestures.blink.output") as e:
+        config_from("--set", f"gestures.blink.output={old}")
+    assert "mouse_left_click" in str(e.value)
+    assert "app_pause_toggle" in str(e.value)
 
 
 def test_invalid_gesture_is_rejected_before_the_camera_opens():

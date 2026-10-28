@@ -63,8 +63,8 @@ output = "enter"
 
 - キー：`a`～`z`、`0`～`9`、`f1`～`f24`、`enter`、`space`、`tab`、`escape`、`backspace`、`delete`、`insert`、`home`、`end`、`page_up`、`page_down`、`up`、`down`、`left`、`right`。
 - 1 つ以上の修飾キー（`ctrl`、`shift`、`alt`、`win`）と `+` でつないだキー。たとえば `ctrl+s` や `shift+tab` です。
-- マウス入力：`left_click`、`right_click`、`wheel_down`。
-- `app:toggle_pause`：アイ送りを一時停止または再開します。
+- マウス入力：`mouse_left_click`、`mouse_right_click`、`mouse_wheel_down`。
+- `app_pause_toggle`：アイ送りを一時停止または再開します。
 - `""`：何も送りません。
 
 ## ジェスチャーを組み合わせる

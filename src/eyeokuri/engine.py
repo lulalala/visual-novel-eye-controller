@@ -10,7 +10,7 @@ from eyeokuri.eyes import EyeStateTracker, Observation
 from eyeokuri.feedback import play_sound
 from eyeokuri.head import HeadTracker
 from eyeokuri.outputs import (
-    APP_OUTPUTS, APP_PREFIX, MOUSE_OUTPUTS, Output, check_output_name, create_output,
+    APP_OUTPUTS, MOUSE_OUTPUTS, Output, check_output_name, create_output,
 )
 from eyeokuri.pause import PauseSwitch
 from eyeokuri.sources import Source
@@ -20,22 +20,15 @@ from eyeokuri.triggers import Trigger, TriggerEvent, create_triggers, supported_
 def validate_outputs(config: Config) -> None:
     for name, gesture in config.gestures.items():
         output = gesture.output
-        if output == "":
+        if output == "" or output in APP_OUTPUTS:
             continue
-        if output.startswith(APP_PREFIX):
-            if output not in APP_OUTPUTS:
-                raise ValueError(
-                    f"gestures.{name}.output: unknown app output {output!r}; "
-                    f"choose from {', '.join(sorted(APP_OUTPUTS))}"
-                )
-        else:
-            try:
-                check_output_name(output)
-            except ValueError as e:
-                raise ValueError(
-                    f"gestures.{name}.output: {e}; mouse outputs are {', '.join(MOUSE_OUTPUTS)}, "
-                    "and \"\" sends nothing"
-                ) from None
+        try:
+            check_output_name(output)
+        except ValueError as e:
+            raise ValueError(
+                f"gestures.{name}.output: {e}; mouse outputs are {', '.join(MOUSE_OUTPUTS)}, "
+                f"app outputs are {', '.join(sorted(APP_OUTPUTS))}, and \"\" sends nothing"
+            ) from None
 
 
 def check_config(config: Config) -> None:
@@ -89,7 +82,7 @@ class Engine:
         # set_config() leaves it alone.
         self.pause = PauseSwitch(self._on_pause_change, paused=config.app.paused)
         # What each of outputs.APP_OUTPUTS does.
-        self.app_actions: dict[str, Callable[[], None]] = {"app:toggle_pause": self.pause.toggle}
+        self.app_actions: dict[str, Callable[[], None]] = {"app_pause_toggle": self.pause.toggle}
         self.fps = 0.0
         self.last_fire_at = -1e9
         self._prev: float | None = None
@@ -193,7 +186,7 @@ class Engine:
     def _handle(self, event: TriggerEvent) -> bool:
         """Acts on a gesture that fired. True if it sent keyboard or mouse input."""
         mapped = self._outputs.get(event.action)
-        if not mapped or mapped.startswith(APP_PREFIX):
+        if not mapped or mapped in APP_OUTPUTS:
             # No output: only a step of other gestures. Otherwise an app-level output.
             self._log(f"{event.trigger}: {event.detail}")
             if mapped:

@@ -13,13 +13,15 @@ from typing import Callable, Protocol
 
 from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, KeyCombo, parse_key, press_order
 
-MOUSE_OUTPUTS = ("left_click", "right_click", "wheel_down")
-# Outputs the app handles itself instead of sending input.
-APP_PREFIX = "app:"
-APP_OUTPUTS = frozenset({"app:toggle_pause"})
+MOUSE_OUTPUTS = ("mouse_left_click", "mouse_right_click", "mouse_wheel_down")
+# Outputs the app handles itself instead of sending input. Like the mouse
+# outputs, their names have a prefix so they can't clash with key names.
+APP_OUTPUTS = frozenset({"app_pause_toggle"})
 # Common outputs, offered in the gesture window. Any key name or combination
 # that parse_key accepts (a, f5, ctrl+s, ...) works too.
-OUTPUT_NAMES = ("enter", "space", "left_click", "right_click", "wheel_down", "up", "down", "page_down", "escape")
+OUTPUT_NAMES = (
+    "enter", "space", "mouse_left_click", "mouse_right_click", "mouse_wheel_down", "up", "down", "page_down", "escape",
+)
 
 # Some engines poll key state once per frame, so hold keys down briefly.
 _PRESS_DURATION_S = 0.03
@@ -92,15 +94,15 @@ class Win32Output:
         self._scans: dict[str, int] = {}
 
     def send(self, name: str) -> None:
-        if name == "left_click":
+        if name == "mouse_left_click":
             self._mouse(0x0002)  # MOUSEEVENTF_LEFTDOWN
             time.sleep(_PRESS_DURATION_S)
             self._mouse(0x0004)  # MOUSEEVENTF_LEFTUP
-        elif name == "right_click":
+        elif name == "mouse_right_click":
             self._mouse(0x0008)  # MOUSEEVENTF_RIGHTDOWN
             time.sleep(_PRESS_DURATION_S)
             self._mouse(0x0010)  # MOUSEEVENTF_RIGHTUP
-        elif name == "wheel_down":
+        elif name == "mouse_wheel_down":
             # MOUSEEVENTF_WHEEL; one notch = WHEEL_DELTA (120), negative = towards user.
             self._mouse(0x0800, data=-120 & 0xFFFFFFFF)
         else:
@@ -147,7 +149,7 @@ class PynputOutput:
         self._keyboard_module = keyboard
         self._keyboard = keyboard.Controller()
         self._mouse = mouse.Controller()
-        self._buttons = {"left_click": mouse.Button.left, "right_click": mouse.Button.right}
+        self._buttons = {"mouse_left_click": mouse.Button.left, "mouse_right_click": mouse.Button.right}
 
     def send(self, name: str) -> None:
         if name in self._buttons:
@@ -155,7 +157,7 @@ class PynputOutput:
             self._mouse.press(button)
             time.sleep(_PRESS_DURATION_S)
             self._mouse.release(button)
-        elif name == "wheel_down":
+        elif name == "mouse_wheel_down":
             self._mouse.scroll(0, -1)
         else:
             self._send_keys(parse_key(name))
