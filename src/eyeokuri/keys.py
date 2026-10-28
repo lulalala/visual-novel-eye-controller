@@ -90,6 +90,13 @@ _TK_MODIFIER_KEYSYMS = frozenset({
     "Shift_L", "Shift_R", "Control_L", "Control_R", "Alt_L", "Alt_R", "Meta_L", "Meta_R",
     "Super_L", "Super_R", "Win_L", "Win_R", "Option_L", "Option_R", "Command", "Caps_Lock",
 })
+# The modifier keysyms that name one key in MODIFIERS. Meta means alt on some
+# systems and Command on others, so it has no entry.
+_TK_LONE_MODIFIERS = {
+    "Shift_L": "shift", "Shift_R": "shift", "Control_L": "ctrl", "Control_R": "ctrl",
+    "Alt_L": "alt", "Alt_R": "alt", "Option_L": "alt", "Option_R": "alt",
+    "Win_L": "win", "Win_R": "win", "Super_L": "win", "Super_R": "win", "Command": "win",
+}
 # Tk's event.state bits for each modifier differ by platform.
 _TK_STATE_MASKS = {
     "win32": {"ctrl": 0x4, "shift": 0x1, "alt": 0x20000},
@@ -113,3 +120,9 @@ def from_tk_event(keysym: str, state: int, platform: str) -> str | None:
     masks = _TK_STATE_MASKS.get(platform, _TK_STATE_MASKS["other"])
     modifiers = tuple(m for m in MODIFIERS if m in masks and state & masks[m])
     return str(KeyCombo(modifiers, key))
+
+
+def lone_modifier_from_tk(keysym: str) -> str | None:
+    """The key name for a modifier keysym, so pressing and releasing ctrl on its own can
+    be captured as ctrl; None for other keys. from_tk_event waits for the rest of a combination."""
+    return _TK_LONE_MODIFIERS.get(keysym)

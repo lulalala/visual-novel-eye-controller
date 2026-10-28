@@ -18,7 +18,7 @@ from eyeokuri.gui.live_edit import LiveEdit
 from eyeokuri.gui.plot import PlotEditor
 from eyeokuri.gui.tkutil import id_box, place_over
 from eyeokuri.i18n import _
-from eyeokuri.keys import from_tk_event
+from eyeokuri.keys import from_tk_event, lone_modifier_from_tk
 from eyeokuri.labels import show_gesture, show_signal
 from eyeokuri.outputs import APP_OUTPUTS, OUTPUT_NAMES
 from eyeokuri.triggers import Replay, replay
@@ -184,11 +184,24 @@ class GestureWindow:
         # Keys go to the focused button; "break" stops Space or Tab from acting on it.
         self.capture_button.focus_set()
         self.capture_button.bind("<KeyPress>", self._on_capture_key)
+        self.capture_button.bind("<KeyRelease>", self._on_capture_release)
         self.capture_button.bind("<FocusOut>", lambda _e: self._stop_capture())
+        # The modifier pressed last, while no other key has been pressed after it.
+        self._lone_modifier: str | None = None
 
     def _on_capture_key(self, event: tk.Event) -> str:
         name = from_tk_event(event.keysym, event.state, sys.platform)
         if name is not None:
+            self._stop_capture()
+            self.output_var.set(name)
+        else:
+            self._lone_modifier = lone_modifier_from_tk(event.keysym)
+        return "break"
+
+    def _on_capture_release(self, event: tk.Event) -> str:
+        # A modifier released with no key pressed after it is the key itself (ctrl to skip text).
+        name = lone_modifier_from_tk(event.keysym)
+        if name is not None and name == self._lone_modifier:
             self._stop_capture()
             self.output_var.set(name)
         return "break"
@@ -198,6 +211,7 @@ class GestureWindow:
             return
         self._capturing = False
         self.capture_button.unbind("<KeyPress>")
+        self.capture_button.unbind("<KeyRelease>")
         self.capture_button.unbind("<FocusOut>")
         self.capture_button.configure(text=_("Press a key…"))
 

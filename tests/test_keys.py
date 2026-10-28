@@ -1,6 +1,6 @@
 import pytest
 
-from eyeokuri.keys import KEY_VK, KeyCombo, from_tk_event, parse_key
+from eyeokuri.keys import KEY_VK, KeyCombo, from_tk_event, lone_modifier_from_tk, parse_key
 from eyeokuri.outputs import MOUSE_OUTPUTS, OUTPUT_NAMES, check_output_name
 
 
@@ -87,3 +87,15 @@ def test_tk_modifier_bits_differ_by_platform():
 def test_tk_lone_modifier_or_unnamed_key_gives_none():
     assert from_tk_event("Control_L", 0x4, "win32") is None
     assert from_tk_event("exclam", 0x1, "win32") is None
+
+
+def test_tk_modifier_released_alone_is_its_own_key():
+    assert lone_modifier_from_tk("Control_L") == "ctrl"
+    assert lone_modifier_from_tk("Control_R") == "ctrl"
+    assert lone_modifier_from_tk("Shift_R") == "shift"
+    assert lone_modifier_from_tk("Alt_L") == "alt"
+    assert lone_modifier_from_tk("Win_L") == "win"
+    for keysym in ("Caps_Lock", "Meta_L", "s", "Return"):
+        assert lone_modifier_from_tk(keysym) is None
+    for name in set(map(lone_modifier_from_tk, ("Control_L", "Shift_L", "Alt_L", "Win_L", "Command"))):
+        parse_key(name)
