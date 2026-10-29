@@ -8,6 +8,7 @@ DirectInput/raw-input games that ignore virtual-key-only events. Elsewhere
 from __future__ import annotations
 
 import sys
+import threading
 import time
 from typing import Callable, Protocol
 
@@ -30,6 +31,10 @@ OUTPUT_NAMES = (
 
 # Some engines poll key state once per frame, so hold keys down briefly.
 _PRESS_DURATION_S = 0.03
+# A held key repeats its key-down like a keyboard's auto-repeat (Windows'
+# shortest delay, fastest rate): some games skip text once per key-down.
+_REPEAT_DELAY_S = 0.25
+_REPEAT_INTERVAL_S = 0.033
 # MOUSEEVENTF_ (down, up) flags for each mouse button.
 _WIN32_BUTTONS = {"mouse_left_click": (0x0002, 0x0004), "mouse_right_click": (0x0008, 0x0010)}
 
@@ -43,7 +48,8 @@ class Output(Protocol):
         """Presses and releases a key, combination or mouse output."""
 
     def down(self, name: str) -> None:
-        """Presses a key, combination or mouse button and leaves it down."""
+        """Presses a key, combination or mouse button and leaves it down. A
+        key repeats its key-down until up(), like a key held on a keyboard."""
 
     def up(self, name: str) -> None:
         """Releases what down() pressed, modifiers last."""
@@ -58,6 +64,29 @@ def check_output_name(name: str) -> None:
 def pressed_by(name: str) -> frozenset[str]:
     """The keys, or the mouse output, that a valid output name presses."""
     return frozenset({name}) if name in MOUSE_OUTPUTS else frozenset(parse_key(name).keys)
+
+
+class KeyRepeater:
+    """Calls ``press`` after ``delay_s``, then every ``interval_s`` until stop(),
+    on its own thread so the rate doesn't depend on the camera's frame rate."""
+
+    def __init__(self, press: Callable[[], None], delay_s: float = _REPEAT_DELAY_S,
+                 interval_s: float = _REPEAT_INTERVAL_S) -> None:
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, args=(press, delay_s, interval_s), daemon=True)
+        self._thread.start()
+
+    def _run(self, press: Callable[[], None], delay_s: float, interval_s: float) -> None:
+        if self._stop.wait(delay_s):
+            return
+        while not self._stop.is_set():
+            press()
+            self._stop.wait(interval_s)
+
+    def stop(self) -> None:
+        """Returns once no more presses can come, so the key-up after it is the last event."""
+        self._stop.set()
+        self._thread.join()
 
 
 class Win32Output:
@@ -111,24 +140,38 @@ class Win32Output:
         self._user32.MapVirtualKeyW.argtypes = (wintypes.UINT, wintypes.UINT)
         self._user32.MapVirtualKeyW.restype = wintypes.UINT
         self._scans: dict[str, int] = {}
+        self._repeaters: dict[str, KeyRepeater] = {}
 
     def send(self, name: str) -> None:
         if name == "mouse_wheel_down":
             # MOUSEEVENTF_WHEEL; one notch = WHEEL_DELTA (120), negative = towards user.
             self._mouse(0x0800, data=-120 & 0xFFFFFFFF)
             return
-        self.down(name)
+        self._press(name)
         time.sleep(_PRESS_DURATION_S)
-        self.up(name)
+        self._release(name)
 
     def down(self, name: str) -> None:
+        self._press(name)
+        if name not in _WIN32_BUTTONS:
+            # Like a keyboard, only the last key of a combination repeats.
+            key = parse_key(name).key
+            self._repeaters[name] = KeyRepeater(lambda: self._key(key, up=False))
+
+    def up(self, name: str) -> None:
+        repeater = self._repeaters.pop(name, None)
+        if repeater is not None:
+            repeater.stop()
+        self._release(name)
+
+    def _press(self, name: str) -> None:
         if name in _WIN32_BUTTONS:
             self._mouse(_WIN32_BUTTONS[name][0])
         else:
             for key in parse_key(name).keys:
                 self._key(key, up=False)
 
-    def up(self, name: str) -> None:
+    def _release(self, name: str) -> None:
         if name in _WIN32_BUTTONS:
             self._mouse(_WIN32_BUTTONS[name][1])
         else:
@@ -173,23 +216,38 @@ class PynputOutput:
         self._keyboard = keyboard.Controller()
         self._mouse = mouse.Controller()
         self._buttons = {"mouse_left_click": mouse.Button.left, "mouse_right_click": mouse.Button.right}
+        self._repeaters: dict[str, KeyRepeater] = {}
 
     def send(self, name: str) -> None:
         if name == "mouse_wheel_down":
             self._mouse.scroll(0, -1)
             return
-        self.down(name)
+        self._press(name)
         time.sleep(_PRESS_DURATION_S)
-        self.up(name)
+        self._release(name)
 
     def down(self, name: str) -> None:
+        self._press(name)
+        keys = [] if name in self._buttons else self._keys(name, report=False)
+        if keys:
+            # Like a keyboard, only the last key of a combination repeats.
+            last = keys[-1]
+            self._repeaters[name] = KeyRepeater(lambda: self._keyboard.press(last))
+
+    def up(self, name: str) -> None:
+        repeater = self._repeaters.pop(name, None)
+        if repeater is not None:
+            repeater.stop()
+        self._release(name)
+
+    def _press(self, name: str) -> None:
         if name in self._buttons:
             self._mouse.press(self._buttons[name])
         else:
             for key in self._keys(name, report=True):
                 self._keyboard.press(key)
 
-    def up(self, name: str) -> None:
+    def _release(self, name: str) -> None:
         if name in self._buttons:
             self._mouse.release(self._buttons[name])
         else:
