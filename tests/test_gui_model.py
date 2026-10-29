@@ -27,7 +27,7 @@ def test_gesture_steps_survive_the_editor_round_trip():
 
 
 def test_output_mode_survives_the_editor_round_trip():
-    gesture = GestureConfig(steps=[StepConfig(signal="eyes", below_ratio=0.5)], output="ctrl", output_mode="toggle")
+    gesture = GestureConfig(steps=[StepConfig(signal="eyes", below_ratio=0.5)], output="ctrl", output_mode="while")
     assert gesture_config(gesture_model(gesture)) == gesture
 
 

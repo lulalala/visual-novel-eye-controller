@@ -178,17 +178,17 @@ def test_dump_reads_back_as_the_same_config(tmp_path):
 
 
 def test_output_mode_can_be_set_and_survives_a_dump(tmp_path):
-    config = config_from("--set", "gestures.blink.output=ctrl", "--set", "gestures.blink.output_mode=toggle",
+    config = config_from("--set", "gestures.blink.output=ctrl", "--set", "gestures.blink.output_mode=while",
                          "--set", "gestures.tilt_right.enabled=false")
-    assert config.gestures["blink"].output_mode == "toggle"
+    assert config.gestures["blink"].output_mode == "while"
     path = tmp_path / "saved.toml"
     path.write_text(dump_config(config))
     assert load_config(path) == config
 
 
 def test_output_mode_is_checked_before_the_camera_opens():
-    with pytest.raises(ValueError, match="gestures.blink.output_mode toggle needs a key"):
-        config_from("--set", "gestures.blink.output=mouse_wheel_down", "--set", "gestures.blink.output_mode=toggle")
+    with pytest.raises(ValueError, match="gestures.blink.output_mode while needs a key"):
+        config_from("--set", "gestures.blink.output=mouse_wheel_down", "--set", "gestures.blink.output_mode=while")
 
 
 def test_dump_writes_only_what_changed_in_a_built_in_gesture():

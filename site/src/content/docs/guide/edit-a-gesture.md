@@ -72,10 +72,9 @@ By default, a blink counts only when your head is within 20° of your usual pose
 Some games skip text while you hold `ctrl`. The list next to **Press a key…** sets how the gesture sends its output:
 
 - **Press once (press)**: eyeokuri presses and releases the output each time the gesture fires.
-- **Hold until it fires again (toggle)**: when the gesture fires, eyeokuri presses the output and keeps it down. The log says `blink: ... -> ctrl held`. When it fires again, eyeokuri lets go (`-> ctrl released`).
-- **Hold while it lasts (while)**: eyeokuri presses the output when the gesture fires and lets go when the gesture ends. The gesture ends when the signal leaves the box of the step that completed it, or, if that step is another gesture, when that gesture ends. Turning your head outside the gesture's head limits also ends it.
+- **Hold while it lasts (while)**: eyeokuri presses the output when the gesture fires and lets go when the gesture ends. The log says `look: ... -> ctrl held`, then `-> ctrl released`. The gesture ends when the signal leaves the box of the step that completed it, or, if that step is another gesture, when that gesture ends. Turning your head outside the gesture's head limits also ends it.
 
-For example, to skip text while you keep your left eye closed, give a gesture one step: **Wink**, **Above** 0.25, **Hold** 0.3 s. Set its output to `ctrl` and choose **Hold while it lasts**. Ctrl goes down once your left eye has been closed for 0.3 s and comes up when you open it. The built-in left wink fires when you open your eye again, so it suits **Hold until it fires again** instead. The built-in right tilt (`tilt_right`) holds `ctrl` this way while your head is tilted toward your right shoulder.
+For example, to skip text while you keep your left eye closed, give a gesture one step: **Wink**, **Above** 0.25, **Hold** 0.3 s. Set its output to `ctrl` and choose **Hold while it lasts**. Ctrl goes down once your left eye has been closed for 0.3 s and comes up when you open it. The built-in right tilt (`tilt_right`) holds `ctrl` this way while your head is tilted toward your right shoulder.
 
 eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
 

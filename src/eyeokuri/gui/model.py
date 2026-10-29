@@ -52,7 +52,7 @@ SIGNAL_PLOTS = {
 }
 GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 # A gesture that sent its output: Engine logs "<name>: <detail> -> <output>",
-# with " held" or " released" after it for a toggle gesture.
+# with " held" or " released" after it for a while gesture.
 _FIRED = re.compile(r" -> [^\s()]+( held| released)?$")
 
 

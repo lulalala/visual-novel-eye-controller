@@ -48,7 +48,7 @@ output = "enter"
 | `cooldown_s` | 動作觸發之後，在這段時間內不能再次觸發。 |
 | `enabled` | 開啟或關閉動作。 |
 | `output` | 動作送出什麼。 |
-| `output_mode` | `press`（預設）送出一次輸出；`toggle` 會按住輸出，直到動作再次觸發；`while` 會按住輸出，直到動作結束。 |
+| `output_mode` | `press`（預設）送出一次輸出；`while` 會按住輸出，直到動作結束。 |
 
 這些名稱也會出現在[動作視窗](../edit-a-gesture/#變更範圍)的欄和列。
 
@@ -68,7 +68,7 @@ output = "enter"
 - `app_pause_toggle`：暫停或繼續 eyeokuri。
 - `""`：不送出任何東西。
 
-`output_mode` 決定輸出怎麼送出：`press`（預設）送出一次，`toggle` 會按住直到動作再次觸發，`while` 會按住直到動作結束。每一種的行為，以及 eyeokuri 什麼時候放開，請見[按住按鍵](../edit-a-gesture/#按住按鍵)。下面這個動作會在你閉著左眼時按住 `ctrl`（許多遊戲用它跳過文字）：
+`output_mode` 決定輸出怎麼送出：`press`（預設）送出一次，`while` 會按住直到動作結束。每一種的行為，以及 eyeokuri 什麼時候放開，請見[按住按鍵](../edit-a-gesture/#按住按鍵)。下面這個動作會在你閉著左眼時按住 `ctrl`（許多遊戲用它跳過文字）：
 
 ```toml
 [gestures.skip]

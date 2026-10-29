@@ -154,10 +154,9 @@ class GestureConfig:
     # mouse_left_click, mouse_right_click, mouse_wheel_down. App-level outputs: app_pause_toggle.
     # Empty: send nothing (for a gesture that is only a step of another gesture).
     output: str = ""
-    # press: send the output once. toggle: hold it down when the gesture fires,
-    # and let go when it fires again (some games skip text while ctrl is held).
-    # while: hold it down when the gesture fires, and let go when the signal
-    # leaves the box of the step that completed it.
+    # press: send the output once. while: hold it down when the gesture fires,
+    # and let go when the signal leaves the box of the step that completed it
+    # (some games skip text while ctrl is held).
     output_mode: str = "press"
 
 

@@ -27,7 +27,6 @@ _SIGNALS = {
 # Output mode ID -> label; every one in outputs.OUTPUT_MODES needs an entry.
 _OUTPUT_MODES = {
     "press": N_("Press once"),
-    "toggle": N_("Hold until it fires again"),
     "while": N_("Hold while it lasts"),
 }
 

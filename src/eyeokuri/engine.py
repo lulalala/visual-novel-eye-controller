@@ -69,10 +69,9 @@ class Engine:
     but gestures neither match nor send anything. Unlike pause, no gesture
     can end it.
 
-    A held output (output_mode = "toggle" or "while") is down for the whole
-    system, not just the game, so the engine lets go of it on pause, suspend,
-    new settings, face loss and close() as well as when the gesture fires
-    again (toggle) or ends (while).
+    A held output (output_mode = "while") is down for the whole system, not
+    just the game, so the engine lets go of it on pause, suspend, new
+    settings, face loss and close() as well as when the gesture ends.
     """
 
     def __init__(
@@ -93,7 +92,7 @@ class Engine:
             source = OpenCVSource(config.camera, log)
         self.source = source
         self._output = output
-        # The output each toggle or while gesture holds down, in the order they went
+        # The output each while gesture holds down, in the order they went
         # down. Gestures may hold the same key; the Output keeps it down until all let go.
         self._held: dict[str, str] = {}
         # Only read here: afterwards the engine owns the paused state, and
@@ -225,7 +224,7 @@ class Engine:
         if event.ended:
             # Only a while gesture acts on its end. It's already up if a pause,
             # suspend or lost face let go of it first.
-            if mode == "while" and event.action in self._held:
+            if event.action in self._held:
                 assert self._output is not None
                 del self._held[event.action]
                 self._output.up(mapped)
@@ -245,17 +244,13 @@ class Engine:
         if mode == "press":
             self._output.send(mapped)
             self._on_fire(event, mapped)
-        elif event.action not in self._held:
+        elif event.action in self._held:
+            # A while gesture that fires again before it ended keeps holding.
+            return False
+        else:
             self._output.down(mapped)
             self._held[event.action] = mapped
             self._on_fire(event, f"{mapped} held")
-        elif mode == "toggle":
-            del self._held[event.action]
-            self._output.up(mapped)
-            self._on_fire(event, f"{mapped} released")
-        else:
-            # A while gesture that fires again before it ended keeps holding.
-            return False
         return True
 
     def close(self) -> None:
