@@ -20,11 +20,12 @@ def test_every_built_in_gesture_and_signal_has_a_label():
 
 def test_english_label_leaves_out_an_id_it_already_spells():
     assert show_gesture("nod_down") == "Nod down"
-    assert show_signal("eyes") == "Eyes"
+    assert show_signal("wink") == "Wink"
 
 
 def test_english_label_shows_an_id_it_doesnt_spell():
     assert show_gesture("wink_left") == "Left wink (wink_left)"
+    assert show_signal("eyes") == "Eye openness (eyes)"
     assert show_signal("yaw") == "Head turn (yaw)"
 
 

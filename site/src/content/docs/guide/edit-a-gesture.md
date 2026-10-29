@@ -13,7 +13,7 @@ The gear button (⚙) on a gesture's row opens its window. You change the gestur
 
 A gesture is a list of steps. Each step is a box on a plot of one signal over time, and a step counts the moment the signal enters its box. The signals are:
 
-- **Eyes** (`eyes`): how open your eyes are. 1.0 is your usual open level.
+- **Eye openness** (`eyes`): how open your eyelids are. 1.0 is your usual open level.
 - **Wink** (`wink`): how open your right eye is minus your left, each relative to its usual level. It stays near 0 with both eyes open or both closed. Closing only your left eye takes it toward +1, and closing only your right eye toward −1.
 - **Head tilt** (`pitch`): how far your head tilts up or down, in degrees. Positive is down.
 - **Head turn** (`yaw`): how far your head turns to the side, in degrees. Positive is your left.

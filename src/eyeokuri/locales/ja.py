@@ -125,7 +125,7 @@ CATALOG: dict[str, str] = {
     "Head shake": "首を振る",
     "Nod up": "上にうなずく",
     "Nod down": "下にうなずく",
-    "Eyes": "目",
+    "Eye openness": "目の開き具合",
     "Wink": "ウィンク",
     "Head tilt": "頭の上下",
     "Head turn": "頭の左右",

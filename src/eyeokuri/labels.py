@@ -16,7 +16,7 @@ _GESTURES = {
 }
 # Signal ID -> label; every one in config.SIGNALS needs an entry.
 _SIGNALS = {
-    "eyes": N_("Eyes"),
+    "eyes": N_("Eye openness"),
     "wink": N_("Wink"),
     "pitch": N_("Head tilt"),
     "yaw": N_("Head turn"),
