@@ -79,7 +79,7 @@ For example, to skip text while you keep your left eye closed, give a gesture on
 
 eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
 
-You can hold a key, a key combination, `mouse_left_click` or `mouse_right_click`. A held key is down for every app, not only the game: if you switch windows while it's held, what you type there gets `ctrl` too. Another gesture's output can't use a key that this gesture holds. If you end eyeokuri from Task Manager while a key is held, press that key once to release it.
+You can hold a key, a key combination, `mouse_left_click` or `mouse_right_click`. A held key is down for every app, not only the game: if you switch windows while it's held, what you type there gets `ctrl` too. Several gestures can use the same key: if two gestures hold `ctrl`, it stays down until both have let go. If you end eyeokuri from Task Manager while a key is held, press that key once to release it.
 
 ## Save or cancel
 

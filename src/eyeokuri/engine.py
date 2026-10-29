@@ -10,7 +10,7 @@ from eyeokuri.eyes import EyeStateTracker, Observation
 from eyeokuri.feedback import play_sound
 from eyeokuri.head import HeadTracker
 from eyeokuri.outputs import (
-    APP_OUTPUTS, MOUSE_BUTTONS, MOUSE_OUTPUTS, OUTPUT_MODES, Output, check_output_name, create_output, pressed_by,
+    APP_OUTPUTS, MOUSE_BUTTONS, MOUSE_OUTPUTS, OUTPUT_MODES, Output, check_output_name, create_output,
 )
 from eyeokuri.pause import PauseSwitch
 from eyeokuri.sources import Source
@@ -35,29 +35,10 @@ def validate_outputs(config: Config) -> None:
                 f"gestures.{name}.output_mode {mode} needs a key, key combination, "
                 f"{' or '.join(MOUSE_BUTTONS)} as the output, not {output!r}"
             )
-    _check_held_outputs_are_not_shared(config)
 
 
 def _can_hold(output: str) -> bool:
     return output in MOUSE_BUTTONS or not (output == "" or output in APP_OUTPUTS or output in MOUSE_OUTPUTS)
-
-
-def _check_held_outputs_are_not_shared(config: Config) -> None:
-    """Letting go of a key that another output also uses would end that output's
-    press or hold early, so a held key belongs to one enabled gesture only."""
-    sending = {n: g for n, g in config.gestures.items()
-               if g.enabled and g.output != "" and g.output not in APP_OUTPUTS}
-    for name, gesture in sending.items():
-        if gesture.output_mode == "press":
-            continue
-        held = pressed_by(gesture.output)
-        for other, other_gesture in sending.items():
-            shared = held & pressed_by(other_gesture.output)
-            if other != name and shared:
-                raise ValueError(
-                    f"gestures.{name} holds {', '.join(sorted(shared))} down, so gestures.{other}.output "
-                    f"can't use it too ({other_gesture.output!r}); pick outputs without shared keys"
-                )
 
 
 def check_config(config: Config) -> None:
@@ -112,8 +93,9 @@ class Engine:
             source = OpenCVSource(config.camera, log)
         self.source = source
         self._output = output
-        # Outputs that toggle and while gestures hold down, in the order they went down.
-        self._held: list[str] = []
+        # The output each toggle or while gesture holds down, in the order they went
+        # down. Gestures may hold the same key; the Output keeps it down until all let go.
+        self._held: dict[str, str] = {}
         # Only read here: afterwards the engine owns the paused state, and
         # set_config() leaves it alone.
         self.pause = PauseSwitch(self._on_pause_change, paused=config.app.paused)
@@ -176,7 +158,7 @@ class Engine:
 
     def _release_held(self, reason: str) -> None:
         while self._held:
-            name = self._held.pop()
+            _, name = self._held.popitem()
             assert self._output is not None
             self._output.up(name)
             self._log(f"Released {name}: {reason}")
@@ -243,9 +225,9 @@ class Engine:
         if event.ended:
             # Only a while gesture acts on its end. It's already up if a pause,
             # suspend or lost face let go of it first.
-            if mode == "while" and mapped in self._held:
+            if mode == "while" and event.action in self._held:
                 assert self._output is not None
-                self._held.remove(mapped)
+                del self._held[event.action]
                 self._output.up(mapped)
                 self._log(f"{event.trigger}: {event.detail} -> {mapped} released")
             return False
@@ -263,12 +245,12 @@ class Engine:
         if mode == "press":
             self._output.send(mapped)
             self._on_fire(event, mapped)
-        elif mapped not in self._held:
+        elif event.action not in self._held:
             self._output.down(mapped)
-            self._held.append(mapped)
+            self._held[event.action] = mapped
             self._on_fire(event, f"{mapped} held")
         elif mode == "toggle":
-            self._held.remove(mapped)
+            del self._held[event.action]
             self._output.up(mapped)
             self._on_fire(event, f"{mapped} released")
         else:

@@ -363,27 +363,16 @@ def test_unknown_output_mode_is_rejected():
     {"output": "ctrl", "output_mode": "toggle"},
     {"output": "shift+ctrl", "output_mode": "toggle"},
 ])
-def test_a_held_key_cannot_be_part_of_another_output(other):
+def test_a_held_key_may_be_part_of_another_output(other):
     config = hold_on_blink(nod_up={"enabled": True, **other})
-    with pytest.raises(ValueError, match="gestures.blink holds ctrl down, so gestures.nod_up.output"):
-        make(calibrate(), config)
-
-
-def test_a_disabled_gesture_may_share_a_held_key():
-    # tilt_right holds ctrl by default; a gesture that never fires can't let go of it.
-    config = apply_overrides(Config(), {"gestures": {"nod_up": {"output": "ctrl+s"}}})
     make(calibrate(), config)
 
 
-def test_held_keys_may_differ_between_gestures():
-    config = hold_on_blink(nod_up={"output": "shift", "output_mode": "toggle"})
-    make(calibrate(), config)
+LOOK = {"steps": [{"signal": "yaw", "above_deg": 15.0}], "output": "ctrl", "output_mode": "while"}
 
 
 def hold_while_turned(**changes):
-    return apply_overrides(Config(), {"gestures": {"tilt_right": {"enabled": False}, "look": {
-        "steps": [{"signal": "yaw", "above_deg": 15.0}], "output": "ctrl", "output_mode": "while", **changes,
-    }}})
+    return apply_overrides(Config(), {"gestures": {"tilt_right": {"enabled": False}, "look": {**LOOK, **changes}}})
 
 
 def turn(frames=20):
@@ -417,6 +406,28 @@ def test_while_gesture_released_by_a_lost_face_is_not_released_twice():
     assert output.held == [("down", "ctrl"), ("up", "ctrl")]
     assert "Released ctrl: no face" in messages
     assert not any("ended" in m for m in messages)
+
+
+def test_gestures_holding_the_same_key_each_let_go_of_their_own_hold():
+    samples = calibrate() + blink() + turn() + blink()
+    engine, output, messages, _ = make(samples, hold_on_blink(look=LOOK))
+    run(engine, len(samples))
+    assert output.held == [("down", "ctrl"), ("down", "ctrl"), ("up", "ctrl"), ("up", "ctrl")]
+    assert [m.rsplit(" -> ", 1)[-1] for m in messages if m.startswith(("blink: ", "look: "))] == [
+        "ctrl held", "ctrl held", "ctrl released", "ctrl released",
+    ]
+    assert [m.split(":")[0] for m in messages if m.endswith(("ctrl held", "ctrl released"))] == [
+        "blink", "look", "look", "blink",
+    ]
+
+
+def test_stopping_lets_go_once_for_each_gesture_holding_a_key():
+    samples = calibrate() + blink() + [(0.3, 20.0)] * 5
+    engine, output, messages, _ = make(samples, hold_on_blink(look=LOOK))
+    run(engine, len(samples))
+    engine.close()
+    assert output.held == [("down", "ctrl"), ("down", "ctrl"), ("up", "ctrl"), ("up", "ctrl")]
+    assert messages.count("Released ctrl: stopping") == 2
 
 
 def test_ends_of_press_and_toggle_gestures_are_ignored():

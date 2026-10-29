@@ -1,7 +1,29 @@
 import threading
 import time
 
-from eyeokuri.outputs import KeyRepeater
+from eyeokuri.outputs import HeldKeys, KeyRepeater
+
+
+def test_shared_key_goes_down_with_the_first_output_and_up_with_the_last():
+    held = HeldKeys()
+    assert held.press(["ctrl"]) == ["ctrl"]
+    assert held.press(["ctrl"]) == []
+    assert held.release(["ctrl"]) == []
+    assert held.release(["ctrl"]) == ["ctrl"]
+
+
+def test_combination_presses_and_releases_only_the_keys_no_one_else_holds():
+    held = HeldKeys()
+    held.press(["ctrl"])
+    assert held.press(["ctrl", "s"]) == ["s"]
+    assert held.release(["s", "ctrl"]) == ["s"]
+    assert held.release(["ctrl"]) == ["ctrl"]
+
+
+def test_releasing_a_key_that_is_up_sends_nothing():
+    held = HeldKeys()
+    assert held.release(["enter"]) == []
+    assert held.press(["enter"]) == ["enter"]
 
 
 def counting():

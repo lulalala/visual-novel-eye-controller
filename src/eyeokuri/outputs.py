@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from typing import Callable, Protocol
+from typing import Callable, Protocol, Sequence
 
 from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, parse_key
 
@@ -49,10 +49,12 @@ class Output(Protocol):
 
     def down(self, name: str) -> None:
         """Presses a key, combination or mouse button and leaves it down. A
-        key repeats its key-down until up(), like a key held on a keyboard."""
+        key repeats its key-down until up(), like a key held on a keyboard.
+        Outputs may share keys: a key stays down until every send() or
+        down() that pressed it has let go."""
 
     def up(self, name: str) -> None:
-        """Releases what down() pressed, modifiers last."""
+        """Releases what one down() pressed, modifiers last."""
 
 
 def check_output_name(name: str) -> None:
@@ -61,9 +63,32 @@ def check_output_name(name: str) -> None:
         parse_key(name)
 
 
-def pressed_by(name: str) -> frozenset[str]:
-    """The keys, or the mouse output, that a valid output name presses."""
-    return frozenset({name}) if name in MOUSE_OUTPUTS else frozenset(parse_key(name).keys)
+class HeldKeys:
+    """Counts the outputs that hold each key or mouse button down, so outputs
+    can share one: it goes down with the first of them and up with the last,
+    like a key that two fingers press."""
+
+    def __init__(self) -> None:
+        self._counts: dict[str, int] = {}
+
+    def press(self, keys: Sequence[str]) -> list[str]:
+        """Counts keys as down; returns those that were up, which need a key-down."""
+        pressed = [k for k in keys if k not in self._counts]
+        for k in keys:
+            self._counts[k] = self._counts.get(k, 0) + 1
+        return pressed
+
+    def release(self, keys: Sequence[str]) -> list[str]:
+        """Counts keys as up; returns, in the same order, those no output holds any more."""
+        released = []
+        for k in keys:
+            if k not in self._counts:
+                continue
+            self._counts[k] -= 1
+            if self._counts[k] == 0:
+                del self._counts[k]
+                released.append(k)
+        return released
 
 
 class KeyRepeater:
@@ -140,6 +165,8 @@ class Win32Output:
         self._user32.MapVirtualKeyW.argtypes = (wintypes.UINT, wintypes.UINT)
         self._user32.MapVirtualKeyW.restype = wintypes.UINT
         self._scans: dict[str, int] = {}
+        self._held = HeldKeys()
+        # By the key they repeat.
         self._repeaters: dict[str, KeyRepeater] = {}
 
     def send(self, name: str) -> None:
@@ -152,31 +179,36 @@ class Win32Output:
         self._release(name)
 
     def down(self, name: str) -> None:
-        self._press(name)
-        if name not in _WIN32_BUTTONS:
-            # Like a keyboard, only the last key of a combination repeats.
-            key = parse_key(name).key
-            self._repeaters[name] = KeyRepeater(lambda: self._key(key, up=False))
+        pressed = self._press(name)
+        key = None if name in _WIN32_BUTTONS else parse_key(name).key
+        # Like a keyboard, only the last key of a combination repeats, from when it went down.
+        if key in pressed:
+            self._repeaters[key] = KeyRepeater(lambda: self._key(key, up=False))
 
     def up(self, name: str) -> None:
-        repeater = self._repeaters.pop(name, None)
-        if repeater is not None:
-            repeater.stop()
         self._release(name)
 
-    def _press(self, name: str) -> None:
+    def _press(self, name: str) -> list[str]:
         if name in _WIN32_BUTTONS:
-            self._mouse(_WIN32_BUTTONS[name][0])
-        else:
-            for key in parse_key(name).keys:
-                self._key(key, up=False)
+            pressed = self._held.press([name])
+            if pressed:
+                self._mouse(_WIN32_BUTTONS[name][0])
+            return pressed
+        pressed = self._held.press(parse_key(name).keys)
+        for key in pressed:
+            self._key(key, up=False)
+        return pressed
 
     def _release(self, name: str) -> None:
         if name in _WIN32_BUTTONS:
-            self._mouse(_WIN32_BUTTONS[name][1])
-        else:
-            for key in reversed(parse_key(name).keys):
-                self._key(key, up=True)
+            if self._held.release([name]):
+                self._mouse(_WIN32_BUTTONS[name][1])
+            return
+        for key in self._held.release(parse_key(name).keys[::-1]):
+            repeater = self._repeaters.pop(key, None)
+            if repeater is not None:
+                repeater.stop()
+            self._key(key, up=True)
 
     def _scan(self, key: str) -> int:
         # Asks the current layout which key types this letter, so "a" is a on AZERTY too.
@@ -216,6 +248,8 @@ class PynputOutput:
         self._keyboard = keyboard.Controller()
         self._mouse = mouse.Controller()
         self._buttons = {"mouse_left_click": mouse.Button.left, "mouse_right_click": mouse.Button.right}
+        self._held = HeldKeys()
+        # By the key they repeat.
         self._repeaters: dict[str, KeyRepeater] = {}
 
     def send(self, name: str) -> None:
@@ -227,43 +261,50 @@ class PynputOutput:
         self._release(name)
 
     def down(self, name: str) -> None:
-        self._press(name)
-        keys = [] if name in self._buttons else self._keys(name, report=False)
-        if keys:
-            # Like a keyboard, only the last key of a combination repeats.
-            last = keys[-1]
-            self._repeaters[name] = KeyRepeater(lambda: self._keyboard.press(last))
+        pressed = self._press(name)
+        key = None if name in self._buttons else parse_key(name).key
+        # Like a keyboard, only the last key of a combination repeats, from when it went down.
+        if key in pressed:
+            last = self._pynput_key(key)
+            self._repeaters[key] = KeyRepeater(lambda: self._keyboard.press(last))
 
     def up(self, name: str) -> None:
-        repeater = self._repeaters.pop(name, None)
-        if repeater is not None:
-            repeater.stop()
         self._release(name)
 
-    def _press(self, name: str) -> None:
+    def _press(self, name: str) -> list[str]:
         if name in self._buttons:
-            self._mouse.press(self._buttons[name])
-        else:
-            for key in self._keys(name, report=True):
-                self._keyboard.press(key)
+            pressed = self._held.press([name])
+            if pressed:
+                self._mouse.press(self._buttons[name])
+            return pressed
+        keys = self._keys(name, report=True)
+        pressed = self._held.press(list(keys))
+        for key in pressed:
+            self._keyboard.press(keys[key])
+        return pressed
 
     def _release(self, name: str) -> None:
         if name in self._buttons:
-            self._mouse.release(self._buttons[name])
-        else:
-            for key in reversed(self._keys(name, report=False)):
-                self._keyboard.release(key)
+            if self._held.release([name]):
+                self._mouse.release(self._buttons[name])
+            return
+        keys = self._keys(name, report=False)
+        for key in self._held.release(list(keys)[::-1]):
+            repeater = self._repeaters.pop(key, None)
+            if repeater is not None:
+                repeater.stop()
+            self._keyboard.release(keys[key])
 
-    def _keys(self, name: str, report: bool) -> list[object]:
-        """pynput's keys for a key name, in press order; none if one is missing
-        (reported on the way down, so up() doesn't repeat it)."""
+    def _keys(self, name: str, report: bool) -> dict[str, object]:
+        """pynput's keys for a key name, by key name in press order; none if one
+        is missing (reported on the way down, so up() doesn't repeat it)."""
         combo = parse_key(name)
-        keys = [self._pynput_key(k) for k in combo.keys]
-        missing = [k for k, v in zip(combo.keys, keys) if v is None]
+        keys = {k: self._pynput_key(k) for k in combo.keys}
+        missing = [k for k, v in keys.items() if v is None]
         if missing:
             if report:
                 self._log(f"Can't send {combo}: {', '.join(missing)} is not available on this system.")
-            return []
+            return {}
         return keys
 
     def _pynput_key(self, key: str) -> object | None:
