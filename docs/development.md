@@ -60,7 +60,7 @@ src/eyeokuri/
     face_mesh.py  MediaPipe's face model, run with OpenCV
     camera.py     webcam capture that reconnects, plus the scanner for the camera picker
   eyes.py         Signals -> Observation (open/closed vs. your open-eye level, and wink: one eye vs. the other)
-  head.py         Signals -> head yaw/pitch relative to your usual pose
+  head.py         Signals -> head yaw/pitch/roll relative to your usual pose
   triggers.py     Observation -> step boxes entered -> gestures -> TriggerEvent
   i18n.py         GUI translations: _(), N_(), language detection (no Tk; the command line stays English)
   labels.py       what the GUI shows for a built-in gesture or signal ID: a translated label, plus the ID

@@ -13,6 +13,8 @@ _GESTURES = {
     "head_shake": N_("Head shake"),
     "nod_up": N_("Nod up"),
     "nod_down": N_("Nod down"),
+    "tilt_right": N_("Tilt right"),
+    "tilt_left": N_("Tilt left"),
 }
 # Signal ID -> label; every one in config.SIGNALS needs an entry.
 _SIGNALS = {
@@ -20,6 +22,7 @@ _SIGNALS = {
     "wink": N_("Wink"),
     "pitch": N_("Head tilt"),
     "yaw": N_("Head turn"),
+    "roll": N_("Side tilt"),
 }
 # Output mode ID -> label; every one in outputs.OUTPUT_MODES needs an entry.
 _OUTPUT_MODES = {

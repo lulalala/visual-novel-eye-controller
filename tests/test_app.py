@@ -7,13 +7,13 @@ def test_csv_row_formats_one_frame():
     obs = Observation(10.5, True, left=0.31234, right=0.3, combined=0.31234, baseline=0.3,
                       ready=True, head_yaw=3.14)
     assert csv_row(Frame(obs, fired=True), start=10.0) == [
-        "0.500", "1", "0.3123", "0.3000", "0.3123", "0.3000", "1", "0", "", "3.1", "", "1",
+        "0.500", "1", "0.3123", "0.3000", "0.3123", "0.3000", "1", "0", "", "3.1", "", "", "1",
     ]
 
 
 def test_csv_row_leaves_missing_values_empty():
     row = csv_row(Frame(Observation(10.5, False), fired=False), start=10.0)
-    assert row == ["0.500", "0", "", "", "", "", "0", "0", "", "", "", "0"]
+    assert row == ["0.500", "0", "", "", "", "", "0", "0", "", "", "", "", "0"]
 
 
 def test_csv_header_names_each_column_of_a_row():

@@ -26,6 +26,8 @@ Your settings are saved in `%APPDATA%\eyeokuri\config.toml`. Upgrading or uninst
 - **Blink** (both eyes closed for at least 0.1 s): sends `Enter` when you reopen your eyes. Closing your eyes for more than 1 s cancels the blink.
 - **Shake your head** to pause or resume: turn past about 15° to one side, then past about 15° to the other side, within 1.5 s.
 - **Nod up or down** sends the `up` or `down` arrow key. It is off by default. You can turn it on with its checkbox in the main window.
+- **Tilt your head toward your right shoulder** (`tilt_right`) past about 15° for 0.3 s to hold down `ctrl`, which skips text in many games. `ctrl` comes up when you straighten up. If you hold the tilt for more than about 10 s, eyeokuri takes it as your usual pose and lets go.
+- **Tilt your head toward your left shoulder** (`tilt_left`) is off by default and sends nothing until you choose an output in its gesture window.
 - **Wink with your left or right eye** (`wink_left`, `wink_right`) is off by default and sends nothing until you choose an output in its gesture window. A wink counts when one eye is at least 0.25 less open than the other, then both are level again 0.05–0.6 s later. A normal blink closes both eyes, so it doesn't count as a wink. Turning your head makes one eye look narrower to the camera, so winks count only with your head within 20° sideways and 10° up or down. Run the [wizard](../gesture-wizard/) to fit it to your face.
 
 A shake often comes with a blink, so it can also advance one line.

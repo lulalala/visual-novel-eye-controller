@@ -36,13 +36,14 @@ def signals_from_landmarks(timestamp: float, landmarks: np.ndarray | None) -> Si
     """Eye aspect ratios and head pose from face mesh landmarks (None = no face)."""
     if landmarks is None:
         return Signals(timestamp, face_present=False)
-    yaw, pitch = head_pose_from_landmarks(landmarks)
+    yaw, pitch, roll = head_pose_from_landmarks(landmarks)
     return Signals(
         timestamp,
         face_present=True,
         eye_openness=(eye_aspect_ratio(landmarks, LEFT_EYE), eye_aspect_ratio(landmarks, RIGHT_EYE)),
         head_yaw_deg=yaw,
         head_pitch_deg=pitch,
+        head_roll_deg=roll,
     )
 
 

@@ -49,7 +49,7 @@ class EyeConfig:
 
 @dataclass(frozen=True)
 class HeadConfig:
-    # Head yaw is measured relative to a rolling median of your usual pose.
+    # Head yaw, pitch and roll are measured relative to a rolling median of your usual pose.
     baseline_window_s: float = 10.0
     # Seconds to learn before head gestures can trigger.
     warmup_s: float = 2.0
@@ -94,6 +94,7 @@ SIGNALS: dict[str, SignalSpec] = {
     "wink": SignalSpec("ratio", EYE_OPENNESS, rest=0.0, min_reach=0.2, gap=0.1),
     "pitch": SignalSpec("deg", HEAD_POSE, rest=0.0, min_reach=5.0, gap=3.0, guard=True),
     "yaw": SignalSpec("deg", HEAD_POSE, rest=0.0, min_reach=5.0, gap=3.0, guard=True),
+    "roll": SignalSpec("deg", HEAD_POSE, rest=0.0, min_reach=5.0, gap=3.0),
 }
 GUARD_SIGNALS = tuple(name for name, spec in SIGNALS.items() if spec.guard)
 
@@ -102,7 +103,8 @@ GUARD_SIGNALS = tuple(name for name, spec in SIGNALS.items() if spec.guard)
 class StepConfig:
     # What to watch: eyes (openness, 1.0 = your usual open level), wink (right
     # eye's openness minus the left's, positive = left eye closed), pitch
-    # (degrees, positive = head tilted down) or yaw (degrees, positive = your left).
+    # (degrees, positive = head tilted down), yaw (degrees, positive = your
+    # left) or roll (degrees of sideways tilt, positive = toward your left).
     signal: str = ""
     # Instead of a signal: another gesture's name. The step counts when it fires.
     gesture: str = ""
@@ -209,6 +211,17 @@ def _default_gestures() -> dict[str, GestureConfig]:
             enabled=False,
             steps=[StepConfig(signal="pitch", above_deg=12.0), StepConfig(signal="pitch", **center)],
             cooldown_s=1.0, output="down",
+        ),
+        # Tilting your head toward a shoulder past 15° for 0.3 s; with "while",
+        # ctrl stays down (skipping text in many games) until you straighten up.
+        "tilt_right": GestureConfig(
+            steps=[StepConfig(signal="roll", below_deg=-15.0, hold_s=0.3)],
+            cooldown_s=0.5, output="ctrl", output_mode="while",
+        ),
+        "tilt_left": GestureConfig(
+            enabled=False,
+            steps=[StepConfig(signal="roll", above_deg=15.0, hold_s=0.3)],
+            cooldown_s=0.5,
         ),
     }
 

@@ -9,9 +9,9 @@ from eyeokuri.tuning import DO, OTHER, TOO_QUICK, TOO_SLOW, Take, can_tune, fit,
 FPS = 30
 
 
-def obs(i, eyes=1.0, yaw=0.0, pitch=0.0, wink=0.0):
+def obs(i, eyes=1.0, yaw=0.0, pitch=0.0, wink=0.0, roll=0.0):
     return Observation(i / FPS, face_present=True, ready=True, combined=eyes, baseline=1.0,
-                       head_yaw=yaw, head_pitch=pitch, wink=wink)
+                       head_yaw=yaw, head_pitch=pitch, wink=wink, head_roll=roll)
 
 
 def blink_take(kind, closed_frames, depth=0.2, total=90):
@@ -88,6 +88,14 @@ def test_an_edge_stays_clear_of_the_box_around_rest():
     takes = [head_take(DO, nod, "pitch") for _ in range(5)]
     result = fit(Config(), "nod_down", takes)
     assert result.gesture.steps[0].above_deg == 11.0
+    assert all(r.fired_at is not None for r in result.results)
+
+
+def test_tilt_edge_fits_your_held_tilts():
+    tilt = [0.0] * 10 + [-10.0] + [-30.0] * 30 + [-10.0] + [0.0] * 10
+    result = fit(Config(), "tilt_right", [head_take(DO, tilt, "roll") for _ in range(3)])
+    # 60% of the way from 0° to your weakest tilt (-30°).
+    assert result.gesture.steps[0].below_deg == -18.0
     assert all(r.fired_at is not None for r in result.results)
 
 

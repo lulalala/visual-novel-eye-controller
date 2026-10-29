@@ -17,6 +17,7 @@ A gesture is a list of steps. Each step is a box on a plot of one signal over ti
 - **Wink** (`wink`): how open your right eye is minus your left, each relative to its usual level. It stays near 0 with both eyes open or both closed. Closing only your left eye takes it toward +1, and closing only your right eye toward −1.
 - **Head tilt** (`pitch`): how far your head tilts up or down, in degrees. Positive is down.
 - **Head turn** (`yaw`): how far your head turns to the side, in degrees. Positive is your left.
+- **Side tilt** (`roll`): how far your head tilts toward a shoulder, in degrees. Positive is toward your left shoulder.
 
 The blink in the screenshot has two steps. Box 1 is "eyes below 0.6", and box 2 is "eyes above 0.7, between 0.1 s and 1 s after step 1". The dark line is your signal over the last 4 seconds.
 
@@ -74,7 +75,7 @@ Some games skip text while you hold `ctrl`. The list next to **Press a key…** 
 - **Hold until it fires again (toggle)**: when the gesture fires, eyeokuri presses the output and keeps it down. The log says `blink: ... -> ctrl held`. When it fires again, eyeokuri lets go (`-> ctrl released`).
 - **Hold while it lasts (while)**: eyeokuri presses the output when the gesture fires and lets go when the gesture ends. The gesture ends when the signal leaves the box of the step that completed it, or, if that step is another gesture, when that gesture ends. Turning your head outside the gesture's head limits also ends it.
 
-For example, to skip text while you keep your left eye closed, give a gesture one step: **Wink**, **Above** 0.25, **Hold** 0.3 s. Set its output to `ctrl` and choose **Hold while it lasts**. Ctrl goes down once your left eye has been closed for 0.3 s and comes up when you open it. The built-in left wink fires when you open your eye again, so it suits **Hold until it fires again** instead.
+For example, to skip text while you keep your left eye closed, give a gesture one step: **Wink**, **Above** 0.25, **Hold** 0.3 s. Set its output to `ctrl` and choose **Hold while it lasts**. Ctrl goes down once your left eye has been closed for 0.3 s and comes up when you open it. The built-in left wink fires when you open your eye again, so it suits **Hold until it fires again** instead. The built-in right tilt (`tilt_right`) holds `ctrl` this way while your head is tilted toward your right shoulder.
 
 eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
 

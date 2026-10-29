@@ -84,6 +84,16 @@ _SCRIPTS = {
     ],
     "nod_down": [(DO, N_("Nod down once.")), (TOO_SLOW, N_("Tilt your head down and hold it for a few seconds, as if reading the bottom of the screen.")), _READ],
     "nod_up": [(DO, N_("Nod up once.")), (TOO_SLOW, N_("Tilt your head up and hold it for a few seconds, as if looking above the screen.")), _READ],
+    "tilt_right": [
+        (DO, N_("Tilt your head toward your right shoulder, hold it for a second, then straighten up.")),
+        (OTHER, N_("Shake your head once.")),
+        _READ,
+    ],
+    "tilt_left": [
+        (DO, N_("Tilt your head toward your left shoulder, hold it for a second, then straighten up.")),
+        (OTHER, N_("Shake your head once.")),
+        _READ,
+    ],
 }
 # For gestures you add.
 _GENERIC_SCRIPT = [(DO, N_("Do the gesture once.")), (TOO_SLOW, N_("Do the gesture slowly.")), _READ]

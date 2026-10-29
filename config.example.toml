@@ -22,7 +22,9 @@ open_ratio = 0.75
 require_both_eyes = true
 
 [head]
-# eyeokuri learns your usual head position over this many seconds
+# eyeokuri learns your usual head position over this many seconds. A sideways
+# tilt past 8° isn't learned, so holding tilt_right keeps ctrl down for up to
+# this long before eyeokuri relearns your pose and lets go.
 baseline_window_s = 10.0
 # Seconds to learn before head gestures can trigger
 warmup_s = 2.0
@@ -31,9 +33,10 @@ warmup_s = 2.0
 # over time, and it counts the moment the signal enters the box:
 #   signal       eyes (1.0 = your usual open level), wink (right eye's
 #                openness minus the left's, + = left eye closed), pitch
-#                (degrees, + = head down) or yaw (degrees, + = your left)
+#                (degrees, + = head down), yaw (degrees, + = your left) or
+#                roll (degrees of sideways tilt, + = toward your left shoulder)
 #   above_ratio, below_ratio   the box for eyes and wink (leave one out: open-ended)
-#   above_deg, below_deg       the box for pitch and yaw
+#   above_deg, below_deg       the box for pitch, yaw and roll
 #   after_min_s, after_max_s   time allowed since the previous step (0 = no limit)
 #   hold_s       stay in the box this long before the step counts
 #   gesture      instead of signal: another gesture's name; counts when it fires
@@ -126,6 +129,26 @@ steps = [
 ]
 cooldown_s = 1.0
 output = "down"
+
+[gestures.tilt_right]
+# Tilt your head toward your right shoulder past 15° for 0.3 s. ctrl stays
+# down (many games skip text while it is) until you straighten up again.
+enabled = true
+steps = [
+  { signal = "roll", below_deg = -15.0, hold_s = 0.3 },
+]
+cooldown_s = 0.5
+output = "ctrl"
+output_mode = "while"
+
+[gestures.tilt_left]
+# Toward your left shoulder. Off by default, no output yet.
+enabled = false
+steps = [
+  { signal = "roll", above_deg = 15.0, hold_s = 0.3 },
+]
+cooldown_s = 0.5
+output = ""
 
 # Add your own gesture under a new name. This one needs nod_down enabled;
 # set nod_down's output = "" if it should only count as part of this one.

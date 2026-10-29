@@ -55,7 +55,10 @@ def signal_value(signal: str, obs: Observation) -> float | None:
         # Positive = left eye closed, like yaw: positive = your left.
         return obs.wink if obs.ready else None
     # Positive pitch = head tilted down; positive yaw = face turned toward
-    # the camera image's right, which is your left.
+    # the camera image's right, which is your left; positive roll = top of
+    # the head tilted toward the image's right, also your left.
+    if signal == "roll":
+        return obs.head_roll
     return obs.head_pitch if signal == "pitch" else obs.head_yaw
 
 

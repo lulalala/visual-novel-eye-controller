@@ -24,9 +24,11 @@ The `wink` signal compares the two eyes instead: right openness over its median 
 
 ## Head pose baseline
 
-`HeadTracker` in `head.py` reports yaw and pitch relative to the median pose over the last `head.baseline_window_s` seconds (10 by default). An off-center webcam or a habitual slight tilt therefore reads as 0°. Brief turns such as a head shake or nod barely move the median, so it stays close to the resting pose. For the first `head.warmup_s` seconds (2 by default), and again after a face loss longer than the window, the history is too short to trust, so the tracker reports no head pose and head gestures can't start.
+`HeadTracker` in `head.py` reports yaw, pitch and roll relative to the median pose over the last `head.baseline_window_s` seconds (10 by default). An off-center webcam or a habitual slight tilt therefore reads as 0°. Brief turns such as a head shake or nod barely move the median, so it stays close to the resting pose. For the first `head.warmup_s` seconds (2 by default), and again after a face loss longer than the window, the history is too short to trust, so the tracker reports no head pose and head gestures can't start.
 
-Pitch is positive when the head tilts down, because image y grows downward.
+Roll samples more than 8° from the median aren't added to the history. Holding a sideways tilt (to keep `ctrl` down with `tilt_right`) would otherwise become the median after about half the window, and the roll would fall back to 0 with the head still tilted. A tilt held past the window empties the history, so the tracker reports no roll for `head.warmup_s` and then learns the new pose.
+
+Pitch is positive when the head tilts down, because image y grows downward. Roll is positive when the top of the head moves toward the image's right, which is the subject's left shoulder.
 
 ## Output kinds
 

@@ -31,6 +31,8 @@ class Signals:
     """Absolute head turn. Positive = face turned toward the image's right."""
     head_pitch_deg: float | None = None
     """Absolute head tilt. Positive = head tilted down."""
+    head_roll_deg: float | None = None
+    """Absolute sideways head tilt. Positive = top of the head toward the image's right."""
 
 
 class Source(Protocol):

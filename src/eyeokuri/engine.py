@@ -44,8 +44,9 @@ def _can_hold(output: str) -> bool:
 
 def _check_held_outputs_are_not_shared(config: Config) -> None:
     """Letting go of a key that another output also uses would end that output's
-    press or hold early, so a held key belongs to one gesture only."""
-    sending = {n: g for n, g in config.gestures.items() if g.output != "" and g.output not in APP_OUTPUTS}
+    press or hold early, so a held key belongs to one enabled gesture only."""
+    sending = {n: g for n, g in config.gestures.items()
+               if g.enabled and g.output != "" and g.output not in APP_OUTPUTS}
     for name, gesture in sending.items():
         if gesture.output_mode == "press":
             continue
@@ -222,8 +223,8 @@ class Engine:
             self.fps = 0.9 * self.fps + 0.1 * (1.0 / max(now - self._prev, 1e-6))
         self._prev = now
 
-        head_yaw, head_pitch = self.head.update(signals)
-        obs = replace(self.eyes.update(signals), head_yaw=head_yaw, head_pitch=head_pitch)
+        head_yaw, head_pitch, head_roll = self.head.update(signals)
+        obs = replace(self.eyes.update(signals), head_yaw=head_yaw, head_pitch=head_pitch, head_roll=head_roll)
         if not obs.face_present:
             # Nobody is there to fire the gesture again and let go.
             self._release_held("no face")

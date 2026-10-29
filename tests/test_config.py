@@ -19,6 +19,8 @@ def test_defaults():
         "head_shake": "app_pause_toggle",
         "nod_up": "up",
         "nod_down": "down",
+        "tilt_right": "ctrl",
+        "tilt_left": "",
     }
     assert config.feedback.log_rejected
 
@@ -108,8 +110,8 @@ def test_invalid_keystroke_output_is_rejected():
 
 
 def test_key_combination_output_is_accepted():
-    config = config_from("--set", "gestures.blink.output=ctrl+s", "--set", "gestures.nod_up.output=page_down")
-    assert config.gestures["blink"].output == "ctrl+s"
+    config = config_from("--set", "gestures.blink.output=shift+s", "--set", "gestures.nod_up.output=page_down")
+    assert config.gestures["blink"].output == "shift+s"
     assert config.gestures["nod_up"].output == "page_down"
 
 
@@ -176,7 +178,8 @@ def test_dump_reads_back_as_the_same_config(tmp_path):
 
 
 def test_output_mode_can_be_set_and_survives_a_dump(tmp_path):
-    config = config_from("--set", "gestures.blink.output=ctrl", "--set", "gestures.blink.output_mode=toggle")
+    config = config_from("--set", "gestures.blink.output=ctrl", "--set", "gestures.blink.output_mode=toggle",
+                         "--set", "gestures.tilt_right.enabled=false")
     assert config.gestures["blink"].output_mode == "toggle"
     path = tmp_path / "saved.toml"
     path.write_text(dump_config(config))

@@ -11,7 +11,7 @@ Config files must start with `version = 1`. A file without it uses an older layo
 
 ## Write a gesture
 
-Each gesture is a list of steps. A step is a box on a plot of one signal over time, and it counts the moment the signal enters the box. See [Read the plot](../edit-a-gesture/#read-the-plot) for the signals: `eyes`, `wink`, `pitch` and `yaw`.
+Each gesture is a list of steps. A step is a box on a plot of one signal over time, and it counts the moment the signal enters the box. See [Read the plot](../edit-a-gesture/#read-the-plot) for the signals: `eyes`, `wink`, `pitch`, `yaw` and `roll`.
 
 The built-in blink is "eyes below 60%, then eyes above 70% between 0.1 s and 1 s later":
 
@@ -34,7 +34,7 @@ Each step sets its own box and timing, so you can change one step without changi
 | Field | Meaning |
 | --- | --- |
 | `above_ratio`, `below_ratio` | The box for `eyes` and `wink`. Leave one out for a box that is open on that side. |
-| `above_deg`, `below_deg` | The box for `pitch` and `yaw`. |
+| `above_deg`, `below_deg` | The box for `pitch`, `yaw` and `roll`. |
 | `after_min_s`, `after_max_s` | The time allowed since the previous step. 0 means no limit. |
 | `hold_s` | How long the signal must stay in the box before the step counts, for example to fire on looking left for 1 s. |
 

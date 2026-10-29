@@ -64,6 +64,8 @@ class Signals:
     """Absolute head turn. Positive = toward the image's right."""
     head_pitch_deg: float | None = None
     """Absolute head tilt. Positive = head tilted down."""
+    head_roll_deg: float | None = None
+    """Absolute sideways head tilt. Positive = top of the head toward the image's right."""
 
 
 class Source(Protocol):
@@ -96,7 +98,7 @@ Each gesture needs the signals its steps watch, plus whatever the gestures it us
 | Step signal | Needs |
 |---|---|
 | `eyes` | `eye_openness` |
-| `pitch`, `yaw` | `head_pose` |
+| `pitch`, `yaw`, `roll` | `head_pose` |
 
 At startup, the core compares each enabled trigger's needs with the source's `provides` and skips a trigger whose needs are missing, with a notice such as `head_shake: disabled (source tobii has no head_pose)`. `OpenCVSource` provides both signals, so the check never fails in step 1. It is part of step 1 anyway, so that a future source without head pose, such as an eye tracker, works without changes to the core.
 

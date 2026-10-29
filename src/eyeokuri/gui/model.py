@@ -47,6 +47,8 @@ SIGNAL_PLOTS = {
                         N_("+ = tilted down"), (12.0, None)),
     "yaw": SignalPlot(-60.0, 60.0, (-60, -40, -20, 0, 20, 40, 60), 0.5,
                       N_("+ = turned to your left"), (15.0, None)),
+    "roll": SignalPlot(-45.0, 45.0, (-40, -20, 0, 20, 40), 0.5,
+                       N_("+ = tilted toward your left shoulder"), (15.0, None)),
 }
 GESTURE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 # A gesture that sent its output: Engine logs "<name>: <detail> -> <output>",

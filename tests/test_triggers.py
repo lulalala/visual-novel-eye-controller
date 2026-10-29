@@ -24,11 +24,11 @@ def custom(*steps, log=None, **changes):
     return GestureTrigger("custom", GestureConfig(steps=list(steps), **changes), log)
 
 
-def obs(i, eyes=1.0, yaw=0.0, pitch=0.0, face=True, ready=True, wink=0.0):
+def obs(i, eyes=1.0, yaw=0.0, pitch=0.0, face=True, ready=True, wink=0.0, roll=0.0):
     if not face:
         return Observation(i / FPS, face_present=False)
     return Observation(i / FPS, face_present=True, ready=ready, combined=eyes, baseline=1.0,
-                       head_yaw=yaw, head_pitch=pitch, wink=wink)
+                       head_yaw=yaw, head_pitch=pitch, wink=wink, head_roll=roll)
 
 
 def drive(triggers, observations):
@@ -435,6 +435,70 @@ def test_losing_head_pose_cancels_nod():
     assert drive([trigger], stream) == []
 
 
+# Sideways tilt
+
+
+def test_tilt_right_fires_after_a_short_hold():
+    rolls = [0.0] * 5 + sweep(0, -20, 5) + [-20.0] * 20
+    events = drive([gesture("tilt_right")], head(rolls, "roll"))
+    assert [e.action for e in events] == ["tilt_right"]
+    # Past -15° from frame 9, held 0.3 s.
+    assert events[0].timestamp == pytest.approx(18 / FPS)
+
+
+def test_tilt_left_fires_the_other_way():
+    rolls = [0.0] * 5 + [20.0] * 20
+    assert [e.action for e in drive([gesture("tilt_left")], head(rolls, "roll"))] == ["tilt_left"]
+
+
+def test_tilt_right_ignores_a_left_tilt():
+    rolls = [0.0] * 5 + [20.0] * 20
+    assert drive([gesture("tilt_right")], head(rolls, "roll")) == []
+
+
+def test_brief_tilt_does_not_fire():
+    rolls = [0.0] * 5 + [-20.0] * 6 + [0.0] * 10
+    assert drive([gesture("tilt_right")], head(rolls, "roll")) == []
+
+
+def test_small_tilt_does_not_fire():
+    rolls = [0.0] * 5 + [-12.0] * 30
+    assert drive([gesture("tilt_right")], head(rolls, "roll")) == []
+
+
+def test_tilt_right_ends_when_you_straighten_up():
+    rolls = [0.0] * 5 + [-20.0] * 60 + [-5.0] * 5
+    events = every_event([gesture("tilt_right")], head(rolls, "roll"))
+    assert [(e.ended, e.timestamp) for e in events] == [(False, 14 / FPS), (True, 65 / FPS)]
+    assert events[1].detail == "ended (signal left step 1's box)"
+
+
+def test_tilt_cooldown_blocks_a_quick_second_tilt():
+    messages = []
+    one = [-20.0] * 12 + [0.0] * 2
+    events = drive([gesture("tilt_right", messages.append)], head([0.0] * 5 + one + one, "roll"))
+    assert len(events) == 1
+    assert messages == ["tilt_right: step 1 reached (cooldown 0.50s)"]
+
+
+def test_losing_the_face_ends_a_held_tilt():
+    stream = head([0.0] * 5 + [-20.0] * 15, "roll") + [obs(20, face=False)]
+    events = every_event([gesture("tilt_right")], stream)
+    assert [e.ended for e in events] == [False, True]
+    assert events[1].detail == "ended (face lost)"
+
+
+def test_losing_head_pose_cancels_a_tilt_before_it_fires():
+    stream = head([0.0] * 5 + [-20.0] * 5, "roll") + [obs(10, face=False)] + head([-20.0] * 5, "roll", start=11)
+    assert drive([gesture("tilt_right")], stream) == []
+
+
+def test_positive_roll_is_your_left():
+    # Documents the sign; a live check confirms it against a real camera.
+    trigger = custom(StepConfig(signal="roll", above_deg=15.0))
+    assert len(drive([trigger], head([0.0] * 5 + [20.0] * 5, "roll"))) == 1
+
+
 # Gestures made of gestures
 
 
@@ -495,7 +559,7 @@ def test_gestures_are_built_after_their_steps():
     ({"x": {"steps": [{"gesture": "nod_down"}]}}, "nod_down is disabled"),
     ({"x": {"steps": [{"signal": "eyes", "gesture": "blink"}]}}, "not both"),
     ({"x": {"steps": [{"above_deg": 1.0}]}}, "not neither"),
-    ({"x": {"steps": [{"signal": "roll", "above_deg": 1.0}]}}, r"steps\[0\].signal must be one of"),
+    ({"x": {"steps": [{"signal": "tilt", "above_deg": 1.0}]}}, r"steps\[0\].signal must be one of"),
     ({"x": {"steps": [{"signal": "eyes", "above_deg": 1.0}]}}, "eyes uses above_ratio/below_ratio"),
     ({"x": {"steps": [{"signal": "pitch"}]}}, "needs above_deg, below_deg or both"),
     ({"x": {"steps": [{"signal": "pitch", "above_deg": 8.0, "below_deg": -8.0}]}}, r"steps\[0\].above_deg must be below"),
@@ -514,9 +578,9 @@ def test_head_tracker_is_relative_to_usual_pose():
     tracker = HeadTracker(HeadConfig())
     for i in range(60):
         tracker.update(Signals(i / FPS, face_present=True, head_yaw_deg=10.0))
-    yaw, pitch = tracker.update(Signals(2.0, face_present=True, head_yaw_deg=35.0))
+    yaw, pitch, roll = tracker.update(Signals(2.0, face_present=True, head_yaw_deg=35.0))
     assert yaw == 25.0
-    assert pitch is None
+    assert pitch is None and roll is None
 
 
 class FakeSource:

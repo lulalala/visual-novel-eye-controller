@@ -94,6 +94,7 @@ _CSV_COLUMNS: list[tuple[str, Callable[[Frame, float], str]]] = [
     ("wink", lambda f, _: _number(f.obs.wink, ".4f")),
     ("head_yaw", lambda f, _: _number(f.obs.head_yaw, ".1f")),
     ("head_pitch", lambda f, _: _number(f.obs.head_pitch, ".1f")),
+    ("head_roll", lambda f, _: _number(f.obs.head_roll, ".1f")),
     ("fired", lambda f, _: str(int(f.fired))),
 ]
 

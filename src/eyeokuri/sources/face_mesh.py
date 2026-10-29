@@ -84,16 +84,20 @@ _ROI_SCALE = 1.5
 _RIGHT_EYE_OUTER, _LEFT_EYE_OUTER, _FOREHEAD, _CHIN = 33, 263, 10, 152
 
 
-def head_pose_from_landmarks(points: np.ndarray) -> tuple[float, float]:
-    """(yaw, pitch) in degrees from 3D mesh landmarks in image axes (x right, y down,
-    z away from the camera). Positive yaw = face turned toward the image's right;
-    positive pitch = head tilted down."""
+def head_pose_from_landmarks(points: np.ndarray) -> tuple[float, float, float]:
+    """(yaw, pitch, roll) in degrees from 3D mesh landmarks in image axes (x right,
+    y down, z away from the camera). Positive yaw = face turned toward the image's
+    right; positive pitch = head tilted down; positive roll = top of the head
+    tilted toward the image's right."""
     across = points[_LEFT_EYE_OUTER] - points[_RIGHT_EYE_OUTER]
     down = points[_CHIN] - points[_FOREHEAD]
     forward = np.cross(down, across)  # out of the face, toward the camera
     yaw = math.degrees(math.atan2(forward[0], -forward[2]))
     pitch = math.degrees(math.atan2(forward[1], -forward[2]))
-    return yaw, pitch
+    # The eye line's slope out of the horizontal plane, so turning the head
+    # (which swings the eye line toward the camera) doesn't read as a tilt.
+    roll = math.degrees(math.atan2(across[1], math.hypot(across[0], across[2])))
+    return yaw, pitch, roll
 
 
 def detector_anchors() -> np.ndarray:

@@ -253,8 +253,9 @@ def test_new_config_keeps_the_live_paused_state():
 
 
 def hold_on_blink(output="ctrl", **gestures):
+    # tilt_right holds ctrl by default.
     return apply_overrides(Config(), {"gestures": {
-        "blink": {"output": output, "output_mode": "toggle"}, **gestures,
+        "blink": {"output": output, "output_mode": "toggle"}, "tilt_right": {"enabled": False}, **gestures,
     }})
 
 
@@ -363,9 +364,15 @@ def test_unknown_output_mode_is_rejected():
     {"output": "shift+ctrl", "output_mode": "toggle"},
 ])
 def test_a_held_key_cannot_be_part_of_another_output(other):
-    config = hold_on_blink(nod_up=other)
+    config = hold_on_blink(nod_up={"enabled": True, **other})
     with pytest.raises(ValueError, match="gestures.blink holds ctrl down, so gestures.nod_up.output"):
         make(calibrate(), config)
+
+
+def test_a_disabled_gesture_may_share_a_held_key():
+    # tilt_right holds ctrl by default; a gesture that never fires can't let go of it.
+    config = apply_overrides(Config(), {"gestures": {"nod_up": {"output": "ctrl+s"}}})
+    make(calibrate(), config)
 
 
 def test_held_keys_may_differ_between_gestures():
@@ -374,7 +381,7 @@ def test_held_keys_may_differ_between_gestures():
 
 
 def hold_while_turned(**changes):
-    return apply_overrides(Config(), {"gestures": {"look": {
+    return apply_overrides(Config(), {"gestures": {"tilt_right": {"enabled": False}, "look": {
         "steps": [{"signal": "yaw", "above_deg": 15.0}], "output": "ctrl", "output_mode": "while", **changes,
     }}})
 

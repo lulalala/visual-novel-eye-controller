@@ -11,7 +11,7 @@ description: 在 config.toml 把動作寫成步驟，選擇它送出什麼，並
 
 ## 撰寫動作
 
-每個動作都是一串步驟。步驟是畫在某個訊號隨時間變化的圖上的一個方框，訊號進入方框的那一刻，這個步驟就算達成。關於 `eyes`、`wink`、`pitch` 和 `yaw` 這幾個訊號，請看[看懂圖表](../edit-a-gesture/#看懂圖表)。
+每個動作都是一串步驟。步驟是畫在某個訊號隨時間變化的圖上的一個方框，訊號進入方框的那一刻，這個步驟就算達成。關於 `eyes`、`wink`、`pitch`、`yaw` 和 `roll` 這幾個訊號，請看[看懂圖表](../edit-a-gesture/#看懂圖表)。
 
 內建的眨眼是「eyes 低於 60%，然後在 0.1 秒到 1 秒之後 eyes 高於 70%」：
 
@@ -34,7 +34,7 @@ output = "enter"
 | 欄位 | 意義 |
 | --- | --- |
 | `above_ratio`、`below_ratio` | `eyes` 和 `wink` 的方框。省略其中一個，那一側就是開放的。 |
-| `above_deg`、`below_deg` | `pitch` 和 `yaw` 的方框。 |
+| `above_deg`、`below_deg` | `pitch`、`yaw` 和 `roll` 的方框。 |
 | `after_min_s`、`after_max_s` | 距離上一個步驟允許的時間。0 代表不限制。 |
 | `hold_s` | 訊號必須在方框內停留多久，這個步驟才算數，例如看向左邊 1 秒才觸發。 |
 

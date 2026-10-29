@@ -30,6 +30,8 @@ class Observation:
     """Head turn in degrees relative to the user's usual pose (sign: left/right)."""
     head_pitch: float | None = None
     """Head tilt in degrees relative to the user's usual pose (positive = down)."""
+    head_roll: float | None = None
+    """Sideways head tilt in degrees relative to the user's usual pose (positive = your left)."""
 
 
 class EyeStateTracker:
