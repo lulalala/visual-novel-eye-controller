@@ -71,6 +71,7 @@ class EyeStateTracker:
 
         baseline, ready = self._baseline(t)
         wink = None
+        one_eye_closed = False
         if ready:
             # Each eye against its own usual level, so eyes that differ in size
             # (or look different at an angle) still sit near 0 when both are open.
@@ -78,6 +79,7 @@ class EyeStateTracker:
             right_base = statistics.median(h[3] for h in self._history)
             if left_base > 0 and right_base > 0:
                 wink = right / right_base - left / left_base
+                one_eye_closed = min(left / left_base, right / right_base) < self.config.close_ratio
         if ready:
             if self._closed:
                 self._closed = combined < baseline * self.config.open_ratio
@@ -88,7 +90,10 @@ class EyeStateTracker:
             # baseline window (e.g. a big posture change): start learning again.
             self._closed = False
 
-        if not self._closed:
+        # A wink isn't "closed" when both eyes must close, but learning from it
+        # would pull that eye's usual level down, and with it the wink signal of
+        # a long wink (holding ctrl to skip) until it fell back to 0.
+        if not self._closed and not one_eye_closed:
             self._history.append((t, combined, left, right))
 
         return Observation(

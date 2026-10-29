@@ -87,3 +87,13 @@ def test_wink_stays_near_zero_with_both_eyes_closed():
 def test_wink_is_unknown_before_warmup():
     tracker = EyeStateTracker(EyeConfig())
     assert feed(tracker, 0.0, 1.0, 0.3)[-1].wink is None
+
+
+@pytest.mark.parametrize("fps", [10, 30])
+def test_long_wink_keeps_its_wink_signal(fps):
+    tracker = EyeStateTracker(EyeConfig())
+    feed(tracker, 0.0, 3.0, 0.30, fps=fps)
+    # Longer than half the baseline window, where the median would flip.
+    obs = feed(tracker, 3.0, 12.0, 0.05, fps=fps, right=0.30)
+    assert all(o.wink == pytest.approx(1 - 0.05 / 0.30) for o in obs)
+    assert not any(o.closed for o in obs)
