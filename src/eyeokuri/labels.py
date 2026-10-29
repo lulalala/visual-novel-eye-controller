@@ -1,4 +1,4 @@
-"""What the GUI shows for a gesture or signal ID. The ID stays the name
+"""What the GUI shows for a gesture, signal or output mode ID. The ID stays the name
 everywhere else: config files, --set, logs and trigger reasons."""
 
 from __future__ import annotations
@@ -21,6 +21,12 @@ _SIGNALS = {
     "pitch": N_("Head tilt"),
     "yaw": N_("Head turn"),
 }
+# Output mode ID -> label; every one in outputs.OUTPUT_MODES needs an entry.
+_OUTPUT_MODES = {
+    "press": N_("Press once"),
+    "toggle": N_("Hold until it fires again"),
+    "while": N_("Hold while it lasts"),
+}
 
 
 def show_gesture(name: str) -> str:
@@ -31,6 +37,11 @@ def show_gesture(name: str) -> str:
 def show_signal(signal: str) -> str:
     """A signal's label."""
     return _show(signal, _SIGNALS.get(signal))
+
+
+def show_output_mode(mode: str) -> str:
+    """An output mode's label."""
+    return _show(mode, _OUTPUT_MODES.get(mode))
 
 
 def _show(ident: str, label: str | None) -> str:

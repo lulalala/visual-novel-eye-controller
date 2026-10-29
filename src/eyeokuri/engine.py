@@ -30,9 +30,9 @@ def validate_outputs(config: Config) -> None:
                     f"gestures.{name}.output: {e}; mouse outputs are {', '.join(MOUSE_OUTPUTS)}, "
                     f"app outputs are {', '.join(sorted(APP_OUTPUTS))}, and \"\" sends nothing"
                 ) from None
-        if mode == "toggle" and not _can_hold(output):
+        if mode != "press" and not _can_hold(output):
             raise ValueError(
-                f"gestures.{name}.output_mode toggle needs a key, key combination, "
+                f"gestures.{name}.output_mode {mode} needs a key, key combination, "
                 f"{' or '.join(MOUSE_BUTTONS)} as the output, not {output!r}"
             )
     _check_held_outputs_are_not_shared(config)
@@ -47,7 +47,7 @@ def _check_held_outputs_are_not_shared(config: Config) -> None:
     press or hold early, so a held key belongs to one gesture only."""
     sending = {n: g for n, g in config.gestures.items() if g.output != "" and g.output not in APP_OUTPUTS}
     for name, gesture in sending.items():
-        if gesture.output_mode != "toggle":
+        if gesture.output_mode == "press":
             continue
         held = pressed_by(gesture.output)
         for other, other_gesture in sending.items():
@@ -87,9 +87,10 @@ class Engine:
     but gestures neither match nor send anything. Unlike pause, no gesture
     can end it.
 
-    A held output (output_mode = "toggle") is down for the whole system, not
-    just the game, so the engine lets go of it on pause, suspend, new
-    settings, face loss and close() as well as when the gesture fires again.
+    A held output (output_mode = "toggle" or "while") is down for the whole
+    system, not just the game, so the engine lets go of it on pause, suspend,
+    new settings, face loss and close() as well as when the gesture fires
+    again (toggle) or ends (while).
     """
 
     def __init__(
@@ -110,7 +111,7 @@ class Engine:
             source = OpenCVSource(config.camera, log)
         self.source = source
         self._output = output
-        # Outputs that toggle gestures hold down, in the order they went down.
+        # Outputs that toggle and while gestures hold down, in the order they went down.
         self._held: list[str] = []
         # Only read here: afterwards the engine owns the paused state, and
         # set_config() leaves it alone.
@@ -170,7 +171,7 @@ class Engine:
         if self._own_output and self._output is None:
             self._output = create_output(self._log)
         self._outputs = {name: g.output for name, g in config.gestures.items()}
-        self._toggles = {name for name, g in config.gestures.items() if g.output_mode == "toggle"}
+        self._modes = {name: g.output_mode for name, g in config.gestures.items()}
 
     def _release_held(self, reason: str) -> None:
         while self._held:
@@ -235,8 +236,18 @@ class Engine:
         return Frame(obs, fired)
 
     def _handle(self, event: TriggerEvent) -> bool:
-        """Acts on a gesture that fired. True if it sent keyboard or mouse input."""
+        """Acts on a gesture that fired or ended. True if it fired and sent keyboard or mouse input."""
         mapped = self._outputs.get(event.action)
+        mode = self._modes.get(event.action)
+        if event.ended:
+            # Only a while gesture acts on its end. It's already up if a pause,
+            # suspend or lost face let go of it first.
+            if mode == "while" and mapped in self._held:
+                assert self._output is not None
+                self._held.remove(mapped)
+                self._output.up(mapped)
+                self._log(f"{event.trigger}: {event.detail} -> {mapped} released")
+            return False
         if not mapped or mapped in APP_OUTPUTS:
             # No output: only a step of other gestures. Otherwise an app-level output.
             self._log(f"{event.trigger}: {event.detail}")
@@ -248,17 +259,20 @@ class Engine:
             self._log(f"{event.trigger}: {event.detail} -> {mapped} (paused, not sent)")
             return False
         assert self._output is not None
-        if event.action not in self._toggles:
+        if mode == "press":
             self._output.send(mapped)
             self._on_fire(event, mapped)
-        elif mapped in self._held:
+        elif mapped not in self._held:
+            self._output.down(mapped)
+            self._held.append(mapped)
+            self._on_fire(event, f"{mapped} held")
+        elif mode == "toggle":
             self._held.remove(mapped)
             self._output.up(mapped)
             self._on_fire(event, f"{mapped} released")
         else:
-            self._output.down(mapped)
-            self._held.append(mapped)
-            self._on_fire(event, f"{mapped} held")
+            # A while gesture that fires again before it ended keeps holding.
+            return False
         return True
 
     def close(self) -> None:

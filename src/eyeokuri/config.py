@@ -154,6 +154,8 @@ class GestureConfig:
     output: str = ""
     # press: send the output once. toggle: hold it down when the gesture fires,
     # and let go when it fires again (some games skip text while ctrl is held).
+    # while: hold it down when the gesture fires, and let go when the signal
+    # leaves the box of the step that completed it.
     output_mode: str = "press"
 
 

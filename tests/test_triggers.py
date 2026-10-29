@@ -37,7 +37,7 @@ def drive(triggers, observations):
     for o in observations:
         for trigger in triggers:
             event = trigger.update(o)
-            if event:
+            if event and not event.ended:
                 events.append(event)
     return events
 
@@ -586,3 +586,78 @@ def test_replay_reports_an_attempt_that_expired_quietly():
     result = replay(Config(), "head_shake", head([0.0] * 5 + [-20.0] * 5 + [0.0] * 110, "yaw"))
     assert result.reason == "didn't finish in time (too slow, max 1.50s)"
     assert [i for i, _ in result.steps] == [1]
+
+
+# Ends
+
+
+def every_event(triggers, observations):
+    """Like drive, but with the events of gestures ending too."""
+    events = []
+    for o in observations:
+        for trigger in triggers:
+            event = trigger.update(o)
+            if event:
+                events.append(event)
+    return events
+
+
+def held_wink(**changes):
+    return custom(StepConfig(signal="wink", above_ratio=0.25, hold_s=0.3), **changes)
+
+
+def test_gesture_ends_when_the_signal_leaves_the_last_box():
+    events = every_event([held_wink()], winks([(10, 0.0), (30, 0.5), (10, 0.0)]))
+    assert [(e.ended, e.timestamp) for e in events] == [(False, 19 / FPS), (True, 40 / FPS)]
+    assert events[1].detail == "ended (signal left step 1's box)"
+    assert events[1].action == "custom"
+
+
+def test_multi_step_gesture_ends_when_its_last_step_box_is_left():
+    events = every_event([gesture("blink")], eyes([(30, False), (9, True), (20, False), (5, True)]))
+    assert [(e.ended, e.timestamp) for e in events] == [(False, 39 / FPS), (True, 59 / FPS)]
+
+
+def test_losing_face_ends_a_gesture_that_fired():
+    stream = winks([(10, 0.0), (20, 0.5)]) + [obs(30, face=False)]
+    events = every_event([held_wink()], stream)
+    assert [e.ended for e in events] == [False, True]
+    assert events[1].detail == "ended (face lost)"
+
+
+def test_leaving_a_guard_ends_a_gesture_that_fired():
+    guard = StepConfig(signal="yaw", above_deg=-20.0, below_deg=20.0)
+    stream = winks([(10, 0.0), (20, 0.5)]) + winks([(1, 0.5)], start=30, yaw=30.0)
+    events = every_event([held_wink(guards=[guard])], stream)
+    assert [e.ended for e in events] == [False, True]
+    assert events[1].detail == "ended (head yaw +30° outside its limit)"
+
+
+def test_gesture_that_did_not_fire_never_ends():
+    trigger = held_wink(cooldown_s=5.0)
+    stream = winks([(10, 0.0), (20, 0.5), (5, 0.0), (20, 0.5), (5, 0.0)])
+    events = every_event([trigger], stream)
+    assert [e.ended for e in events] == [False, True]
+
+
+def test_reset_drops_the_end_of_a_fire():
+    trigger = held_wink()
+    every_event([trigger], winks([(10, 0.0), (20, 0.5)]))
+    trigger.reset()
+    assert every_event([trigger], winks([(10, 0.0)], start=30)) == []
+
+
+def test_gesture_whose_last_step_is_a_gesture_ends_with_it():
+    triggers = create_triggers(apply_overrides(Config(), combo_config()))
+    stream = blink_then_nod()
+    stream += [obs(len(stream) + i, pitch=p) for i, p in enumerate(sweep(0, 20, 5))]
+    ends = [e for e in every_event(triggers, stream) if e.ended]
+    assert [e.action for e in ends] == ["blink", "nod_down", "blink_nod"]
+    assert ends[1].timestamp == ends[2].timestamp
+    assert ends[2].detail == "ended (nod_down ended)"
+
+
+def test_replay_ignores_ends():
+    config = apply_overrides(Config(), {"gestures": {"blink": {"cooldown_s": 0.0}}})
+    stream = eyes([(30, False), (9, True), (20, False), (9, True), (5, False)])
+    assert replay(config, "blink", stream).fired_at == 39 / FPS

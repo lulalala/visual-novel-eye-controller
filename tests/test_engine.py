@@ -353,7 +353,7 @@ def test_toggle_needs_an_output_that_can_be_held(output):
 
 def test_unknown_output_mode_is_rejected():
     config = apply_overrides(Config(), {"gestures": {"blink": {"output_mode": "hold"}}})
-    with pytest.raises(ValueError, match="gestures.blink.output_mode must be one of press, toggle, not 'hold'"):
+    with pytest.raises(ValueError, match="gestures.blink.output_mode must be one of press, toggle, while, not 'hold'"):
         make(calibrate(), config)
 
 
@@ -371,3 +371,55 @@ def test_a_held_key_cannot_be_part_of_another_output(other):
 def test_held_keys_may_differ_between_gestures():
     config = hold_on_blink(nod_up={"output": "shift", "output_mode": "toggle"})
     make(calibrate(), config)
+
+
+def hold_while_turned(**changes):
+    return apply_overrides(Config(), {"gestures": {"look": {
+        "steps": [{"signal": "yaw", "above_deg": 15.0}], "output": "ctrl", "output_mode": "while", **changes,
+    }}})
+
+
+def turn(frames=20):
+    return [(0.3, 20.0)] * frames + [(0.3, 0.0)] * 10
+
+
+def test_while_gesture_holds_its_output_until_it_ends():
+    samples = calibrate() + turn()
+    engine, output, messages, sounds = make(samples, hold_while_turned())
+    frames = run(engine, len(calibrate()) + 5)
+    assert output.held == [("down", "ctrl")]
+    assert any(m.endswith("-> ctrl held") for m in messages)
+    frames += run(engine, len(samples) - len(frames))
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert "look: ended (signal left step 1's box) -> ctrl released" in messages
+    assert sum(f.fired for f in frames) == 1
+    assert sounds == ["trigger"]
+
+
+def test_while_gesture_holds_again_each_time():
+    samples = calibrate() + turn() + turn()
+    engine, output, *_ = make(samples, hold_while_turned(cooldown_s=0.0))
+    run(engine, len(samples))
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")] * 2
+
+
+def test_while_gesture_released_by_a_lost_face_is_not_released_twice():
+    samples = calibrate() + [(0.3, 20.0)] * 5 + [(None, None)] * 3
+    engine, output, messages, _ = make(samples, hold_while_turned())
+    run(engine, len(samples))
+    assert output.held == [("down", "ctrl"), ("up", "ctrl")]
+    assert "Released ctrl: no face" in messages
+    assert not any("ended" in m for m in messages)
+
+
+def test_ends_of_press_and_toggle_gestures_are_ignored():
+    samples = calibrate() + blink() + [(0.05, 0.0)] * 3
+    engine, output, messages, _ = make(samples, hold_on_blink())
+    run(engine, len(samples))
+    assert output.held == [("down", "ctrl")]
+    assert not any("ended" in m for m in messages)
+
+
+def test_while_needs_an_output_that_can_be_held():
+    with pytest.raises(ValueError, match="gestures.look.output_mode while needs a key"):
+        make(calibrate(), hold_while_turned(output="mouse_wheel_down"))

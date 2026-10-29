@@ -16,8 +16,9 @@ from eyeokuri.keys import EXTENDED_KEYS, KEY_VK, parse_key
 MOUSE_OUTPUTS = ("mouse_left_click", "mouse_right_click", "mouse_wheel_down")
 # Mouse outputs with a down and an up, so output_mode = "toggle" can hold them.
 MOUSE_BUTTONS = ("mouse_left_click", "mouse_right_click")
-# press sends the output once; toggle holds it down until the gesture fires again.
-OUTPUT_MODES = ("press", "toggle")
+# press sends the output once; toggle holds it down until the gesture fires
+# again; while holds it down until the gesture ends (see TriggerEvent.ended).
+OUTPUT_MODES = ("press", "toggle", "while")
 # Outputs the app handles itself instead of sending input. Like the mouse
 # outputs, their names have a prefix so they can't clash with key names.
 APP_OUTPUTS = frozenset({"app_pause_toggle"})

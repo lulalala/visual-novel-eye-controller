@@ -48,7 +48,7 @@ A gesture also has these fields:
 | `cooldown_s` | The time after the gesture fires during which it can't fire again. |
 | `enabled` | Turns the gesture on or off. |
 | `output` | What the gesture sends. |
-| `output_mode` | `press` (the default) sends the output once; `toggle` holds it down until the gesture fires again. |
+| `output_mode` | `press` (the default) sends the output once; `toggle` holds it down until the gesture fires again; `while` holds it down until the gesture ends. |
 
 The same names appear as the columns and rows of the [gesture window](../edit-a-gesture/#change-a-limit).
 
@@ -68,13 +68,13 @@ By default, a blink counts only when your head is within 20° of your usual pose
 - `app_pause_toggle`, which pauses or resumes eyeokuri.
 - `""`, which sends nothing.
 
-To hold the output down until the gesture fires again, set `output_mode = "toggle"`. [Hold a key down](../edit-a-gesture/#hold-a-key-down) explains when eyeokuri lets go. This wink holds `ctrl`, which skips text in many games, until you wink again:
+`output_mode` sets how the output is sent: `press` (the default) sends it once, `toggle` holds it down until the gesture fires again, and `while` holds it down until the gesture ends. [Hold a key down](../edit-a-gesture/#hold-a-key-down) explains each one and when eyeokuri lets go. This gesture holds `ctrl`, which skips text in many games, while you keep your left eye closed:
 
 ```toml
-[gestures.wink_left]
-enabled = true
+[gestures.skip]
+steps = [{ signal = "wink", above_ratio = 0.25, hold_s = 0.3 }]
 output = "ctrl"
-output_mode = "toggle"   # wink again to let go
+output_mode = "while"   # let go when you open your left eye
 ```
 
 ## Combine gestures

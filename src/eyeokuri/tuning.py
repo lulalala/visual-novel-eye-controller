@@ -224,7 +224,8 @@ def _attempts(name: str, gesture: GestureConfig, take: Take) -> list[tuple[tuple
     trigger = GestureTrigger(name, gesture)
     found = []
     for obs in take.observations:
-        if trigger.update(obs) is not None:
+        event = trigger.update(obs)
+        if event is not None and not event.ended:
             found.append(trigger.last_attempt)
     pending = trigger.progress()
     if pending and take.observations:

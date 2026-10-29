@@ -22,6 +22,10 @@ class TriggerEvent:
     action: str
     timestamp: float
     detail: str = ""
+    ended: bool = False
+    """False when the gesture fires. True when a gesture that fired ends: the
+    signal leaves the box of the step that completed it (or that step's
+    gesture ends), or the face or a guard is lost."""
 
 
 class Trigger(Protocol):
@@ -29,7 +33,8 @@ class Trigger(Protocol):
     needs: frozenset[str]
     """Signals the source must provide (see eyeokuri.sources); otherwise the trigger is skipped."""
 
-    def update(self, obs: Observation) -> TriggerEvent | None: ...
+    def update(self, obs: Observation) -> TriggerEvent | None:
+        """The gesture firing or ending this frame, if it does."""
 
     def reset(self) -> None: ...
 
@@ -67,6 +72,11 @@ class StepWatcher:
         # The next frame only sets where the signal is; already inside doesn't count.
         self._was_inside = None
         self._entered_at = None
+
+    @property
+    def inside(self) -> bool:
+        """Whether the signal was in the box on the last update."""
+        return self._was_inside is True
 
     def update(self, value: float, t: float) -> bool:
         inside = (self._above is None or value > self._above) and (
@@ -128,38 +138,68 @@ class GestureTrigger:
         """(step, time) of the steps in the last attempt that fired or was rejected."""
         self.fired = False
         """True on the frame this gesture fires, for gestures that use it as a step."""
+        self.ended = False
+        """True on the frame this gesture ends, for gestures that use it as their last step."""
+        self._active_step: int | None = None
+        """After a fire, the step that completed it, until the gesture ends."""
 
     def reset(self) -> None:
         for watcher in self._watchers.values():
             watcher.reset()
         self._partials = []
+        self._active_step = None
 
     def update(self, obs: Observation) -> TriggerEvent | None:
         self.fired = False
+        self.ended = False
         t = obs.timestamp
         self._values = {s.signal: signal_value(s.signal, obs) for s in self._steps if s.signal}
         if not obs.face_present or None in self._values.values():
             # Losing the face (or a signal) mid-gesture cancels it.
             if self._partials:
                 self._log(f"{self.name}: canceled (face lost)")
+            event = self._end(t, "face lost")
             self.reset()
-            return None
+            return event
         outside = self._outside_guard(obs)
         if outside:
             # Like a lost face: a half-done gesture is dropped, and the signal
             # must enter its box again after the head is back.
             if self._partials:
                 self._log(f"{self.name}: canceled ({outside})")
+            event = self._end(t, outside)
             self.reset()
-            return None
+            return event
         arrived = [i for i, w in self._watchers.items() if w.update(self._values[w.step.signal], t)]
         arrived += [i for i, g in self._gestures.items() if g.fired]
+        ending = self._ending(t)
         for i in sorted(arrived):
             event = self._arrive(i, t)
             if event is not None:
+                # Firing again on the frame it ended carries on, so that end isn't reported.
                 return event
         self._expire(t)
-        return None
+        return ending
+
+    def _ending(self, t: float) -> TriggerEvent | None:
+        """The end of the last fire, if the signal just left the box of the step that completed it."""
+        i = self._active_step
+        if i is None:
+            return None
+        if i in self._watchers:
+            if self._watchers[i].inside:
+                return None
+            return self._end(t, f"signal left step {i + 1}'s box")
+        if not self._gestures[i].ended:
+            return None
+        return self._end(t, f"{self._steps[i].gesture} ended")
+
+    def _end(self, t: float, why: str) -> TriggerEvent | None:
+        if self._active_step is None:
+            return None
+        self._active_step = None
+        self.ended = True
+        return TriggerEvent(self.name, self.name, t, f"ended ({why})", ended=True)
 
     def _outside_guard(self, obs: Observation) -> str:
         """Why a guard blocks this frame, or an empty string."""
@@ -224,6 +264,8 @@ class GestureTrigger:
         # The step that completed this match can't start the next one.
         self._partials = []
         self.fired = True
+        self.ended = False
+        self._active_step = match.last
         return TriggerEvent(self.name, self.name, t, detail)
 
     def _expire(self, t: float) -> None:
@@ -288,7 +330,7 @@ def replay(config: Config, name: str, observations: list[Observation]) -> Replay
     for obs in observations:
         for trigger in triggers:
             event = trigger.update(obs)
-            if event is not None and trigger is target:
+            if event is not None and not event.ended and trigger is target:
                 return Replay(event.timestamp, f"fires at {event.timestamp:.2f}s", target.last_attempt)
     prefix = f"{name}: "
     own = [m[len(prefix):] for m in messages if m.startswith(prefix)]

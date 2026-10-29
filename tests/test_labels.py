@@ -3,7 +3,8 @@ import pytest
 from eyeokuri import labels
 from eyeokuri.config import SIGNALS, Config
 from eyeokuri.i18n import set_language
-from eyeokuri.labels import show_gesture, show_signal
+from eyeokuri.labels import show_gesture, show_output_mode, show_signal
+from eyeokuri.outputs import OUTPUT_MODES
 
 
 @pytest.fixture(autouse=True)
@@ -37,3 +38,8 @@ def test_translated_label_shows_the_id_in_full_width_parentheses():
 def test_a_gesture_you_added_shows_its_name():
     set_language("ja")
     assert show_gesture("double_blink") == "double_blink"
+
+
+def test_every_output_mode_has_a_label():
+    assert set(labels._OUTPUT_MODES) == set(OUTPUT_MODES)
+    assert show_output_mode("while") == "Hold while it lasts (while)"

@@ -68,11 +68,15 @@ By default, a blink counts only when your head is within 20° of your usual pose
 
 ## Hold a key down
 
-Some games skip text while you hold `ctrl`. Select **Hold until it fires again** to make the gesture hold its output down instead of pressing it once:
+Some games skip text while you hold `ctrl`. The list next to **Press a key…** sets how the gesture sends its output:
 
-- When the gesture fires, eyeokuri presses the output and keeps it down. The log says `blink: ... -> ctrl held`.
-- When it fires again, eyeokuri lets go (`-> ctrl released`).
-- eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
+- **Press once (press)**: eyeokuri presses and releases the output each time the gesture fires.
+- **Hold until it fires again (toggle)**: when the gesture fires, eyeokuri presses the output and keeps it down. The log says `blink: ... -> ctrl held`. When it fires again, eyeokuri lets go (`-> ctrl released`).
+- **Hold while it lasts (while)**: eyeokuri presses the output when the gesture fires and lets go when the gesture ends. The gesture ends when the signal leaves the box of the step that completed it, or, if that step is another gesture, when that gesture ends. Turning your head outside the gesture's head limits also ends it.
+
+For example, to skip text while you keep your left eye closed, give a gesture one step: **Wink**, **Above** 0.25, **Hold** 0.3 s. Set its output to `ctrl` and choose **Hold while it lasts**. Ctrl goes down once your left eye has been closed for 0.3 s and comes up when you open it. The built-in left wink fires when you open your eye again, so it suits **Hold until it fires again** instead.
+
+eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
 
 You can hold a key, a key combination, `mouse_left_click` or `mouse_right_click`. A held key is down for every app, not only the game: if you switch windows while it's held, what you type there gets `ctrl` too. Another gesture's output can't use a key that this gesture holds. If you end eyeokuri from Task Manager while a key is held, press that key once to release it.
 
