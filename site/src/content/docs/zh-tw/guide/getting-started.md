@@ -13,7 +13,7 @@ eyeokuri 會透過視訊鏡頭觀察你，當你眨眼時，就對遊戲送出 `
 
 因為這個程式沒有數位簽章，Windows 可能會警告「不明的發行者」。請選擇 **其他資訊**，再選擇 **仍要執行**。
 
-你的設定會儲存在 `%APPDATA%\eyeokuri\config.toml`。升級或解除安裝 eyeokuri 都會保留設定。
+你的設定會儲存在 `%APPDATA%\eyeokuri\config.toml`。升級或解除安裝 eyeokuri 都會保留設定。程式專用設定檔會放在它旁邊的 `configs` 資料夾。請參閱[為每個程式使用不同的按鍵](../main-window/#為每個程式使用不同的按鍵)。
 
 ## 開始閱讀
 
