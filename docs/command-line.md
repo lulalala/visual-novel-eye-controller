@@ -12,7 +12,7 @@ eyeokuri --min-duration 0.5 --blink-key ctrl+enter   # common settings as flags
 eyeokuri --set eyes.open_ratio=0.8                # any config key (repeatable)
 ```
 
-`eyeokuri --help` lists all flags. Command-line settings override the config file.
+`eyeokuri --help` lists all flags. Command-line settings override the config file. The command line doesn't read per-program configs, which only `eyeokuri-gui` uses.
 
 ## Set a config value
 

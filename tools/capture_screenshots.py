@@ -33,6 +33,7 @@ import numpy as np
 from eyeokuri import i18n, theme
 from eyeokuri.config import Config
 from eyeokuri.engine import Engine
+from eyeokuri.foreground import Seen
 from eyeokuri.gui import worker as worker_module
 from eyeokuri.gui.main_window import MainWindow
 from eyeokuri.sources import EYE_OPENNESS, HEAD_POSE, Signals
@@ -133,6 +134,13 @@ class SilentOutput:
 
     def up(self, name: str) -> None:
         pass
+
+
+class FixedForeground:
+    """Says CLANNAD is in front, so the main window shows its program tab."""
+
+    def read(self) -> Seen:
+        return Seen("CLANNAD.exe", "CLANNAD")
 
 
 # Screen capture
@@ -243,7 +251,13 @@ def run(language: str, out: Path, only: set[str]) -> list[Path]:
     root.geometry("+40+40")
     session = Session(root, out, only)
     with tempfile.TemporaryDirectory() as folder:
+        # A program config for the main window's second tab: CLANNAD advances with space.
+        (Path(folder) / "configs").mkdir()
+        (Path(folder) / "configs" / "clannad.toml").write_text(
+            'version = 1\n\n[program]\nexe = "CLANNAD.exe"\nname = "CLANNAD"\n\n[gestures.blink]\noutput = "space"\n',
+            encoding="utf-8")
         main = MainWindow(root, replace(Config(), app=replace(Config().app, paused=False)), Path(folder) / "config.toml")
+        main._probe = FixedForeground()
         try:
             _scenes(session, main, source)
         finally:
@@ -256,12 +270,16 @@ def _scenes(s: Session, main: MainWindow, source: ScriptedSource) -> None:
     # Let the eye and head trackers learn the steady pose.
     s.pump(3.5)
 
-    # Main window: a quick blink that is turned down, two blinks that fire, then a head shake to pause and another to resume.
+    # Main window, with the CLANNAD tab selected: a quick blink that is turned down, two blinks that fire,
+    # then a head shake to pause and another to resume.
+    main.tabs.select(main.program_rows)
     source.play(blink(2) + steady(0.8) + blink() + steady(0.8) + blink() + steady(0.8)
                 + shake() + steady(1.5) + shake() + steady(1.5))
     s.pump_until(lambda: source.idle)
     s.pump(0.5)
     s.shoot("main-window", main.root)
+    main.tabs.select(main.base_rows)  # the other windows edit the base config
+    s.pump(0.3)  # Tk tells the window about the tab change in an event
 
     # Gesture window: the plot shows 4 seconds, a blink 1.4 s in, then the source holds still.
     main.open_gesture("blink")

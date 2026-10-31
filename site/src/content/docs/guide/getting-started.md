@@ -13,7 +13,7 @@ Download `eyeokuri-setup.exe` from the [latest release](https://github.com/lulal
 
 Windows might warn about an unknown publisher because the app is not signed. Select **More info**, then **Run anyway**.
 
-Your settings are saved in `%APPDATA%\eyeokuri\config.toml`. Upgrading or uninstalling eyeokuri keeps them.
+Your settings are saved in `%APPDATA%\eyeokuri\config.toml`. Upgrading or uninstalling eyeokuri keeps them. A program's own config goes in the `configs` folder next to it. See [Use different keys for each program](../main-window/#use-different-keys-for-each-program).
 
 ## Start reading
 

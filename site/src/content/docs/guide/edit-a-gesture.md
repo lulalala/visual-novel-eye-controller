@@ -63,8 +63,8 @@ eyeokuri uses your changes as soon as you make them. They aren't saved until you
 
 - **OK** saves the settings to the config file and closes the window.
 - **Cancel** goes back to the settings you had when you opened the window and closes it. Closing the window another way works like **Cancel**, and asks first if you changed something.
-- **Reset to default** puts a built-in gesture's settings back. It keeps the gesture on or off as it is.
-- **Delete** removes a gesture you added. If another gesture uses it as a step, remove it from there first. You can't delete a built-in gesture. Turn it off instead.
+- **Reset to default** puts a built-in gesture's settings back. It keeps the gesture on or off as it is. When you open the window from a program's tab, the button reads **Reset to base config** and puts back the base config's settings.
+- **Delete** removes a gesture you added. If another gesture uses it as a step, remove it from there first. You can't delete a built-in gesture. Turn it off instead. In a program's tab, you can delete only a gesture you added in that tab.
 
 Saving rewrites the config file with only the values that differ from the defaults, so comments in the file are not kept.
 

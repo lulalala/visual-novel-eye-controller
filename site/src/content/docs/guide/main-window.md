@@ -7,14 +7,14 @@ description: Turn gestures on and off, choose the key each one sends, pause eyeo
 
 The main window lists your gestures on the left and shows the log on the right. Start it from the Start menu after you install it, or with `eyeokuri-gui` if you run from source.
 
-![The eyeokuri main window with four gestures and a log of blinks and a head shake](../../../assets/screenshots/main-window.png)
+![The eyeokuri main window with a Base config tab and a CLANNAD tab, the gesture list and a log of blinks and a head shake](../../../assets/screenshots/main-window.png)
 
 ## Turn gestures on and off
 
 Each gesture row shows the gesture's name and has three controls:
 
 - The button in the **Key** column shows the key the gesture sends and opens the key window. See [Choose what a gesture sends](#choose-what-a-gesture-sends).
-- The checkbox in the **On** column turns the gesture on or off. eyeokuri saves the change to the config file right away.
+- The checkbox in the **On** column turns the gesture on or off. eyeokuri saves the change right away, to the config of the tab you're in. See [Use different keys for each program](#use-different-keys-for-each-program).
 - The gear button (⚙) opens the gesture's window. See [Edit a gesture](../edit-a-gesture/).
 
 **New gesture…** asks for a name, then opens a gesture window for the new gesture.
@@ -49,7 +49,7 @@ Each game or other program can have its own config. Two tabs sit above the gestu
 - **Base config** holds the settings every program uses.
 - The second tab is for the program you used last, other than eyeokuri. It shows that program's window title.
 
-A ✔ marks the tab whose settings eyeokuri uses now. **Base config** shows a ✖ while a program's own config is in use.
+A ✔ marks the tab whose settings eyeokuri uses now. **Base config** shows a ✖ while a program's own config is in use. In the screenshot at the top, CLANNAD is in front, so its tab has the ✔, and a blink sends `space` there while the base config still sends `enter`.
 
 To give a game its own keys:
 
