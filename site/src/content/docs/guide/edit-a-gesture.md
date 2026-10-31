@@ -45,7 +45,7 @@ Each step has its own settings, so changing one step doesn't affect the others.
 | **After previous: min**, **max** | The time allowed since the previous step. 0 means no limit. |
 | **Hold** | How long the signal must stay in the box before the step counts. |
 
-Above the plot:
+Above the steps table:
 
 - **Within** is the time allowed from the first step to the last. 0 means no limit.
 - **Cooldown** is the time after the gesture fires during which it can't fire again.

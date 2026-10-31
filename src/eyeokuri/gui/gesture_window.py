@@ -85,7 +85,7 @@ class GestureWindow:
 
     def _build(self, tab: ttk.Frame) -> None:
         tab.columnconfigure(0, weight=1)
-        tab.rowconfigure(2, weight=1)
+        tab.rowconfigure(1, weight=1)
 
         # The wizard is the usual way to set the limits, so it leads the window.
         banner = ttk.Frame(tab, padding=8, relief="groove")
@@ -100,23 +100,9 @@ class GestureWindow:
             "Do the gesture a few times and the wizard fits the limits and time windows to you. "
             "You can also edit them by hand below.")).grid(row=1, column=1, sticky="w")
 
-        top = ttk.Frame(tab)
-        top.grid(row=1, column=0, sticky="ew")
-        # The gesture's key is set in the key window, from its button in the main window.
-        self.any_order = tk.BooleanVar()
-        ttk.Checkbutton(top, text=_("Steps in any order"), variable=self.any_order,
-                        command=self._on_gesture_field).pack(side="left")
-        self.gesture_vars: dict[str, tk.StringVar] = {}
-        for key, label in (("within_s", _("Within")), ("cooldown_s", _("Cooldown"))):
-            ttk.Label(top, text=label).pack(side="left", padx=(14, 4))
-            var = tk.StringVar()
-            var.trace_add("write", lambda *_a, k=key: self._on_gesture_number(k))
-            ttk.Entry(top, textvariable=var, width=6).pack(side="left")
-            ttk.Label(top, text="s").pack(side="left", padx=(2, 0))
-            self.gesture_vars[key] = var
-
+        # The banner's bottom padding is the small gap above the plot.
         middle = ttk.Frame(tab)
-        middle.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
+        middle.grid(row=1, column=0, sticky="nsew")
         middle.columnconfigure(0, weight=1)
         middle.rowconfigure(1, weight=1)
         self.result = ttk.Label(middle, text="", font="TkHeadingFont")
@@ -128,7 +114,16 @@ class GestureWindow:
             "the previous step was reached in this recording.")).grid(row=2, column=0, sticky="w", pady=(4, 0))
 
         self.steps_frame = ttk.Frame(tab)
-        self.steps_frame.grid(row=3, column=0, sticky="ew", pady=(8, 0))
+        self.steps_frame.grid(row=2, column=0, sticky="ew", pady=(8, 0))
+
+        # Settings for the whole gesture. Their widgets are in the steps table, so they
+        # outlive a rebuild here. The gesture's key is set in the key window, from the main window.
+        self.any_order = tk.BooleanVar()
+        self.gesture_vars: dict[str, tk.StringVar] = {}
+        for key in ("within_s", "cooldown_s"):
+            var = tk.StringVar()
+            var.trace_add("write", lambda *_a, k=key: self._on_gesture_number(k))
+            self.gesture_vars[key] = var
 
     def _load_fields(self) -> None:
         """Shows the model in the widgets, after opening, a reset or the wizard."""
@@ -174,14 +169,23 @@ class GestureWindow:
         frame = self.steps_frame
         for child in frame.winfo_children():
             child.destroy()
+        # The whole gesture's settings, in the steps' columns: any order under Signal,
+        # Within and Cooldown under Above and Below.
+        for key, col, text in (("within_s", 2, _("Within")), ("cooldown_s", 4, _("Cooldown"))):
+            ttk.Label(frame, text=text, foreground=theme.MUTED).grid(row=0, column=col, columnspan=2, sticky="w", padx=3)
+            ttk.Entry(frame, textvariable=self.gesture_vars[key], width=7).grid(row=1, column=col, padx=3, pady=2)
+            ttk.Label(frame, text="s").grid(row=1, column=col + 1, sticky="w")
+        ttk.Checkbutton(frame, text=_("Steps in any order"), variable=self.any_order,
+                        command=self._on_gesture_field).grid(row=1, column=1, sticky="w", padx=3)
+        top = 2
         self.step_vars: dict[tuple[int, str], tk.StringVar] = {}
         headers = ("", _("Signal"), _("Above"), "", _("Below"), "", _("After previous: min"), _("max"), _("Hold"), "")
         for col, text in enumerate(headers):
-            ttk.Label(frame, text=text, foreground=theme.MUTED).grid(row=0, column=col, sticky="w", padx=3)
+            ttk.Label(frame, text=text, foreground=theme.MUTED).grid(row=top, column=col, sticky="w", padx=3, pady=(10, 0))
         m = self.model
         choices = step_choices(self.app.config.gestures, self.name)
         for i, step in enumerate(m["steps"]):
-            r = i + 1
+            r = top + 1 + i
             color = theme.STEP_COLORS[i % len(theme.STEP_COLORS)]
             tk.Label(frame, text=str(i + 1), background=color, foreground="white", width=2).grid(
                 row=r, column=0, padx=3, pady=2)
@@ -204,11 +208,12 @@ class GestureWindow:
             ttk.Label(frame, text=unit).grid(row=r, column=5, sticky="w")
             ttk.Button(frame, text="✕", width=3, command=lambda i=i: self._delete_step(i),
                        state="normal" if len(m["steps"]) > 1 else "disabled").grid(row=r, column=9, padx=3)
+        add_row = top + 1 + len(m["steps"])
         ttk.Button(frame, text=_("+ Add step"), command=self._add_step).grid(
-            row=len(m["steps"]) + 1, column=1, sticky="w", padx=3, pady=(4, 0))
+            row=add_row, column=1, sticky="w", padx=3, pady=(4, 0))
         ttk.Label(frame, foreground=theme.MUTED, text=_("Leave a number empty for no limit.")).grid(
-            row=len(m["steps"]) + 1, column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
-        self._add_guard_rows(frame, len(m["steps"]) + 2)
+            row=add_row, column=2, columnspan=8, sticky="w", padx=10, pady=(4, 0))
+        self._add_guard_rows(frame, add_row + 1)
 
     def _build_guards(self) -> None:
         """Head limits share the steps table's columns, so rebuilding one rebuilds both."""
