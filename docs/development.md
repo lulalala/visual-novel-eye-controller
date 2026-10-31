@@ -68,10 +68,12 @@ src/eyeokuri/
   keys.py         key names and combinations ("ctrl+s"): parsing and press order
   outputs.py      TriggerEvent -> key/mouse input
   engine.py       runs the pipeline one frame at a time (used by both front ends)
+  programs.py     per-program configs: gesture overrides over the base config, and which program is in front (GUI only)
+  foreground.py   the foreground window's executable name and title (Windows)
   app.py          command line: main loop and flags
   gui/            window (Tkinter); eyeokuri-gui runs gui:main
     launch.py       parses the flags and starts the main window
-    main_window.py  the gesture list with on/off and pause toggles, the log, and the menu bar
+    main_window.py  the gesture list (Base config and program tabs) with on/off and pause toggles, the log, and the menu bar
     worker.py       runs the Engine on a background thread
     gesture_window.py  one gesture's window: plot, steps table, head limits
     output_window.py   key window: the key a gesture sends, and press or hold

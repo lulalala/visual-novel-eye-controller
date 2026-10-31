@@ -5,6 +5,7 @@ __pycache__/
 /build/
 /dist/
 /config.toml
+/configs/
 # Eye-value logs from --log
 *.csv
 /site/dist/

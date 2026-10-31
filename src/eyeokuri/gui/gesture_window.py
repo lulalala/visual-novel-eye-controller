@@ -18,6 +18,7 @@ from eyeokuri.gui.plot import PlotEditor
 from eyeokuri.gui.tkutil import id_box, place_over
 from eyeokuri.i18n import _
 from eyeokuri.labels import show_gesture, show_signal
+from eyeokuri.programs import BASE
 from eyeokuri.triggers import Replay, replay
 from eyeokuri.tuning import Take, can_tune
 
@@ -37,7 +38,8 @@ class GestureWindow:
         self.app = app
         self.name = name
         self.new = gesture is not None
-        self.builtin = name in Config().gestures
+        self.builtin = name in app.reference_gestures()
+        """A built-in gesture, or in a program tab one the base config has: it can be reset, not deleted."""
         self.model = gesture_model(gesture or app.config.gestures[name])
         self._suppress = False
 
@@ -59,7 +61,8 @@ class GestureWindow:
         self.delete_button = ttk.Button(bottom, text=_("Delete"), command=self._delete,
                                         state="disabled" if self.builtin else "normal")
         self.delete_button.pack(side="left")
-        ttk.Button(bottom, text=_("Reset to default"), command=self._reset,
+        reset = _("Reset to default") if app.tab == BASE else _("Reset to base config")
+        ttk.Button(bottom, text=reset, command=self._reset,
                    state="normal" if self.builtin else "disabled").pack(side="left", padx=(6, 0))
         ttk.Button(bottom, text=_("Cancel"), command=self.cancel).pack(side="right")
         self.ok_button = ttk.Button(bottom, text=_("OK"), style="Accent.TButton", command=self.ok)
@@ -386,11 +389,11 @@ class GestureWindow:
         self._close()
 
     def _reset(self) -> None:
-        """Goes back to the built-in settings. On or off and the key stay as they are:
-        the main window's toggle and key window own those."""
+        """Goes back to the built-in settings (in a program tab, the base config's). On or off
+        and the key stay as they are: the main window's toggle and key window own those."""
         if self.builtin:
             m = self.model
-            default = Config().gestures[self.name]
+            default = self.app.reference_gestures()[self.name]
             self.model = gesture_model(replace(default, enabled=m["enabled"], output=m["output"],
                                                output_mode=m["output_mode"]))
             self._load_fields()

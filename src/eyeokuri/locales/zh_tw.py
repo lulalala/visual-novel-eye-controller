@@ -16,6 +16,8 @@ CATALOG: dict[str, str] = {
     "Key": "按鍵",
     "On": "開啟",
     "All gestures": "所有動作",
+    "Base config": "基本設定檔",
+    "Create for:": "建立設定檔：",
     "(none)": "（無）",
     "Couldn't turn on this gesture:": "無法開啟這個動作：",
     "Couldn't turn off this gesture:": "無法關閉這個動作：",
@@ -86,6 +88,7 @@ CATALOG: dict[str, str] = {
     # Gesture window
     "Delete": "刪除",
     "Reset to default": "還原預設值",
+    "Reset to base config": "還原為基本設定檔",
     "Set up with wizard…": "用精靈設定…",
     "Recommended: let the wizard set the limits": "建議：讓精靈幫你設定範圍",
     "Do the gesture a few times and the wizard fits the limits and time windows to you. You can also edit them by hand below.":

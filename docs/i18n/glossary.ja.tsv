@@ -53,3 +53,5 @@ spread the word	布教しよう	Homepage only; otaku slang for sharing something
 backlog (unplayed games)	積みゲー	Homepage footer only.
 demo dialog voice	ツンデレ (あなた, 〜んだからね, バカ!)	Decided with the user: classic tsundere with a few VN in-jokes (フラグ, セーブ). Addresses the player as あなた.
 homepage voice (non-dialog)	Light otaku slang plus game-UI gags	Decided with the user. Trust bullets and install steps stay plain.
+base config	基本の設定ファイル	The config that program configs apply on top of
+program config	ソフト別の設定ファイル	A config for one program (game), over the base config

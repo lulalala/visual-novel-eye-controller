@@ -14,6 +14,7 @@ eyeokuri reads your webcam to detect blinks and head movements. Each frame is pr
 ## What stays on your PC
 
 - **Settings.** eyeokuri saves your settings in `%APPDATA%\eyeokuri\config.toml`. Delete the file to reset them, or uninstall and remove the folder.
+- **Program configs.** To use each program's own config, eyeokuri reads the executable name and window title of the program in front. They stay in memory, unless you create a config for that program: then its file in `%APPDATA%\eyeokuri\configs\` keeps the executable name and the title.
 - **Log file.** Only if you start eyeokuri with `--log`, it writes numbers (eye openness and head angles per frame) to the file you name. The file contains no images and no identifying information. You decide whether to keep or share it.
 - **Key and mouse output.** eyeokuri sends the input you configured, `Enter` by default, to the foreground window. It does not read what you type or what the game shows.
 

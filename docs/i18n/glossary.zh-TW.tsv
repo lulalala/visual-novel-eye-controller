@@ -50,3 +50,5 @@ checkbox	核取方塊
 tab	分頁	一般 / 進階.
 live view	即時畫面	The camera picker shows each camera live.
 Help (menu)	說明	The Windows menu name, not the docs (使用說明).
+base config	基本設定檔	The config that program configs apply on top of
+program config	程式專用設定檔	A config for one program (game), over the base config

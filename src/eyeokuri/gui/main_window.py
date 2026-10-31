@@ -1,4 +1,5 @@
-"""The main window: the gesture list with on/off toggles, and the log."""
+"""The main window: the gesture list with on/off toggles, in a tab for the base config
+and one for the program in front, and the log."""
 
 from __future__ import annotations
 
@@ -12,6 +13,7 @@ from tkinter import messagebox, ttk
 from eyeokuri import theme
 from eyeokuri.config import Config, GestureConfig, StepConfig, dump_config
 from eyeokuri.engine import check_config
+from eyeokuri.foreground import ForegroundProbe
 from eyeokuri.gui.about import AboutWindow
 from eyeokuri.gui.camera import CameraWindow
 from eyeokuri.gui.config_window import ConfigWindow
@@ -24,19 +26,37 @@ from eyeokuri.gui.wizard import WizardWindow
 from eyeokuri.gui.worker import Worker
 from eyeokuri.i18n import _
 from eyeokuri.labels import show_gesture
+from eyeokuri.programs import BASE, PROGRAM, Program, dump_program, load_programs, merged, next_target, split
 
 
 _POLL_MS = 15
+# How often to look at which program is in front.
+_PROBE_S = 0.3
+# Longer window titles are cut short on the tab.
+_TAB_NAME_CHARS = 30
 
 
 class MainWindow:
     """The gesture list (each with a button for its key, an on/off toggle and a gear button to configure it),
-    a toggle for all gestures (pause), and the log."""
+    a toggle for all gestures (pause), and the log.
 
-    def __init__(self, root: tk.Tk, config: Config, path: Path) -> None:
+    The list has two tabs: the base config, and the program in front (its own
+    config over the base, or "Create for" one). ``config`` is what the selected
+    tab shows, so the editor windows edit that tab; gesture edits go to its
+    layer and everything else to the base config."""
+
+    def __init__(self, root: tk.Tk, config: Config, path: Path, folder: Path | None = None) -> None:
         self.root = root
-        self.config = config
+        self.base = config
+        """The base config, as in use."""
+        self._base_on_disk = config
         self.path = path
+        self.folder = folder if folder is not None else path.parent / "configs"
+        """Where program configs go."""
+        self.program: Program | None = None
+        """The second tab's program; its config is in use once saved."""
+        self.tab = BASE
+        self.config = config
         self.gesture_window: GestureWindow | None = None
         self.config_window: ConfigWindow | None = None
         self.output_window: OutputWindow | None = None
@@ -44,8 +64,12 @@ class MainWindow:
         self.camera: CameraWindow | None = None
         self.about: AboutWindow | None = None
         self.worker = Worker(config)
+        self.programs = load_programs(self.folder, config, self.worker.log)
+        """Program configs as saved, by lowercased exe."""
+        self._probe = ForegroundProbe()
+        self._next_probe = 0.0
         self._shown_status: tuple[str, bool] | None = None
-        self._shown_rows: tuple[tuple[str, str, str, bool], ...] | None = None
+        self._shown_rows: tuple[str, tuple[tuple[str, str, str, bool], ...]] | None = None
         self._row_controls: list[ttk.Widget] = []
 
         root.title("eyeokuri")
@@ -67,8 +91,16 @@ class MainWindow:
 
         left = ttk.Frame(root, padding=(8, 8, 0, 8))
         left.grid(row=0, column=0, sticky="ns")
-        self.rows = ttk.Frame(left)
-        self.rows.pack(anchor="nw")
+        self.tabs = ttk.Notebook(left)
+        self.tabs.pack(anchor="nw")
+        self.base_rows = ttk.Frame(self.tabs, padding=(0, 6, 0, 0))
+        self.program_rows = ttk.Frame(self.tabs, padding=(0, 6, 0, 0))
+        self.rows = self.base_rows
+        self.tabs.add(self.base_rows)
+        self.tabs.add(self.program_rows)
+        self.tabs.hide(self.program_rows)
+        self.tabs.bind("<<NotebookTabChanged>>", self._tab_changed)
+        self._update_tabs()
         self.running = tk.BooleanVar(value=not config.app.paused)
         self.new_button = ttk.Button(left, text=_("New gesture…"), command=self.new_gesture)
         self.new_button.pack(anchor="w", pady=(10, 0))
@@ -107,9 +139,11 @@ class MainWindow:
 
     def _build_rows(self) -> None:
         """One row per gesture, under a row that turns all of them on or off (pause)."""
-        self._shown_rows = self._rows_of(self.config)
-        for child in self.rows.winfo_children():
-            child.destroy()
+        self._shown_rows = (self.tab, self._rows_of(self.config))
+        for frame in (self.base_rows, self.program_rows):
+            for child in frame.winfo_children():
+                child.destroy()
+        self.rows = self.program_rows if self.tab == PROGRAM else self.base_rows
         for col, text in enumerate((_("Gesture"), _("Key"), _("On"))):
             ttk.Label(self.rows, text=text, foreground=theme.MUTED).grid(row=0, column=col, sticky="w", padx=4)
         ttk.Label(self.rows, text=_("All gestures"), font="TkHeadingFont").grid(row=1, column=0, sticky="w", padx=4)
@@ -176,6 +210,61 @@ class MainWindow:
         self.gesture_window = GestureWindow(self, name, GestureConfig(steps=[StepConfig(signal="eyes", below_ratio=0.55)]))
         self.push_config()
 
+    # Tabs
+
+    def _active(self) -> Program | None:
+        """The program whose config is in use."""
+        return self.program if self.program is not None and self.program.saved else None
+
+    def _shown(self) -> Config:
+        return merged(self.base, self.program) if self.tab == PROGRAM else self.base
+
+    def reference_gestures(self) -> dict[str, GestureConfig]:
+        """What the selected tab's gestures go back to: the built-in ones, or the base config's."""
+        return Config().gestures if self.tab == BASE else self.base.gestures
+
+    def _update_tabs(self) -> None:
+        """The tab names, with ✔ on the one in use, and the program tab shown only when there is a program."""
+        active = self._active()
+        self.tabs.tab(self.base_rows, text=("✖ " if active else "✔ ") + _("Base config"))
+        if self.program is None:
+            self.tabs.hide(self.program_rows)
+            return
+        name = self.program.name
+        if len(name) > _TAB_NAME_CHARS:
+            name = name[:_TAB_NAME_CHARS - 1] + "…"
+        self.tabs.add(self.program_rows)
+        self.tabs.tab(self.program_rows, text="✔ " + name if self.program.saved else _("Create for:") + " " + name)
+
+    def _tab_changed(self, _event: object = None) -> None:
+        tab = PROGRAM if self.tabs.select() == str(self.program_rows) else BASE
+        if tab != self.tab:
+            self.tab = tab
+            self.config = self._shown()
+            self._build_rows()
+
+    def _follow_foreground(self) -> None:
+        """Switches the program tab to the program in front. Not while a window is
+        editing a tab, which would change under it; gestures are off then anyway."""
+        if self._editing:
+            return
+        target = next_target(self.program, self._probe.read(), self.programs, self.folder)
+        if target == self.program:
+            return
+        was = self._active()
+        self.program = target
+        self._update_tabs()
+        self._tab_changed()
+        self.config = self._shown()
+        self._build_rows()
+        if self._active() != was:
+            self._log_active()
+            self.push_config()
+
+    def _log_active(self) -> None:
+        active = self._active()
+        self.worker.log(f"Using {active.name}'s config ({active.path.name})" if active else "Using the base config")
+
     # Polling
 
     def _poll(self) -> None:
@@ -195,6 +284,10 @@ class MainWindow:
             self._save_paused(status[1])
         if self.camera is not None:
             self.camera.show(self.worker.frame)
+        now = time.monotonic()
+        if now >= self._next_probe:
+            self._next_probe = now + _PROBE_S
+            self._follow_foreground()
         self.root.after(_POLL_MS, self._poll)
 
     def _append_log(self, message: str) -> None:
@@ -210,9 +303,11 @@ class MainWindow:
     # Settings
 
     def apply_config(self, config: Config) -> None:
-        self.config = config
+        """Puts the selected tab's settings in use: its gestures go to its layer, the rest to the base config."""
+        self.base, self.program = split(self.base, self.program, self.tab, config)
+        self.config = self._shown()
         self.push_config()
-        if self._rows_of(config) != self._shown_rows:
+        if (self.tab, self._rows_of(self.config)) != self._shown_rows:
             self._build_rows()
 
     @property
@@ -222,7 +317,7 @@ class MainWindow:
     def push_config(self) -> None:
         """Sends the settings in use to the engine. Gestures are off while a gesture,
         config, key or wizard window is open, so editing and recording send nothing to other windows."""
-        self.worker.set_config(self.config)
+        self.worker.set_config(merged(self.base, self._active()))
         self.worker.set_suspended(self._editing)
         self._set_controls()
 
@@ -231,11 +326,32 @@ class MainWindow:
         state = "disabled" if self._editing else "normal"
         for widget in [*self._row_controls, self.new_button]:
             widget.configure(state=state)
+        # The other tab too: the open window edits this one.
+        for frame in (self.base_rows, self.program_rows):
+            if frame is not self.rows and self.tabs.tab(frame, "state") != "hidden":
+                self.tabs.tab(frame, state=state)
         self.settings_menu.entryconfigure(self._config_label, state=state)
 
     def save_config(self, config: Config) -> None:
+        """Puts the settings in use and saves what changed: the base config, the program's config or both.
+        A program you haven't made a config for gets one with its first gesture change."""
         self.apply_config(config)
-        self.path.write_text(dump_config(config), encoding="utf-8")
+        if self.tab == BASE or self.base != self._base_on_disk:
+            self.path.write_text(dump_config(self.base), encoding="utf-8")
+            self._base_on_disk = self.base
+        program = self.program
+        if (self.tab != PROGRAM or program is None or not (program.saved or program.overrides)
+                or program == self.programs.get(program.key)):
+            return
+        saved = replace(program, saved=True)
+        self.folder.mkdir(parents=True, exist_ok=True)
+        saved.path.write_text(dump_program(self.base, saved), encoding="utf-8")
+        self.program = self.programs[saved.key] = saved
+        if not program.saved:
+            self.worker.log(f"Created {saved.path}")
+            self._update_tabs()
+            self._log_active()
+            self.push_config()
 
     # Windows
 

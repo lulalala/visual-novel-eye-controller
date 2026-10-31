@@ -16,6 +16,8 @@ CATALOG: dict[str, str] = {
     "Key": "キー",
     "On": "オン",
     "All gestures": "すべてのジェスチャー",
+    "Base config": "基本の設定ファイル",
+    "Create for:": "新規作成：",
     "(none)": "（なし）",
     "Couldn't turn on this gesture:": "このジェスチャーをオンにできませんでした：",
     "Couldn't turn off this gesture:": "このジェスチャーをオフにできませんでした：",
@@ -86,6 +88,7 @@ CATALOG: dict[str, str] = {
     # Gesture window
     "Delete": "削除",
     "Reset to default": "初期設定に戻す",
+    "Reset to base config": "基本の設定ファイルに戻す",
     "Set up with wizard…": "ウィザードで設定…",
     "Recommended: let the wizard set the limits": "おすすめ：ウィザードで範囲を設定",
     "Do the gesture a few times and the wizard fits the limits and time windows to you. You can also edit them by hand below.":

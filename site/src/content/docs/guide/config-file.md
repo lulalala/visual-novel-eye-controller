@@ -92,3 +92,24 @@ output = "space"
 ```
 
 When the same movement matches several gestures, each one fires. In this example, a blink followed by a nod also fires `blink`, so it sends `Enter` too.
+
+## Give a program its own config
+
+The second tab of the [main window](../main-window/#use-different-keys-for-each-program) saves each program's config in a `configs` folder next to `config.toml`. The installed app uses `%APPDATA%\eyeokuri\configs\`. The file holds the program's executable name, the tab name and the gesture fields that differ from `config.toml`:
+
+```toml
+version = 1
+
+[program]
+exe = "CLANNAD.exe"   # matched with any capitalization
+name = "CLANNAD"      # shown on the tab
+
+[gestures.blink]
+output = "space"
+```
+
+- A program's config can hold only `[program]` and `[gestures.NAME]` sections. Camera, eye, head, feedback and app settings come from `config.toml`.
+- A field the file leaves out comes from `config.toml`, so a later change there reaches the program too.
+- A gesture that isn't in `config.toml` needs its `steps`.
+- eyeokuri reads these files when it starts. It skips a file it can't use and says why in the log.
+- To stop using a program's config, delete its file and restart eyeokuri.

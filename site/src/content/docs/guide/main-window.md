@@ -42,6 +42,24 @@ eyeokuri also lets go when you pause, when your face leaves the camera, when you
 
 You can hold a key, a key combination, `mouse_left_click` or `mouse_right_click`. A held key is down for every app, not only the game: if you switch windows while it's held, what you type there gets `ctrl` too. Several gestures can use the same key: if two gestures hold `ctrl`, it stays down until both have let go. If you end eyeokuri from Task Manager while a key is held, press that key once to release it.
 
+## Use different keys for each program
+
+Each game or other program can have its own config. Two tabs sit above the gesture list:
+
+- **Base config** holds the settings every program uses.
+- The second tab is for the program you used last, other than eyeokuri. It shows that program's window title.
+
+A ✔ marks the tab whose settings eyeokuri uses now. **Base config** shows a ✖ while a program's own config is in use.
+
+To give a game its own keys:
+
+1. Switch to the game, then back to eyeokuri. The second tab reads **Create for: <window title>**, and eyeokuri still uses the base config.
+2. Select that tab and change a key, a checkbox or a gesture. eyeokuri saves a config for the game, and the tab becomes **✔ <window title>**.
+
+From then on, eyeokuri uses that config whenever the game is in front, and the base config when another program is. Switching to eyeokuri, the taskbar or Alt+Tab keeps the game's tab, so you can change its settings. eyeokuri recognizes the program by its executable file name, such as `CLANNAD.exe`, so a changing window title doesn't matter. Games that run on the same executable name share one config.
+
+A program's config saves only what you changed from the base config, so a change in **Base config** reaches every program that doesn't change the same setting. In a program's tab, **Reset to base config** in the gesture window takes a gesture back to the base config's settings, and **Delete** works only for gestures you added in that tab. Pause and the settings in the config window apply to all programs.
+
 ## Pause eyeokuri
 
 The **All gestures** checkbox at the top of the list pauses and resumes eyeokuri. The `p` key and a head shake do the same.

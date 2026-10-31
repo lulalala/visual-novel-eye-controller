@@ -29,7 +29,8 @@ def _windows_sharp_text() -> None:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="eyeokuri-gui", description="eyeokuri with a window: live view, log and settings.")
     p.add_argument("-c", "--config", type=Path, default=Path("config.toml"),
-                   help="config file to load and save (default: config.toml, created on first save)")
+                   help="config file to load and save (default: config.toml, created on first save); "
+                        "per-program configs go in a configs folder next to it")
     args = p.parse_args(argv)
     _windows_sharp_text()
     i18n.set_language(i18n.detect_language())

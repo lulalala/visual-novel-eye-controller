@@ -92,3 +92,24 @@ output = "space"
 ```
 
 當同一個動作符合多個動作時，每一個都會觸發。在這個例子中，眨眼之後點頭也會觸發 `blink`，所以也會送出 `Enter`。
+
+## 為程式建立專用設定檔
+
+[主視窗](../main-window/#為每個程式使用不同的按鍵)的第二個分頁，會把每個程式的設定檔存在 `config.toml` 旁邊的 `configs` 資料夾。安裝版使用 `%APPDATA%\eyeokuri\configs\`。檔案中有程式的執行檔名稱、分頁名稱，以及和 `config.toml` 不同的動作欄位：
+
+```toml
+version = 1
+
+[program]
+exe = "CLANNAD.exe"   # 不分大小寫
+name = "CLANNAD"      # 顯示在分頁上
+
+[gestures.blink]
+output = "space"
+```
+
+- 程式專用設定檔只能有 `[program]` 和 `[gestures.NAME]` 區段。鏡頭、眼睛、頭部、回饋和應用程式設定都來自 `config.toml`。
+- 檔案中沒有的欄位會使用 `config.toml` 的值，所以之後在那裡的修改也會套用到程式。
+- 不在 `config.toml` 裡的動作需要有 `steps`。
+- eyeokuri 在啟動時讀取這些檔案。無法使用的檔案會被略過，並在記錄中說明原因。
+- 要停止使用程式專用設定檔，請刪除它的檔案並重新啟動 eyeokuri。

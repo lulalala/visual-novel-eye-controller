@@ -348,6 +348,22 @@ def _toml_key(key: str) -> str:
     return key if re.fullmatch(r"[A-Za-z0-9_-]+", key) else json.dumps(key)
 
 
+def gesture_lines(gestures: dict[str, GestureConfig], reference: dict[str, GestureConfig]) -> list[str]:
+    """TOML sections with the gesture fields that differ from ``reference``. A gesture
+    that isn't in ``reference`` is written with its steps, so it can be read back on its own."""
+    lines: list[str] = []
+    for name, gesture in gestures.items():
+        ref = reference.get(name)
+        if gesture == ref:
+            continue
+        lines += ["", f"[gestures.{_toml_key(name)}]"]
+        for gf in fields(GestureConfig):
+            v = getattr(gesture, gf.name)
+            if v != getattr(ref or GestureConfig(), gf.name) or (ref is None and gf.name == "steps"):
+                lines.append(f"{gf.name} = {_toml_value(v)}")
+    return lines
+
+
 def dump_config(config: Config) -> str:
     """TOML with the values that differ from the defaults; load_config reads it back."""
     default = Config()
@@ -357,16 +373,7 @@ def dump_config(config: Config) -> str:
         if f.name == "version" or value == base:
             continue
         if f.name == "gestures":
-            for name, gesture in value.items():
-                builtin = base.get(name)
-                if gesture == builtin:
-                    continue
-                ref = builtin or GestureConfig()
-                lines += ["", f"[gestures.{_toml_key(name)}]"]
-                for gf in fields(GestureConfig):
-                    v = getattr(gesture, gf.name)
-                    if v != getattr(ref, gf.name) or (builtin is None and gf.name == "steps"):
-                        lines.append(f"{gf.name} = {_toml_value(v)}")
+            lines += gesture_lines(value, base)
         else:
             lines += ["", f"[{f.name}]"]
             lines += [f"{sf.name} = {_toml_value(getattr(value, sf.name))}" for sf in fields(value)
