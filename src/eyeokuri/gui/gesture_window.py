@@ -1,8 +1,7 @@
-"""The gesture window: one gesture's output, plot editor, steps table and head limits."""
+"""The gesture window: one gesture's plot editor, steps table and head limits."""
 
 from __future__ import annotations
 
-import sys
 import tkinter as tk
 from dataclasses import replace
 from tkinter import messagebox, ttk
@@ -18,9 +17,7 @@ from eyeokuri.gui.live_edit import LiveEdit
 from eyeokuri.gui.plot import PlotEditor
 from eyeokuri.gui.tkutil import id_box, place_over
 from eyeokuri.i18n import _
-from eyeokuri.keys import from_tk_event, lone_modifier_from_tk
-from eyeokuri.labels import show_gesture, show_output_mode, show_signal
-from eyeokuri.outputs import APP_OUTPUTS, OUTPUT_MODES, OUTPUT_NAMES
+from eyeokuri.labels import show_gesture, show_signal
 from eyeokuri.triggers import Replay, replay
 from eyeokuri.tuning import Take, can_tune
 
@@ -105,22 +102,10 @@ class GestureWindow:
 
         top = ttk.Frame(tab)
         top.grid(row=1, column=0, sticky="ew")
-        ttk.Label(top, text=_("Output")).pack(side="left", padx=(0, 4))
-        # Editable: any key or combination (f5, ctrl+s) can be typed, or captured below.
-        self.output_var = tk.StringVar()
-        self.output_var.trace_add("write", lambda *_a: self._on_gesture_field())
-        self.output = ttk.Combobox(top, width=18, textvariable=self.output_var,
-                                   values=["(none)", *OUTPUT_NAMES, *sorted(APP_OUTPUTS)])
-        self.output.pack(side="left")
-        self.capture_button = ttk.Button(top, text=_("Press a key…"), command=self._toggle_capture)
-        self.capture_button.pack(side="left", padx=(4, 0))
-        self._capturing = False
-        self.mode_box = id_box(top, list(OUTPUT_MODES), show_output_mode, self.model["output_mode"],
-                               self._on_output_mode, min_width=10)
-        self.mode_box.pack(side="left", padx=(4, 0))
+        # The gesture's key is set in the key window, from its button in the main window.
         self.any_order = tk.BooleanVar()
         ttk.Checkbutton(top, text=_("Steps in any order"), variable=self.any_order,
-                        command=self._on_gesture_field).pack(side="left", padx=(14, 0))
+                        command=self._on_gesture_field).pack(side="left")
         self.gesture_vars: dict[str, tk.StringVar] = {}
         for key, label in (("within_s", _("Within")), ("cooldown_s", _("Cooldown"))):
             ttk.Label(top, text=label).pack(side="left", padx=(14, 4))
@@ -149,9 +134,6 @@ class GestureWindow:
         """Shows the model in the widgets, after opening, a reset or the wizard."""
         m = self.model
         self._suppress = True
-        self._stop_capture()
-        self.output_var.set(m["output"] or "(none)")
-        self.mode_box.set(show_output_mode(m["output_mode"]))
         self.any_order.set(m["any_order"])
         for key, var in self.gesture_vars.items():
             var.set(fmt(m[key]))
@@ -165,57 +147,10 @@ class GestureWindow:
         if self._suppress:
             return
         m = self.model
-        output = self.output_var.get().strip().lower()
-        # Invalid text is stored too; build_config() reports it, and nothing applies until it's fixed.
-        m["output"] = "" if output in ("", "(none)") else output
         if m["any_order"] != self.any_order.get():
             m["any_order"] = self.any_order.get()
             self._build_steps()
         self._refresh()
-
-    def _on_output_mode(self, mode: str) -> None:
-        self.model["output_mode"] = mode
-        self._refresh()
-
-    def _toggle_capture(self) -> None:
-        if self._capturing:
-            self._stop_capture()
-            return
-        self._capturing = True
-        self.capture_button.configure(text=_("Press a key now (click to cancel)"))
-        # Keys go to the focused button; "break" stops Space or Tab from acting on it.
-        self.capture_button.focus_set()
-        self.capture_button.bind("<KeyPress>", self._on_capture_key)
-        self.capture_button.bind("<KeyRelease>", self._on_capture_release)
-        self.capture_button.bind("<FocusOut>", lambda _e: self._stop_capture())
-        # The modifier pressed last, while no other key has been pressed after it.
-        self._lone_modifier: str | None = None
-
-    def _on_capture_key(self, event: tk.Event) -> str:
-        name = from_tk_event(event.keysym, event.state, sys.platform)
-        if name is not None:
-            self._stop_capture()
-            self.output_var.set(name)
-        else:
-            self._lone_modifier = lone_modifier_from_tk(event.keysym)
-        return "break"
-
-    def _on_capture_release(self, event: tk.Event) -> str:
-        # A modifier released with no key pressed after it is the key itself (ctrl to skip text).
-        name = lone_modifier_from_tk(event.keysym)
-        if name is not None and name == self._lone_modifier:
-            self._stop_capture()
-            self.output_var.set(name)
-        return "break"
-
-    def _stop_capture(self) -> None:
-        if not self._capturing:
-            return
-        self._capturing = False
-        self.capture_button.unbind("<KeyPress>")
-        self.capture_button.unbind("<KeyRelease>")
-        self.capture_button.unbind("<FocusOut>")
-        self.capture_button.configure(text=_("Press a key…"))
 
     def _on_gesture_number(self, key: str) -> None:
         if self._suppress:
@@ -446,10 +381,13 @@ class GestureWindow:
         self._close()
 
     def _reset(self) -> None:
-        """Goes back to the built-in settings. On or off stays as it is: the main window's toggle owns that."""
+        """Goes back to the built-in settings. On or off and the key stay as they are:
+        the main window's toggle and key window own those."""
         if self.builtin:
-            enabled = self.model["enabled"]
-            self.model = gesture_model(replace(Config().gestures[self.name], enabled=enabled))
+            m = self.model
+            default = Config().gestures[self.name]
+            self.model = gesture_model(replace(default, enabled=m["enabled"], output=m["output"],
+                                               output_mode=m["output_mode"]))
             self._load_fields()
 
     def ok(self) -> None:

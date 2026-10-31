@@ -2,7 +2,7 @@
 title: Edit a gesture
 sidebar:
   order: 3
-description: Change a gesture's thresholds, timing, head limits and output in the gesture window, and test the change against your own movement.
+description: Change a gesture's thresholds, timing and head limits in the gesture window, and test the change against your own movement.
 ---
 
 The gear button (⚙) on a gesture's row opens its window. You change the gesture's settings here and see the result on your own movement at once.
@@ -56,29 +56,6 @@ Above the plot:
 Moving your head often makes you blink, and a turned or tilted head also changes how open your eyes look. The **Only while the head stays within** rows limit the head angle for the whole gesture. While your head is outside a limit, the gesture can't start, and one in progress is canceled. The log says why, for example `blink: canceled (head yaw +25° outside its limit)`.
 
 By default, a blink counts only when your head is within 20° of your usual pose sideways and 10° up or down. Remove the rows to count blinks at any head angle.
-
-## Choose what the gesture sends
-
-**Output** is what the gesture sends. You can type it, choose it from the list, or select **Press a key…** and press the key or combination.
-
-- A key, such as `enter`, `space`, `up`, `f5` or `a`.
-- A key with modifiers (`ctrl`, `shift`, `alt`, `win`), joined with `+`, such as `ctrl+s`.
-- A mouse input: `mouse_left_click`, `mouse_right_click` or `mouse_wheel_down`.
-- `app_pause_toggle`, which pauses or resumes eyeokuri.
-- `(none)`, which sends nothing. Use it for a gesture that other gestures use as a step.
-
-## Hold a key down
-
-Some games skip text while you hold `ctrl`. The list next to **Press a key…** sets how the gesture sends its output:
-
-- **Press once (press)**: eyeokuri presses and releases the output each time the gesture fires.
-- **Hold while it lasts (while)**: eyeokuri presses the output when the gesture fires and lets go when the gesture ends. The log says `look: ... -> ctrl held`, then `-> ctrl released`. The gesture ends when the signal leaves the box of the step that completed it, or, if that step is another gesture, when that gesture ends. Turning your head outside the gesture's head limits also ends it.
-
-For example, to skip text while you keep your left eye closed, give a gesture one step: **Wink**, **Above** 0.25, **Hold** 0.3 s. Set its output to `ctrl` and choose **Hold while it lasts**. Ctrl goes down once your left eye has been closed for 0.3 s and comes up when you open it. The built-in right tilt (`tilt_right`) holds `ctrl` this way while your head is tilted toward your right shoulder.
-
-eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
-
-You can hold a key, a key combination, `mouse_left_click` or `mouse_right_click`. A held key is down for every app, not only the game: if you switch windows while it's held, what you type there gets `ctrl` too. Several gestures can use the same key: if two gestures hold `ctrl`, it stays down until both have let go. If you end eyeokuri from Task Manager while a key is held, press that key once to release it.
 
 ## Save or cancel
 

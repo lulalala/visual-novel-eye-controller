@@ -10,7 +10,7 @@ from typing import Any
 
 from eyeokuri.config import SIGNALS, CameraConfig, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
-from eyeokuri.i18n import N_, _, colon
+from eyeokuri.i18n import N_, _, aside, colon
 from eyeokuri.labels import show_gesture, show_signal
 from eyeokuri.triggers import Replay
 from eyeokuri.tuning import DO, Take, trim
@@ -68,6 +68,13 @@ def log_tag(message: str) -> str:
 
 def fmt(value: float | None) -> str:
     return "" if value is None else f"{value:g}"
+
+
+def key_label(output: str, output_mode: str) -> str:
+    """What a gesture's key button in the main window shows: the output, marked when it is held."""
+    if not output:
+        return _("(none)")
+    return output + aside(_("hold")) if output_mode == "while" else output
 
 
 def gesture_model(gesture: GestureConfig) -> dict[str, Any]:

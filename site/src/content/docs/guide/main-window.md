@@ -2,7 +2,7 @@
 title: Use the main window
 sidebar:
   order: 2
-description: Turn gestures on and off, pause eyeokuri, read the log and open the other windows.
+description: Turn gestures on and off, choose the key each one sends, pause eyeokuri, read the log and open the other windows.
 ---
 
 The main window lists your gestures on the left and shows the log on the right. Start it from the Start menu after you install it, or with `eyeokuri-gui` if you run from source.
@@ -11,12 +11,36 @@ The main window lists your gestures on the left and shows the log on the right. 
 
 ## Turn gestures on and off
 
-Each gesture row shows the gesture's name and the key it sends. It has two controls:
+Each gesture row shows the gesture's name and has three controls:
 
+- The button in the **Key** column shows the key the gesture sends and opens the key window. See [Choose what a gesture sends](#choose-what-a-gesture-sends).
 - The checkbox in the **On** column turns the gesture on or off. eyeokuri saves the change to the config file right away.
 - The gear button (⚙) opens the gesture's window. See [Edit a gesture](../edit-a-gesture/).
 
 **New gesture…** asks for a name, then opens a gesture window for the new gesture.
+
+## Choose what a gesture sends
+
+The button in a gesture's **Key** column shows what the gesture sends, with `(hold)` after a key it holds down. Select it to open the key window. In **Key**, type the key, choose it from the list, or select **Press a key…** and press the key or combination. **OK** saves the change, and **Cancel** goes back to the key you had.
+
+- A key, such as `enter`, `space`, `up`, `f5` or `a`.
+- A key with modifiers (`ctrl`, `shift`, `alt`, `win`), joined with `+`, such as `ctrl+s`.
+- A mouse input: `mouse_left_click`, `mouse_right_click` or `mouse_wheel_down`.
+- `app_pause_toggle`, which pauses or resumes eyeokuri.
+- `(none)`, which sends nothing. Use it for a gesture that other gestures use as a step.
+
+## Hold a key down
+
+Some games skip text while you hold `ctrl`. The **Send** list in the key window sets how the gesture sends its output:
+
+- **Press once (press)**: eyeokuri presses and releases the output each time the gesture fires.
+- **Hold while it lasts (while)**: eyeokuri presses the output when the gesture fires and lets go when the gesture ends. The log says `look: ... -> ctrl held`, then `-> ctrl released`. The gesture ends when the signal leaves the box of the step that completed it, or, if that step is another gesture, when that gesture ends. Turning your head outside the gesture's head limits also ends it.
+
+For example, to skip text while you keep your left eye closed, give a gesture one step in its [gesture window](../edit-a-gesture/): **Wink**, **Above** 0.25, **Hold** 0.3 s. In its key window, set **Key** to `ctrl` and **Send** to **Hold while it lasts**. Ctrl goes down once your left eye has been closed for 0.3 s and comes up when you open it. The built-in right tilt (`tilt_right`) holds `ctrl` this way while your head is tilted toward your right shoulder.
+
+eyeokuri also lets go when you pause, when your face leaves the camera, when you open a window that edits settings and when eyeokuri stops.
+
+You can hold a key, a key combination, `mouse_left_click` or `mouse_right_click`. A held key is down for every app, not only the game: if you switch windows while it's held, what you type there gets `ctrl` too. Several gestures can use the same key: if two gestures hold `ctrl`, it stays down until both have let go. If you end eyeokuri from Task Manager while a key is held, press that key once to release it.
 
 ## Pause eyeokuri
 
@@ -46,7 +70,7 @@ The status bar at the bottom shows what eyeokuri sees: `Calibrating…`, `Watchi
 
 The camera view appears next to the main window. eyeokuri draws it only while the window is open, so close it when you don't need it to save CPU.
 
-While a gesture, config or wizard window is open, gestures are off and the main window's controls are disabled. Only one of these windows can be open at a time.
+While a gesture, key, config or wizard window is open, gestures are off and the main window's controls are disabled. Only one of these windows can be open at a time.
 
 ## If the camera stops
 

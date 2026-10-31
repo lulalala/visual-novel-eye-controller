@@ -73,10 +73,11 @@ src/eyeokuri/
     launch.py       parses the flags and starts the main window
     main_window.py  the gesture list with on/off and pause toggles, the log, and the menu bar
     worker.py       runs the Engine on a background thread
-    gesture_window.py  one gesture's window: output, plot, steps table, head limits
+    gesture_window.py  one gesture's window: plot, steps table, head limits
+    output_window.py   key window: the key a gesture sends, and press or hold
     about.py        About window: version, and buttons that open LICENSE and THIRD_PARTY_NOTICES.md
     config_window.py   config window: General and Advanced tabs
-    live_edit.py    what the gesture and config windows share: edits apply live, OK saves, Cancel goes back
+    live_edit.py    what the gesture, key and config windows share: edits apply live, OK saves, Cancel goes back
     wizard.py       gesture wizard for the gesture window's gesture
     plot.py         the plot with one draggable box per step
     camera.py       camera view window and the camera picker

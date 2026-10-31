@@ -90,7 +90,10 @@ CATALOG: dict[str, str] = {
     "Recommended: let the wizard set the limits": "建議：讓精靈幫你設定範圍",
     "Do the gesture a few times and the wizard fits the limits and time windows to you. You can also edit them by hand below.":
         "把動作做幾次，精靈就會依你的習慣調整範圍和時間限制。你也可以在下方自己修改。",
-    "Output": "輸出",
+    "Send": "送出方式",
+    "Press once sends the key each time the gesture fires. Hold while it lasts holds the key down until the gesture ends.":
+        "「按一下」會在動作每次觸發時送出按鍵。「動作持續時按住」會按住按鍵，直到動作結束。",
+    "hold": "按住",
     "Press a key…": "按下一個按鍵…",
     "Press a key now (click to cancel)": "現在按下按鍵（點一下可取消）",
     "Press once": "按一下",

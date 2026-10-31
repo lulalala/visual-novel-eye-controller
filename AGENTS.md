@@ -27,7 +27,7 @@
 ## GUI rules
 
 - Only the main thread touches Tk widgets. The worker thread runs `Engine`; the main thread polls it for frames and log lines. `Engine.set_config()` and `toggle_pause()` are the only calls safe from the main thread.
-- Editor windows (gesture, config, wizard) edit a working copy and apply it live with `Engine.set_config()`; OK saves with `dump_config()`, Cancel restores what was in use when the window opened (`LiveEdit` in `gui/live_edit.py` does this for the gesture and config windows). Only one is open at a time, and gestures are suspended while it is.
+- Editor windows (gesture, key, config, wizard) edit a working copy and apply it live with `Engine.set_config()`; OK saves with `dump_config()`, Cancel restores what was in use when the window opened (`LiveEdit` in `gui/live_edit.py` does this for the gesture, key and config windows). Only one is open at a time, and gestures are suspended while it is.
 - `app.paused` is read only at startup; `set_config()` must not change the live paused state.
 - The gesture window gets match results from `triggers.replay()`, and the wizard fits limits with `tuning.fit()`. Don't reimplement matching or fitting in a window.
 - Logic that needs no widgets goes in a module without Tk imports (`gui/model.py`, `tuning.py`, `labels.py`), so it is unit-tested. One window per module; windows import `MainWindow` only under `TYPE_CHECKING`.

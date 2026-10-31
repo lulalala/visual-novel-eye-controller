@@ -16,8 +16,9 @@ from eyeokuri.gui.about import AboutWindow
 from eyeokuri.gui.camera import CameraWindow
 from eyeokuri.gui.config_window import ConfigWindow
 from eyeokuri.gui.gesture_window import GestureWindow
-from eyeokuri.gui.model import GESTURE_NAME, log_tag, view_size
+from eyeokuri.gui.model import GESTURE_NAME, key_label, log_tag, view_size
 from eyeokuri.gui.name_dialog import ask_text
+from eyeokuri.gui.output_window import OutputWindow
 from eyeokuri.gui.tkutil import menu_bar_height
 from eyeokuri.gui.wizard import WizardWindow
 from eyeokuri.gui.worker import Worker
@@ -29,7 +30,7 @@ _POLL_MS = 15
 
 
 class MainWindow:
-    """The gesture list (each with its key, an on/off toggle and a gear button to configure it),
+    """The gesture list (each with a button for its key, an on/off toggle and a gear button to configure it),
     a toggle for all gestures (pause), and the log."""
 
     def __init__(self, root: tk.Tk, config: Config, path: Path) -> None:
@@ -38,12 +39,13 @@ class MainWindow:
         self.path = path
         self.gesture_window: GestureWindow | None = None
         self.config_window: ConfigWindow | None = None
+        self.output_window: OutputWindow | None = None
         self.wizard: WizardWindow | None = None
         self.camera: CameraWindow | None = None
         self.about: AboutWindow | None = None
         self.worker = Worker(config)
         self._shown_status: tuple[str, bool] | None = None
-        self._shown_rows: tuple[tuple[str, str, bool], ...] | None = None
+        self._shown_rows: tuple[tuple[str, str, str, bool], ...] | None = None
         self._row_controls: list[ttk.Widget] = []
 
         root.title("eyeokuri")
@@ -105,7 +107,7 @@ class MainWindow:
 
     def _build_rows(self) -> None:
         """One row per gesture, under a row that turns all of them on or off (pause)."""
-        self._shown_rows = tuple((n, g.output, g.enabled) for n, g in self.config.gestures.items())
+        self._shown_rows = self._rows_of(self.config)
         for child in self.rows.winfo_children():
             child.destroy()
         for col, text in enumerate((_("Gesture"), _("Key"), _("On"))):
@@ -117,8 +119,9 @@ class MainWindow:
         self._row_controls = [pause_toggle]
         for r, (name, gesture) in enumerate(self.config.gestures.items(), 3):
             ttk.Label(self.rows, text=show_gesture(name)).grid(row=r, column=0, sticky="w", padx=4)
-            ttk.Label(self.rows, text=gesture.output or _("(none)"),
-                      foreground=theme.INK if gesture.output else theme.MUTED).grid(row=r, column=1, sticky="w", padx=4)
+            key = ttk.Button(self.rows, text=key_label(gesture.output, gesture.output_mode),
+                             command=lambda n=name: self.open_output(n))
+            key.grid(row=r, column=1, sticky="ew", padx=4, pady=2)
             var = tk.BooleanVar(value=gesture.enabled)
             toggle = ttk.Checkbutton(self.rows, variable=var, command=lambda n=name, v=var: self._set_enabled(n, v))
             toggle.grid(row=r, column=2, padx=4, pady=2)
@@ -127,8 +130,13 @@ class MainWindow:
             configure.grid(row=r, column=3, padx=4, pady=2)
             # Tk drops a variable nobody refers to, and its checkbox goes blank.
             toggle.var = var  # type: ignore[attr-defined]
-            self._row_controls += [toggle, configure]
+            self._row_controls += [key, toggle, configure]
         self._set_controls()
+
+    @staticmethod
+    def _rows_of(config: Config) -> tuple[tuple[str, str, str, bool], ...]:
+        """What the gesture list shows, so it is rebuilt only when that changes."""
+        return tuple((n, g.output, g.output_mode, g.enabled) for n, g in config.gestures.items())
 
     def _set_enabled(self, name: str, var: tk.BooleanVar) -> None:
         """Turns one gesture on or off, and saves."""
@@ -204,16 +212,16 @@ class MainWindow:
     def apply_config(self, config: Config) -> None:
         self.config = config
         self.push_config()
-        if tuple((n, g.output, g.enabled) for n, g in config.gestures.items()) != self._shown_rows:
+        if self._rows_of(config) != self._shown_rows:
             self._build_rows()
 
     @property
     def _editing(self) -> bool:
-        return self.gesture_window is not None or self.config_window is not None or self.wizard is not None
+        return any(w is not None for w in (self.gesture_window, self.config_window, self.output_window, self.wizard))
 
     def push_config(self) -> None:
         """Sends the settings in use to the engine. Gestures are off while a gesture,
-        config or wizard window is open, so editing and recording send nothing to other windows."""
+        config, key or wizard window is open, so editing and recording send nothing to other windows."""
         self.worker.set_config(self.config)
         self.worker.set_suspended(self._editing)
         self._set_controls()
@@ -251,6 +259,14 @@ class MainWindow:
             self.gesture_window.win.focus_force()
             return
         self.gesture_window = GestureWindow(self, name)
+        self.push_config()
+
+    def open_output(self, name: str) -> None:
+        if self.output_window is not None:
+            self.output_window.win.lift()
+            self.output_window.win.focus_force()
+            return
+        self.output_window = OutputWindow(self, name)
         self.push_config()
 
     def open_config(self) -> None:

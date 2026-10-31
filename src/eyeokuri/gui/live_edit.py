@@ -1,4 +1,4 @@
-"""What the gesture and config windows share: edits apply live, OK saves, Cancel goes back."""
+"""What the gesture, key and config windows share: edits apply live, OK saves, Cancel goes back."""
 
 from __future__ import annotations
 

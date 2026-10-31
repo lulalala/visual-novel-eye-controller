@@ -90,7 +90,10 @@ CATALOG: dict[str, str] = {
     "Recommended: let the wizard set the limits": "おすすめ：ウィザードで範囲を設定",
     "Do the gesture a few times and the wizard fits the limits and time windows to you. You can also edit them by hand below.":
         "ジェスチャーを数回行うと、ウィザードがあなたに合わせて範囲と制限時間を調整します。下で手動で編集することもできます。",
-    "Output": "出力",
+    "Send": "送り方",
+    "Press once sends the key each time the gesture fires. Hold while it lasts holds the key down until the gesture ends.":
+        "「1 回押す」は、ジェスチャーが反応するたびにキーを送ります。「続いている間押し続ける」は、ジェスチャーが終わるまでキーを押し続けます。",
+    "hold": "押し続け",
     "Press a key…": "キーを押してください…",
     "Press a key now (click to cancel)": "今すぐキーを押してください（クリックでキャンセル）",
     "Press once": "1 回押す",

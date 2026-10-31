@@ -3,7 +3,8 @@ import pytest
 from eyeokuri.config import SIGNALS, CameraConfig, Config, GestureConfig, StepConfig
 from eyeokuri.eyes import Observation
 from eyeokuri.gui.model import (
-    GESTURE_NAME, RECORD_S, SIGNAL_PLOTS, find_notice_file, fmt, gesture_config, gesture_model, lane_title, new_step,
+    GESTURE_NAME, RECORD_S, SIGNAL_PLOTS, find_notice_file, fmt, gesture_config, gesture_model, key_label, lane_title,
+    new_step,
     show_choice, step_choices, users_of, view_size, wizard_traces,
 )
 from eyeokuri.gui.worker import state_text
@@ -29,6 +30,23 @@ def test_gesture_steps_survive_the_editor_round_trip():
 def test_output_mode_survives_the_editor_round_trip():
     gesture = GestureConfig(steps=[StepConfig(signal="eyes", below_ratio=0.5)], output="ctrl", output_mode="while")
     assert gesture_config(gesture_model(gesture)) == gesture
+
+
+def test_key_label_shows_the_key_a_gesture_presses():
+    assert key_label("ctrl+s", "press") == "ctrl+s"
+
+
+def test_key_label_marks_a_held_key():
+    assert key_label("ctrl", "while") == "ctrl (hold)"
+    set_language("ja")
+    try:
+        assert key_label("ctrl", "while") == "ctrl（押し続け）"
+    finally:
+        set_language("en")
+
+
+def test_key_label_shows_none_without_a_key():
+    assert key_label("", "while") == "(none)"
 
 
 def test_plot_table_covers_every_signal():

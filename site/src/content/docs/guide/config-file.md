@@ -68,7 +68,7 @@ By default, a blink counts only when your head is within 20° of your usual pose
 - `app_pause_toggle`, which pauses or resumes eyeokuri.
 - `""`, which sends nothing.
 
-`output_mode` sets how the output is sent: `press` (the default) sends it once, and `while` holds it down until the gesture ends. [Hold a key down](../edit-a-gesture/#hold-a-key-down) explains each one and when eyeokuri lets go. This gesture holds `ctrl`, which skips text in many games, while you keep your left eye closed:
+`output_mode` sets how the output is sent: `press` (the default) sends it once, and `while` holds it down until the gesture ends. [Hold a key down](../main-window/#hold-a-key-down) explains each one and when eyeokuri lets go. This gesture holds `ctrl`, which skips text in many games, while you keep your left eye closed:
 
 ```toml
 [gestures.skip]
